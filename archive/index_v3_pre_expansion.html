@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>The Covenant of Water — A Post-Cohesion Safari Fable</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Source+Sans+3:wght@300;400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   The Covenant of Water — MASTER STYLESHEET
+   Warm earth palette, cinematic safari aesthetic
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --gold:#C8A45A;--gold-l:#E8D5A0;--gold-d:#96783E;
+  --earth:#3D2B1F;--earth-l:#5C4033;
+  --dusk:#1A0E0A;--dusk-t:rgba(26,14,10,.95);
+  --sunset:#D4603A;--sky:#2C4A6E;--leaf:#4A6741;
+  --sand:#F5E6D0;--cream:#FFF8F0;
+  --red:#C0392B;--green:#27AE60;--water:#4a8b9e;--belong:#7b5ea7;
+  --serif:'Playfair Display',Georgia,serif;
+  --body:'Cormorant Garamond',Georgia,serif;
+  --sans:'Source Sans 3',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--sans);background:var(--dusk);color:var(--cream);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--dusk)}::-webkit-scrollbar-thumb{background:rgba(200,164,90,.25);border-radius:3px}
+
+/* ═══ SCREENS ═══ */
+.scr{display:none;min-height:100vh;flex-direction:column}.scr.on{display:flex}
+
+/* ═══ GLOBAL NAV (sticky top bar) ═══ */
+.gnav{position:fixed;top:0;left:0;right:0;z-index:500;background:rgba(26,14,10,.97);backdrop-filter:blur(10px);border-bottom:1px solid rgba(200,164,90,.12);padding:.45rem .8rem;display:flex;align-items:center;gap:.35rem;overflow-x:auto;transform:translateY(-100%);transition:transform .35s}
+.gnav.vis{transform:translateY(0)}
+.gnav .brand{font-family:var(--serif);font-size:.95rem;font-weight:700;color:var(--gold);margin-right:.5rem;white-space:nowrap;cursor:pointer}
+.gnav button{font-family:var(--sans);font-size:.62rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--sand);background:none;border:1px solid transparent;padding:.35rem .65rem;cursor:pointer;white-space:nowrap;transition:all .25s;opacity:.6}
+.gnav button:hover{color:var(--gold-l);opacity:1}
+.gnav button.on{color:var(--gold);border-color:var(--gold);opacity:1;background:rgba(200,164,90,.06)}
+
+/* ═══ INFO OVERLAY (World/Rules/Scoring/DBT) ═══ */
+.info-overlay{position:fixed;inset:0;z-index:400;background:rgba(26,14,10,.96);backdrop-filter:blur(8px);display:none;overflow-y:auto;padding:3.2rem 1.2rem 2rem;animation:fu .4s forwards}
+.info-overlay.vis{display:block}
+.info-close{position:fixed;top:.7rem;right:1rem;z-index:401;font-family:var(--sans);font-size:.7rem;color:var(--sand);background:rgba(200,164,90,.08);border:1px solid rgba(200,164,90,.2);padding:.35rem .8rem;cursor:pointer;border-radius:2px}
+.info-close:hover{background:rgba(200,164,90,.15);color:var(--gold)}
+.info-inner{max-width:680px;margin:0 auto}
+
+/* ═══ SPLASH ═══ */
+.splash{align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden;background:linear-gradient(180deg,#1a0e08 0%,#2d1810 30%,#3d2517 50%,#5c3a28 70%,#c8724a 85%,#e8944a 92%,#f0a848 100%)}
+.splash::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 120% 60% at 50% 100%,rgba(200,164,90,.15) 0%,transparent 70%);pointer-events:none}
+.sil{position:absolute;bottom:0;left:0;right:0;height:200px;background:var(--dusk);opacity:.9;clip-path:polygon(0% 100%,0% 80%,3% 75%,5% 70%,6% 60%,7% 55%,8% 60%,10% 75%,14% 68%,17% 45%,18% 25%,20% 16%,22% 25%,25% 55%,30% 70%,38% 70%,42% 72%,50% 60%,55% 70%,60% 72%,64% 50%,65% 30%,66% 28%,68% 50%,72% 65%,80% 70%,85% 60%,87% 70%,95% 75%,100% 80%,100% 100%)}
+.sp-in{position:relative;z-index:2;padding:2rem;max-width:700px}
+.sp-eye{font-size:.72rem;letter-spacing:.35em;text-transform:uppercase;color:var(--gold);margin-bottom:1.5rem;opacity:0;animation:fu 1s .3s forwards}
+.sp-t{font-family:var(--serif);font-size:clamp(2.5rem,7vw,4.5rem);font-weight:900;line-height:1.1;margin-bottom:.5rem;text-shadow:0 4px 30px rgba(0,0,0,.5);opacity:0;animation:fu 1s .5s forwards}
+.sp-sub{font-family:var(--body);font-size:clamp(1rem,3vw,1.35rem);font-style:italic;color:var(--gold-l);margin-bottom:1.5rem;opacity:0;animation:fu 1s .7s forwards}
+.sp-q{font-family:var(--body);font-size:1rem;font-style:italic;color:var(--sand);margin-bottom:2rem;line-height:1.6;max-width:460px;margin-left:auto;margin-right:auto;opacity:0;animation:fu 1s .9s forwards}
+.sp-btns{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;opacity:0;animation:fu 1s 1.1s forwards}
+
+/* ═══ BUTTONS ═══ */
+.btn{font-family:var(--sans);font-size:.82rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--dusk);background:linear-gradient(135deg,var(--gold),var(--gold-l));border:none;padding:.85rem 2.2rem;cursor:pointer;transition:all .35s cubic-bezier(.23,1,.32,1)}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 35px rgba(200,164,90,.4)}
+.btn:disabled{opacity:.35;pointer-events:none;transform:none;box-shadow:none}
+.btn::after{content:' →'}
+.btn-s{font-size:.72rem;padding:.65rem 1.5rem}
+.btn-ghost{background:transparent;color:var(--gold);border:2px solid rgba(200,164,90,.35)}
+.btn-ghost:hover{background:rgba(200,164,90,.1);border-color:var(--gold)}
+.btn-ghost::after{content:' →'}
+.btn-back{font-family:var(--sans);font-size:.65rem;color:var(--sand);background:none;border:1px solid rgba(200,164,90,.15);padding:.4rem .8rem;cursor:pointer;margin-top:.8rem;opacity:.6;transition:all .25s;letter-spacing:.05em}
+.btn-back:hover{opacity:1;border-color:var(--gold)}
+.btn-back::before{content:'← '}
+.btn-back::after{content:''}
+
+/* ═══ AVATAR SCREEN ═══ */
+.av-scr{align-items:center;justify-content:center;text-align:center;background:var(--dusk);padding:2rem}
+.av-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:.7rem;max-width:560px;margin:1.2rem auto}
+.av-c{background:rgba(200,164,90,.03);border:2px solid rgba(200,164,90,.1);padding:.8rem .5rem;cursor:pointer;text-align:center;transition:all .3s;border-radius:4px}
+.av-c:hover{border-color:rgba(200,164,90,.35);background:rgba(200,164,90,.06);transform:translateY(-2px)}
+.av-c.sel{border-color:var(--gold);background:rgba(200,164,90,.1);transform:scale(1.06)}
+.av-c .ico{font-size:2rem}.av-c .nm{font-family:var(--serif);font-size:.88rem;font-weight:700;color:var(--gold);margin-top:.25rem}
+.av-c .rl{font-size:.55rem;color:var(--sand);letter-spacing:.06em;text-transform:uppercase;margin-top:.12rem}
+.av-c .ds{font-size:.58rem;color:rgba(200,164,90,.5);margin-top:.2rem;line-height:1.3;font-style:italic}
+
+/* ═══ NAME INPUT ═══ */
+.name-input{font-family:var(--sans);font-size:1rem;color:var(--cream);background:rgba(200,164,90,.06);border:1px solid rgba(200,164,90,.2);padding:.5rem .8rem;text-align:center;outline:none;transition:border-color .3s;width:200px;margin:.6rem auto;display:block}
+.name-input:focus{border-color:var(--gold)}
+.name-input::placeholder{color:rgba(200,164,90,.3)}
+
+/* ═══ GAME SCREEN ═══ */
+.game{background:var(--dusk)}
+.prog-t{position:fixed;top:0;left:0;right:0;height:3px;background:rgba(200,164,90,.12);z-index:101}
+.prog-f{height:100%;background:linear-gradient(90deg,var(--gold),var(--sunset));transition:width .6s}
+
+/* ═══ HUD ═══ */
+.hud{position:fixed;top:3px;left:0;right:0;z-index:100;background:linear-gradient(180deg,rgba(26,14,10,.95) 0%,rgba(26,14,10,.65) 75%,transparent 100%);padding:.7rem 1.5rem 1.8rem;display:flex;justify-content:space-between;align-items:flex-start}
+.hud-l{font-size:.5rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);opacity:.7}
+.hud-v{font-family:var(--serif);font-size:1.2rem;font-weight:700}
+.hud-c{text-align:center}
+.hud .nav-tog{position:absolute;top:.5rem;left:50%;transform:translateX(-50%);font-family:var(--sans);font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);background:none;border:1px solid rgba(200,164,90,.2);padding:.2rem .5rem;cursor:pointer;opacity:.5;transition:opacity .25s}
+.hud .nav-tog:hover{opacity:1}
+
+/* ═══ QUESTION AREA ═══ */
+.q-bg{position:fixed;inset:0;z-index:-1;overflow:hidden}
+.q-bg img{width:100%;height:100%;object-fit:cover;filter:brightness(.28) saturate(.7);transition:opacity 1s}
+.q-bg::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(26,14,10,.88) 0%,rgba(26,14,10,.3) 35%,rgba(26,14,10,.3) 65%,rgba(26,14,10,.88) 100%),radial-gradient(ellipse at center,transparent 30%,rgba(26,14,10,.5) 100%)}
+.q-area{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:90px 1.5rem 100px}
+.q-card{max-width:700px;width:100%;text-align:center;animation:fu .5s forwards}
+.q-th{display:inline-block;font-size:.58rem;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);border:1px solid rgba(200,164,90,.25);padding:.2rem .7rem;margin-bottom:.8rem}
+.q-str{display:flex;justify-content:center;gap:.25rem;margin-bottom:.6rem}
+.q-dot{width:5px;height:5px;border-radius:50%;background:rgba(200,164,90,.18);border:1px solid rgba(200,164,90,.25)}
+.q-dot.on{background:var(--gold);border-color:var(--gold)}
+.q-txt{font-family:var(--serif);font-size:clamp(1.05rem,3vw,1.5rem);font-weight:400;line-height:1.5;margin-bottom:1.8rem;text-shadow:0 2px 15px rgba(0,0,0,.5)}
+
+/* ═══ OPTIONS ═══ */
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:.55rem;max-width:580px;margin:0 auto}
+@media(max-width:580px){.opts{grid-template-columns:1fr}}
+.ob{font-family:var(--sans);font-size:.88rem;color:var(--cream);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);padding:.8rem 1rem;cursor:pointer;text-align:left;transition:all .22s;line-height:1.35}
+.ob:hover:not(.lk){background:rgba(200,164,90,.1);border-color:rgba(200,164,90,.35);transform:translateY(-1px)}
+.ob .lt{font-weight:700;color:var(--gold);margin-right:.4rem}
+.ob.ok{background:rgba(39,174,96,.18);border-color:var(--green)}.ob.ok .lt{color:var(--green)}
+.ob.no{background:rgba(192,57,43,.15);border-color:var(--red);opacity:.45}.ob.no .lt{color:var(--red)}
+.ob.lk{cursor:default;opacity:.35}.ob.lk.ok{opacity:1}.ob.lk.ws{opacity:1}
+.ob.narrative{border-color:rgba(200,164,90,.12);background:rgba(200,164,90,.03)}
+.ob.narrative:hover:not(.lk){background:rgba(200,164,90,.1);border-color:var(--gold)}
+.ob.narrative.chosen{background:rgba(200,164,90,.12);border-color:var(--gold);opacity:1}
+.ob.narrative.lk:not(.chosen){opacity:.3}
+
+/* ═══ TIMER BAR (Tier A) ═══ */
+.timer-wrap{width:100%;max-width:580px;margin:0 auto .8rem;height:4px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden}
+.timer-fill{height:100%;background:var(--gold);transition:width .1s linear;border-radius:2px}
+.timer-fill.danger{background:var(--red)}
+
+/* ═══ INSTINCT CHOOSER ═══ */
+.inst-sec{max-width:580px;margin:1.2rem auto 0;animation:fu .4s forwards}
+.inst-lbl{font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:.5rem;text-align:center}
+.inst-g{display:grid;grid-template-columns:repeat(3,1fr);gap:.35rem}
+.ib{font-family:var(--sans);font-size:.62rem;color:var(--cream);background:rgba(200,164,90,.03);border:1px solid rgba(200,164,90,.08);padding:.45rem .25rem;cursor:pointer;text-align:center;border-radius:2px;transition:all .2s;line-height:1.25}
+.ib:hover{background:rgba(200,164,90,.1);border-color:var(--gold);transform:translateY(-1px)}
+.ib .ii{font-size:.95rem}.ib .in{font-weight:600;color:var(--gold);font-size:.65rem}.ib .id{font-size:.48rem;color:var(--sand);margin-top:1px}
+
+/* ═══ FATE DICE ═══ */
+.fate-sec{max-width:580px;margin:1.2rem auto 0;text-align:center;animation:fu .5s forwards}
+.dice-face{font-size:4rem;margin:.5rem 0;transition:transform .1s}
+.dice-face.rolling{animation:diceShake .12s infinite}
+@keyframes diceShake{0%{transform:rotate(0deg) scale(1)}25%{transform:rotate(8deg) scale(1.1)}50%{transform:rotate(-5deg) scale(.95)}75%{transform:rotate(3deg) scale(1.05)}100%{transform:rotate(0deg) scale(1)}}
+.fate-label{font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:.3rem}
+.fate-result{font-family:var(--serif);font-size:1.1rem;margin:.3rem 0}
+.fate-note{font-size:.6rem;color:var(--sand);opacity:.6;font-style:italic;margin-top:.5rem;max-width:380px;margin-left:auto;margin-right:auto;line-height:1.4}
+.effect-tags{display:flex;gap:.4rem;justify-content:center;flex-wrap:wrap;margin:.5rem 0}
+.etag{font-size:.68rem;padding:.15rem .5rem;border-radius:2px}
+.etag.pos{background:rgba(74,139,158,.12);color:var(--water);border:1px solid rgba(74,139,158,.25)}
+.etag.neg{background:rgba(192,57,43,.12);color:var(--red);border:1px solid rgba(192,57,43,.25)}
+.shadow-note{font-size:.62rem;color:var(--sand);opacity:.45;font-style:italic}
+
+/* ═══ FEEDBACK ═══ */
+.fb{max-width:580px;margin:1rem auto 0;text-align:left;padding:.9rem 1.1rem;background:rgba(255,255,255,.03);border-left:3px solid var(--gold);animation:fu .35s forwards;display:none}
+.fb.vis{display:block}
+.fb-l{font-size:.5rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:.25rem}
+.fb-t{font-family:var(--body);font-size:.95rem;line-height:1.55;color:var(--sand);font-style:italic}
+.nb{display:none;margin:1rem auto 0}.nb.vis{display:inline-block}
+
+/* ═══ METERS ═══ */
+.mbar{position:fixed;bottom:0;left:0;right:0;z-index:100;background:linear-gradient(0deg,rgba(26,14,10,.95) 0%,rgba(26,14,10,.65) 85%,transparent 100%);padding:.8rem 1rem .6rem;display:flex;justify-content:center;gap:.8rem;flex-wrap:wrap}
+.mi{text-align:center;min-width:48px}
+.mi .ml{font-size:.45rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(200,164,90,.55)}
+.mi .mv{font-family:var(--serif);font-size:.8rem;font-weight:700}
+.mi .mt{width:100%;height:3px;background:rgba(255,255,255,.03);border-radius:2px;overflow:hidden;margin-top:2px}
+.mi .mf{height:100%;border-radius:2px;transition:width .6s}
+
+/* ═══ ROUND TRANSITION ═══ */
+.rt{position:fixed;inset:0;z-index:300;background:var(--dusk);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;opacity:0;pointer-events:none;transition:opacity .5s}
+.rt.on{opacity:1;pointer-events:all}
+.rt-l{font-size:.65rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin-bottom:.8rem}
+.rt-n{font-family:var(--serif);font-size:clamp(1.8rem,5vw,2.8rem);font-weight:900;margin-bottom:.4rem}
+.rt-d{font-family:var(--body);font-size:1rem;font-style:italic;color:var(--gold-l)}
+
+/* ═══ DASHBOARD / PORTRAIT ═══ */
+.dash{align-items:center;padding:2.5rem 1.5rem 4rem;background:linear-gradient(180deg,var(--dusk) 0%,#2d1810 50%,var(--earth-l) 100%)}
+.dc{max-width:650px;width:100%;text-align:center}
+.de{font-size:.65rem;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin-bottom:.8rem;opacity:0;animation:fu .8s .2s forwards}
+.dt{font-family:var(--serif);font-size:clamp(1.8rem,5vw,2.8rem);font-weight:900;margin-bottom:.4rem;opacity:0;animation:fu .8s .4s forwards}
+.dd{font-family:var(--body);font-size:1rem;font-style:italic;color:var(--gold-l);margin-bottom:2rem;opacity:0;animation:fu .8s .6s forwards}
+.ds-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem;margin-bottom:2rem;opacity:0;animation:fu .8s .8s forwards}
+.sn{font-family:var(--serif);font-size:2rem;font-weight:900;color:var(--gold)}.sl{font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;color:var(--sand);margin-top:.15rem}
+.dx{background:rgba(200,164,90,.05);border:1px solid rgba(200,164,90,.12);padding:1.2rem;margin-bottom:1rem;text-align:left;border-radius:4px;opacity:0;animation:fu .7s forwards}
+.dx h3{font-family:var(--serif);font-size:1rem;font-weight:700;color:var(--gold);margin-bottom:.6rem}
+.db{display:flex;align-items:center;gap:.35rem;margin-bottom:.35rem}
+.db .dl{font-size:.58rem;color:var(--sand);width:100px;text-align:right}
+.db .dtr{flex:1;height:5px;background:rgba(255,255,255,.03);border-radius:3px;overflow:hidden}
+.db .dfl{height:100%;border-radius:3px;transition:width .8s}
+.db .dv{font-size:.52rem;width:30px}
+.shb{padding:.7rem;background:rgba(192,57,43,.05);border:1px solid rgba(192,57,43,.12);border-radius:3px;margin-bottom:.7rem}
+.shb .shl{font-size:.5rem;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:.2rem}
+.shb .sht{font-family:var(--body);font-size:.9rem;color:var(--cream);line-height:1.5}
+.ip{font-family:var(--body);font-size:.92rem;line-height:1.65;color:var(--sand);font-style:italic}
+.dq{font-family:var(--body);font-size:1.05rem;font-style:italic;color:var(--gold-l);margin:1.8rem 0;line-height:1.6;text-align:center}
+
+/* ═══ INFO PAGE STYLES (reused for World/Rules/Scoring/DBT overlays) ═══ */
+.hdr{font-family:var(--serif);font-size:clamp(1.5rem,4vw,2.1rem);font-weight:700;color:var(--gold);margin-bottom:.3rem}
+.sub2{font-family:var(--serif);font-size:.92rem;color:var(--sand);font-style:italic;margin-bottom:1.5rem}
+.prose{font-family:var(--body);font-size:clamp(.95rem,2vw,1.12rem);line-height:1.9;color:var(--sand)}
+.prose p{margin-bottom:1rem}
+.prose .hl{color:var(--gold);font-weight:600}
+.prose .wh{font-style:italic;color:rgba(200,164,90,.5)}
+.rule{background:rgba(200,164,90,.04);border-left:3px solid var(--gold);padding:1rem;margin-bottom:.8rem;border-radius:2px}
+.rule h4{font-family:var(--serif);font-size:1rem;color:var(--gold);margin-bottom:.3rem}
+.rule p{font-family:var(--body);font-size:.9rem;color:var(--sand);line-height:1.65}
+.card-i{background:rgba(200,164,90,.04);border:1px solid rgba(200,164,90,.12);padding:1rem;border-radius:4px;margin-bottom:.6rem}
+.card-i h4{font-family:var(--serif);font-size:.95rem;color:var(--gold);margin-bottom:.3rem}
+.card-i p{font-family:var(--body);font-size:.85rem;color:var(--sand);line-height:1.5}
+.tag-i{display:inline-block;font-size:.6rem;padding:.12rem .4rem;border-radius:2px;margin-right:.25rem;margin-bottom:.2rem}
+.tag-g{background:rgba(74,139,158,.12);color:var(--water);border:1px solid rgba(74,139,158,.25)}
+.tag-r{background:rgba(192,57,43,.12);color:var(--red);border:1px solid rgba(192,57,43,.25)}
+
+/* ═══ SHARE OVERLAY ═══ */
+.share-overlay{position:fixed;inset:0;z-index:600;background:rgba(26,14,10,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem;overflow-y:auto;animation:fu .4s}
+.share-card{background:linear-gradient(180deg,var(--dusk) 0%,#2d1810 100%);border:2px solid rgba(200,164,90,.3);border-radius:8px;padding:1.5rem;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+
+/* ═══ ANIMATIONS ═══ */
+@keyframes fu{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{transform:scale(0) translateY(0);opacity:0}50%{transform:scale(1.3) translateY(-8px);opacity:1}100%{transform:scale(1) translateY(-18px);opacity:0}}
+.spop{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-family:var(--serif);font-size:2.8rem;font-weight:900;color:var(--gold);pointer-events:none;z-index:200;animation:pop .7s forwards;text-shadow:0 0 25px rgba(200,164,90,.5)}
+
+@media(max-width:480px){
+  .av-grid{grid-template-columns:repeat(auto-fill,minmax(95px,1fr));gap:.5rem}
+  .inst-g{grid-template-columns:repeat(3,1fr);gap:.25rem}
+  .opts{gap:.4rem}
+  .mbar{gap:.4rem;padding:.6rem .5rem .4rem}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ SPLASH ═══ -->
+<div class="scr splash on" id="S0">
+<div class="sil"></div>
+<div class="sp-in">
+<div class="sp-eye">A Post-Cohesion Safari Fable</div>
+<h1 class="sp-t">The Covenant of Water</h1>
+<p class="sp-sub">Where the ancient animals still remember the way to water</p>
+<blockquote class="sp-q">"Abundance is found by taking turns.<br>But the Takers no longer remembered the order.<br>They drank first. And longest. And last."</blockquote>
+<div class="sp-btns">
+<button class="btn" onclick="go('S1')">Begin Solo Journey</button>
+<button class="btn btn-ghost" onclick="startGroup()">Start Group Safari</button>
+</div>
+</div>
+</div>
+
+<!-- ═══ AVATAR SELECTION ═══ -->
+<div class="scr av-scr" id="S1">
+<div style="max-width:620px;width:100%">
+<div style="font-size:.6rem;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:.6rem">Choose Your Animal</div>
+<h2 style="font-family:var(--serif);font-size:clamp(1.4rem,4vw,2rem);font-weight:900;margin-bottom:.3rem">Who Do You Think You Are?</h2>
+<p style="font-family:var(--body);font-size:.95rem;color:var(--gold-l);font-style:italic;margin-bottom:.4rem">Select the animal that resonates most deeply</p>
+<p style="font-size:.72rem;color:var(--sand);margin-bottom:.6rem;max-width:420px;margin-left:auto;margin-right:auto;line-height:1.45">This game tracks not only what you know — but how you respond when the world becomes uncertain. Your chosen identity will be compared against your revealed behavior under stress.</p>
+<input type="text" class="name-input" id="nameIn" placeholder="Your name" maxlength="20" autocomplete="off">
+<div class="av-grid" id="avG"></div>
+<button class="btn" id="goBtn" disabled onclick="startGame()">Enter the Safari</button>
+<button class="btn-back" onclick="go('S0')">Back to Start</button>
+</div>
+</div>
+
+<!-- ═══ GAME ═══ -->
+<div class="scr game" id="S2">
+<div class="prog-t"><div class="prog-f" id="pF"></div></div>
+<div class="hud">
+<div><span class="hud-l">Score</span><br><span class="hud-v" id="hS">0</span></div>
+<div class="hud-c">
+<div style="font-family:var(--body);font-size:.8rem;font-style:italic;color:var(--gold-l)" id="hR">Round 1</div>
+<div style="font-size:.55rem;color:var(--sand);opacity:.55" id="hQ">1 / 11</div>
+</div>
+<div style="text-align:right"><span class="hud-l">Streak</span><br><span class="hud-v" id="hK">0</span></div>
+</div>
+<div class="q-bg" id="qBg"><img id="bgI" src="" alt=""></div>
+<div class="q-area" id="qA"></div>
+<div class="mbar" id="mB"></div>
+</div>
+
+<!-- ═══ ROUND TRANSITION ═══ -->
+<div class="rt" id="rT"><div class="rt-l" id="rTL">Entering</div><div class="rt-n" id="rTN"></div><div class="rt-d" id="rTD"></div></div>
+
+<!-- ═══ DASHBOARD ═══ -->
+<div class="scr dash" id="S3"></div>
+
+<!-- ═══ INFO OVERLAY ═══ -->
+<div class="info-overlay" id="infoOv">
+<button class="info-close" onclick="closeInfo()">✕ Close</button>
+<div class="info-inner" id="infoIn"></div>
+</div>
+
+<!-- ═══ GLOBAL NAV ═══ -->
+<nav class="gnav" id="gNav">
+<span class="brand" onclick="closeInfo()">The Covenant of Water</span>
+<button onclick="showInfo('world')" id="nt-world">World</button>
+<button onclick="showInfo('rules')" id="nt-rules">Rules</button>
+<button onclick="showInfo('scoring')" id="nt-scoring">Scoring</button>
+<button onclick="showInfo('dbt')" id="nt-dbt">Psychology</button>
+<button onclick="showInfo('play')" id="nt-play" class="on">Play</button>
+</nav>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   The Covenant of Water — UNIFIED GAME ENGINE v3.0
+   
+   Architecture:
+   - Cynefin-tiered game loop (4 biomes)
+   - 100-question psychometric bank from Excel
+   - Fisher-Yates shuffle with stratified sampling
+   - 9-instinct personality engine (6 hidden dimensions)
+   - Stress-weighted scoring (Big Five math + Enneagram narrative)
+   - Fate/D20 dice mechanic for Tiers B/C/D
+   - html2canvas portrait export
+   ═══════════════════════════════════════════════════════════════ */
+
+// ═══ QUESTION BANK (100 questions from Excel) ═══
+const QB=[
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"What is the primary diet of a silverback gorilla?",o:["Bamboo and celery", "Insects and grubs", "Small mammals", "Strictly fruit"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"Which animal\u2019s 'funeral committee' gathers in a precise order to dismantle a carcass?",o:["Mixed Vulture Committee", "Marabou Storks", "Spotted Hyenas", "Jackals"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"What object can stop an elephant herd in its tracks years after a death?",o:["Elephant skulls and tusks", "Acacia branches", "Old water skins", "Shed skin"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"Which two species form a moving alliance, combining sharp eyes and a great nose to detect predators?",o:["Zebras & Wildebeest", "Lion & Hyena", "Hippo & Crocodile", "Baboon & Impala"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"What determines whether a crocodile egg hatches as male or female?",o:["Incubation temperature", "Genetics", "Mother's diet", "Phase of the moon"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"Which insect navigates using the faint light of the Milky Way galaxy?",o:["Dung Beetle", "Tsetse Fly", "Termite", "Praying Mantis"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"When heavily grazed, acacia trees release a chemical gas to warn downwind trees. What is it?",o:["Ethylene gas", "Nitrogen dioxide", "Pheromone spores", "Carbon monoxide"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"Which big cat is known to drag its kill high into the branches of trees?",o:["Leopard", "Cheetah", "Lion", "Caracal"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"How long is the gestation period of an African elephant?",o:["22 months", "9 months", "12 months", "18 months"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"What is a group of rhinos called?",o:["A crash", "A herd", "A pod", "A coalition"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"Which animal is responsible for the most human fatalities in Africa annually?",o:["Hippopotamus", "Lion", "Crocodile", "Cape Buffalo"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"What is the top speed of a cheetah?",o:["60-70 mph", "40-50 mph", "80-90 mph", "50-60 mph"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"Which bird has the largest wingspan in Africa?",o:["Wandering Albatross", "Marabou Stork", "Martial Eagle", "Lappet-faced Vulture"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"How do wild dogs vote on whether to go on a hunt?",o:["By sneezing", "By howling", "By tail wagging", "By running in circles"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"What color is a giraffe's tongue?",o:["Blue-black", "Pink", "Red", "Grey"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"Which animal sleeps standing up to escape predators quickly?",o:["Zebra", "Warthog", "Baboon", "Meerkat"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"What is the Great Rift Valley?",o:["A massive geological trench", "A large river system", "A dense jungle", "A mountain range"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"How many stomachs does a hippopotamus have?",o:["Three", "Four", "One", "Two"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"Which antelope is known for its massive, spiraled horns?",o:["Greater Kudu", "Thomson's Gazelle", "Impala", "Wildebeest"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"What is the primary predator of the adult ostrich?",o:["Lion", "Cheetah", "Hyena", "No natural predators"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"Which snake is considered the most venomous in Africa?",o:["Black Mamba", "Puff Adder", "Cape Cobra", "Green Mamba"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"How do elephants cool themselves down?",o:["Flapping their ears", "Sweating", "Panting", "Shedding skin"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"Which insect builds mounds that can be up to 30 feet tall?",o:["Termite", "Ant", "Dung Beetle", "Wasp"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"What is the primary food source of the flamingo?",o:["Algae and crustaceans", "Small fish", "Insects", "Frogs"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"Which animal is known as the 'clown of the plains'?",o:["Wildebeest", "Warthog", "Zebra", "Ostrich"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"How many cervical vertebrae (neck bones) does a giraffe have?",o:["Seven", "Fourteen", "Twelve", "Ten"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"Which big cat has a purely social pack structure?",o:["Lion", "Leopard", "Cheetah", "Caracal"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"What is the main purpose of a zebra's stripes?",o:["Temperature regulation and insect deterrence", "Camouflage in tall grass", "Species identification", "Attracting a mate"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"Which bird runs on the ground to catch venomous snakes?",o:["Secretary Bird", "Ostrich", "Marabou Stork", "Guinea Fowl"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"What is a defining characteristic of a Cape Buffalo?",o:["A fused base of horns called a 'boss'", "A humped back", "Striped legs", "A long mane"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"Which animal has a bite force strong enough to crush bone effortlessly?",o:["Spotted Hyena", "Lion", "Leopard", "Cheetah"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"What type of tree is famous for storing massive amounts of water in its trunk?",o:["Baobab", "Acacia", "Sausage Tree", "Ficus"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"Which primate lives in large troops and is known for its bright blue and red muzzle?",o:["Mandrill", "Baboon", "Vervet Monkey", "Chimpanzee"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"How do honey badgers survive snake bites?",o:["Natural immunity/resistance", "Thick fur", "Speed and agility", "They don't eat snakes"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"Which bird uses tools, such as dropping rocks on ostrich eggs to break them?",o:["Egyptian Vulture", "Crow", "Marabou Stork", "Eagle"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"What is the largest living primate?",o:["Eastern Lowland Gorilla", "Chimpanzee", "Orangutan", "Baboon"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"Which cat is the fastest climber?",o:["Leopard", "Cheetah", "Lion", "Serval"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"What environmental factor drives the Great Migration?",o:["Rainfall and fresh grass", "Mating season", "Predator avoidance", "Temperature drops"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"Which animal is entirely silent and has no vocal cords?",o:["Giraffe", "Zebra", "Okapi", "Elephant"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"A",m:"Cognitive Speed / Threat Baseline",q:"What is a pangolin covered in?",o:["Keratin scales", "Thick fur", "Armor plating", "Spines"],c:0,out:["Correct (+0 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)", "Incorrect (+1 Threat)"]},
+{t:"B",m:"Structure vs. Agency",q:"A localized flash flood washes out the road ahead. Do you...",o:["Wait 4 hours for the water to recede as per the guide's strict protocol.", "Check the map and forge a new detour off-road to beat the sunset.", "Demand the driver attempt the crossing anyway to stay on schedule.", "Set up an emergency camp right there and abandon the day's itinerary."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"You wake up in your tent to the sound of a large animal breathing right outside the canvas. Do you...",o:["Lie perfectly still, remembering the briefing that animals ignore tents.", "Turn on your flashlight and make noise to scare it away immediately.", "Slowly unzip the tent to identify the threat before acting.", "Radio the night guard immediately, breaking the silence rule."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"Your jeep has a flat tire in a high-predator zone. The guide needs 15 minutes to fix it. Do you...",o:["Stay exactly inside the vehicle with the windows up as instructed.", "Offer to step out and keep watch with binoculars to speed up the process.", "Suggest driving slowly on the rim to reach a safer clearing.", "Take photos of the tire change for the memory, ignoring the tension."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"You are lost on a walking safari and the guide drops his compass. A storm is coming. Do you...",o:["Trust the guide to navigate via landmarks despite his visible panic.", "Take charge, using the sun's position and your own instincts to lead.", "Refuse to move, insisting a search party will find you faster if you stay put.", "Wander to find high ground for a cell signal, separating slightly from the group."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"A curious elephant approaches the open-air dining tent during breakfast. Do you...",o:["Freeze and wait for camp staff to handle the situation using standard procedures.", "Quietly back away from the table to ensure your own immediate safety.", "Grab your plate and move to a secure vehicle nearby.", "Take out your camera, trusting the camp wouldn't let it get too dangerous."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"While hiking, you encounter a snake on the path. The guide is further ahead. Do you...",o:["Stop immediately and wait for the guide to return and instruct you.", "Carefully step around it, assessing the distance yourself.", "Throw a small rock near it to encourage it to slither away.", "Walk backward slowly, altering your route entirely."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"The battery on the jeep dies as a pride of lions is resting in the shade of the vehicle. Do you...",o:["Sit quietly for hours, trusting the radio call for backup will eventually work.", "Help the driver try to push-start the jeep while the lions are sleepy.", "Honk the horn to try and scatter the lions so another jeep can approach safely.", "Prepare your emergency flare, ready to use it if they wake up and look curious."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"You are out of water on a hot afternoon hike. Do you...",o:["Ration your last sip and strictly follow the guide's pacing back to camp.", "Speed ahead of the group to reach the river faster, ignoring the pacing.", "Drink the questionable water from a nearby stream to stay hydrated now.", "Demand the group stop and rest until the heat of the day passes."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"A sudden wildfire breaks out miles away, but the wind is shifting. Do you...",o:["Follow the evacuation route mapped out in your welcome packet.", "Trust the local tracker who suggests a hidden path through the rocky ravine.", "Head toward the nearest river to wait it out.", "Pack all your belongings first, delaying departure but securing your gear."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"Your binoculars break right before the rarest bird sighting of the trip. Do you...",o:["Accept the loss and just listen to its unique call instead.", "Interrupt a stranger in the jeep to borrow theirs for 'just one second'.", "Try to fix them quickly with a pocket knife, risking missing the moment entirely.", "Ask the guide to turn the jeep around so you can get closer."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"You find a baby animal that appears abandoned. Do you...",o:["Record the GPS location and report it to the rangers later.", "Approach it to see if it's injured and needs immediate first aid.", "Stay near it to protect it from predators until its mother returns.", "Leave the area immediately, assuming the mother is hunting nearby and will be aggressive."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"The safari camp's generator fails, plunging you into darkness while showering. Do you...",o:["Finish showering in the dark and wait for staff to arrive with lanterns.", "Step out wet, grab your phone flashlight, and go find the breaker box yourself.", "Yell loudly for help until someone comes to your tent.", "Assume it's a scheduled blackout and go to sleep without finishing."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"A monkey steals your passport from your open bag at the lodge. Do you...",o:["Report it to the manager and wait for their staff to retrieve it.", "Chase the monkey into the trees yourself, determined to get it back.", "Offer the monkey food as a trade, trying to negotiate its return.", "Write it off as lost and immediately start the embassy replacement process."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"Your group's flight over the delta is delayed due to heavy fog. Do you...",o:["Sit in the terminal and wait for the official all-clear from the pilot.", "Suggest driving to a different airstrip where the weather might be better.", "Demand a refund and cancel the excursion entirely.", "Use the delay to explore the nearby village unguided."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"You encounter a poacher's snare while on a guided walk. Do you...",o:["Let the guide dismantle it according to anti-poaching protocols.", "Dismantle it yourself immediately to ensure no animal gets caught.", "Leave it alone but take photos to post online for awareness.", "Try to track the poachers using the footprints nearby."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"The jeep gets stuck in deep mud. The guide asks for help pushing. Do you...",o:["Follow his exact instructions on where to push and when.", "Suggest a different method using branches and rocks under the tires.", "Refuse to push, citing safety concerns about animals in the mud.", "Take the driver's seat and try to rock the vehicle out yourself."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"You develop a severe allergic reaction to a plant. The camp medic is away. Do you...",o:["Wait for the medic to return, using cold water to soothe the rash.", "Take antihistamines from another guest's unprescribed medical kit.", "Try a local herbal remedy suggested by a Maasai staff member.", "Demand an immediate airlift to a hospital."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"A heavy thunderstorm rolls in while you are in a canoe on the river. Do you...",o:["Paddle to the nearest bank immediately and wait under a tree.", "Keep paddling hard to reach the main camp before the rain gets worse.", "Flip the canoe and use it as a shelter on the riverbank.", "Trust the guide to navigate the rapids forming in the storm."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"You lose your footing on a steep gorge trail. Do you...",o:["Wait for the guide to throw down a rope and pull you up.", "Scramble up the rocks yourself, risking another fall but moving quickly.", "Slide further down to a flat ledge and wait for a proper rescue team.", "Yell for the person above you to reach down, risking pulling them in too."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"The camp's water supply is contaminated. The staff boils water, but it tastes strange. Do you...",o:["Drink it, trusting their purification process.", "Refuse to drink it and use your emergency iodine tablets instead.", "Only drink bottled soda for the rest of the trip, risking dehydration.", "Complain to the manager and demand sealed bottled water be flown in."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"A large spider is found in your bed netting. Do you...",o:["Call the staff to safely remove and relocate it.", "Kill it yourself with a shoe to ensure it's gone.", "Catch it in a cup and release it outside yourself.", "Sleep in a chair for the night, leaving the bed entirely."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"Your camera lens drops into a crocodile-infested river. Do you...",o:["Accept the loss and file an insurance claim later.", "Ask the guide if there is any safe way to fish it out with a net.", "Try to reach for it yourself from the bank, assuming the crocs are slow.", "Offer a large tip to a local boatman to retrieve it for you."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"The group is scheduled to leave at 5 AM, but it's pouring rain. Do you...",o:["Show up at 4:55 AM, fully packed and ready, as per the schedule.", "Sleep in, assuming the guide will cancel or delay the trip.", "Go to the guide's tent and suggest altering the itinerary.", "Convince the rest of the group to vote to stay in bed."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"You spot a rare leopard, but another jeep is blocking the best view. Do you...",o:["Wait patiently for the other jeep to move according to park etiquette.", "Instruct your driver to aggressively edge past them for a better angle.", "Stand up on the seats, breaking the silhouette rule, to see over them.", "Yell at the other driver to share the sighting."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"A swarm of tsetse flies attacks the open jeep. Do you...",o:["Put on your thick jacket despite the extreme heat, enduring the discomfort.", "Swat frantically at them, disrupting the peace of the drive.", "Ask the driver to speed up to outrun them, ignoring the speed limit.", "Use an entire can of chemical bug spray, ignoring the guide's ecological warning."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"You discover your tent zipper is broken, and it won't close fully. Do you...",o:["Use safety pins and tape from your kit to create a makeshift seal.", "Demand a different tent, even if it means moving to the staff quarters.", "Sleep with it open, trusting the camp guards to keep predators away.", "Stay awake all night keeping watch at the opening."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"The guide gets lost taking a 'shortcut' back to camp. Do you...",o:["Stay quiet and let him figure it out without adding pressure.", "Pull out your GPS app and offer to navigate him back.", "Express your frustration loudly so he knows this is unacceptable.", "Suggest stopping for a break until someone radios for your location."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"You find a beautiful, unbroken ostrich egg abandoned in the brush. Do you...",o:["Leave it exactly where it is, following the 'take nothing' rule.", "Take it as a rare souvenir, rationalizing that it's abandoned anyway.", "Pick it up to show the group, then put it back.", "Smash it to see what the inside of an unhatched egg looks like."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"A persistent street vendor approaches your vehicle in town. Do you...",o:["Politely decline and roll up the window as instructed by the driver.", "Engage in conversation and barter for a bracelet you don't really want.", "Give them money but refuse the item, feeling guilty.", "Ignore them completely, looking straight ahead until they leave."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"B",m:"Structure vs. Agency",q:"The camp's strict rule is 'no walking alone after dark'. You left your book in the lounge. Do you...",o:["Wait until morning to retrieve it.", "Walk quickly to the lounge and back, assuming 30 seconds is safe.", "Call a guard to escort you just for a book.", "Ask a friend to go with you, thinking two people are safer than one."],c:-1,out:["Structure (+1)", "Agency (+1)", "Agency/Threat (+1)", "Avoidance/Structure (+1)"]},
+{t:"C",m:"Affiliation vs. Threat",q:"Your friend severely twists their knee. The guide says you can push forward to see the rare rhino, or turn back now for ice and painkillers. Do you...",o:["Turn back. The whole jeep misses the rhino, but your friend is safe.", "Push forward. Your friend suffers in silence, but you achieve the trip's goal.", "Leave your friend in the jeep with the driver and walk the rest of the way.", "Vote as a group, forcing your injured friend to decide everyone's fate."],c:-1,out:["Affiliation/Harmony (+1)", "Threat/Vigilance (+1)", "Avoidance (+1)", "Agency/Control (+1)"]},
+{t:"C",m:"Affiliation vs. Threat",q:"The jeep is split 50/50 on whether to track a cheetah or watch a river crossing. You are the tie-breaker. Do you...",o:["Choose the river crossing, pleasing the vocal half but disappointing your partner.", "Choose the cheetah, making your partner happy but angering the strangers.", "Refuse to vote, letting the guide make the executive decision.", "Suggest a compromise that likely results in seeing neither clearly."],c:-1,out:["Affiliation/Harmony (+1)", "Threat/Vigilance (+1)", "Avoidance (+1)", "Agency/Control (+1)"]},
+{t:"C",m:"Affiliation vs. Threat",q:"Your tent-mate is snoring loudly, and you haven't slept in two days. Do you...",o:["Endure it in silence to avoid creating conflict in the morning.", "Wake them up aggressively and demand they sleep on their side.", "Take your sleeping bag outside, risking predators for some peace.", "Ask the manager to move you to a different tent, paying the single supplement."],c:-1,out:["Affiliation/Harmony (+1)", "Threat/Vigilance (+1)", "Avoidance (+1)", "Agency/Control (+1)"]},
+{t:"C",m:"Affiliation vs. Threat",q:"A fellow tourist is constantly talking loudly over the guide's explanations. Do you...",o:["Politely ask them to quiet down so everyone can hear.", "Say nothing, seething internally but maintaining group harmony.", "Make passive-aggressive comments hoping they get the hint.", "Complain to the guide privately and expect them to handle it."],c:-1,out:["Affiliation/Harmony (+1)", "Threat/Vigilance (+1)", "Avoidance (+1)", "Agency/Control (+1)"]},
+{t:"C",m:"Affiliation vs. Threat",q:"You catch a member of your group taking a piece of a historical artifact from a ruin. Do you...",o:["Confront them immediately and demand they put it back.", "Tell the guide quietly so they can handle the confrontation.", "Say nothing; it's not your place to police other adults.", "Take a piece yourself, figuring the rules don't matter anymore."],c:-1,out:["Affiliation/Harmony (+1)", "Threat/Vigilance (+1)", "Avoidance (+1)", "Agency/Control (+1)"]},
+{t:"C",m:"Affiliation vs. Threat",q:"The group is given only one premium window seat for the entire week. Do you...",o:["Suggest a strict daily rotation so everyone gets a turn, even if you lose out.", "Claim it first and refuse to move, arguing you paid the most for the trip.", "Offer it to the eldest member of the group permanently out of respect.", "Avoid the seat entirely to stay out of the inevitable drama."],c:-1,out:["Affiliation/Harmony (+1)", "Threat/Vigilance (+1)", "Avoidance (+1)", "Agency/Control (+1)"]},
+{t:"C",m:"Affiliation vs. Threat",q:"Your partner wants to skip the morning safari to sleep in, but the policy requires the whole tent to go or stay. Do you...",o:["Stay behind with them, missing the sunrise drive to keep the peace.", "Force them to go, causing tension and a miserable morning for both of you.", "Sneak out and go anyway, dealing with the fallout when you return.", "Bribe the camp staff to let you go solo against protocol."],c:-1,out:["Affiliation/Harmony (+1)", "Threat/Vigilance (+1)", "Avoidance (+1)", "Agency/Control (+1)"]},
+{t:"C",m:"Affiliation vs. Threat",q:"A local guide makes a culturally insensitive joke that offends you. Do you...",o:["Call them out publicly in front of the group to set a boundary.", "Ignore it completely; you are a guest in their country.", "Pull them aside later and explain why it was offensive privately.", "Laugh uncomfortably to diffuse the immediate tension."],c:-1,out:["Affiliation/Harmony (+1)", "Threat/Vigilance (+1)", "Avoidance (+1)", "Agency/Control (+1)"]},
+{t:"C",m:"Affiliation vs. Threat",q:"You drop your phone, and a friend accidentally steps on it, shattering the screen. Do you...",o:["Tell them it's fine and pay for it yourself to save the friendship.", "Demand they pay for the repair immediately.", "Make a joke out of it but hold a grudge for the rest of the trip.", "Ask the travel insurance to cover it, lying about how it happened."],c:-1,out:["Affiliation/Harmony (+1)", "Threat/Vigilance (+1)", "Avoidance (+1)", "Agency/Control (+1)"]},
+{t:"C",m:"Affiliation vs. Threat",q:"The camp dinner is a communal table. You are seated next to someone whose political views you despise. Do you...",o:["Engage in a heated debate, defending your values.", "Smile, nod, and change the subject to animals constantly.", "Eat quickly and excuse yourself to your tent early.", "Ask the host to move your seat, creating an awkward scene."],c:-1,out:["Affiliation/Harmony (+1)", "Threat/Vigilance (+1)", "Avoidance (+1)", "Agency/Control (+1)"]},
+{t:"C",m:"Affiliation vs. Threat",q:"You are given the last bottle of cold water after a grueling hike. Do you...",o:["Drink it all yourself; you earned it.", "Offer it to the person who looks the most exhausted.", "Share it equally among everyone in the group.", "Refuse it entirely out of guilt, remaining thirsty."],c:-1,out:["Affiliation/Harmony (+1)", "Threat/Vigilance (+1)", "Avoidance (+1)", "Agency/Control (+1)"]},
+{t:"C",m:"Affiliation vs. Threat",q:"Your friend is terrified of the small plane flight and is having a panic attack. Do you...",o:["Hold their hand and comfort them, missing the aerial views.", "Tell them to toughen up; they are ruining the experience for others.", "Ask the pilot to land, delaying the itinerary for everyone.", "Put your headphones on and ignore them."],c:-1,out:["Affiliation/Harmony (+1)", "Threat/Vigilance (+1)", "Avoidance (+1)", "Agency/Control (+1)"]},
+{t:"C",m:"Affiliation vs. Threat",q:"The group is voting on the tip amount for the guide. Most want to under-tip to save money. Do you...",o:["Go along with the group to avoid an argument.", "Secretly slip the guide extra money yourself later.", "Argue with the group and shame them into tipping fairly.", "Refuse to contribute to the group pool and tip independently."],c:-1,out:["Affiliation/Harmony (+1)", "Threat/Vigilance (+1)", "Avoidance (+1)", "Agency/Control (+1)"]},
+{t:"C",m:"Affiliation vs. Threat",q:"A fellow traveler gets food poisoning. Do you...",o:["Spend your day caring for them in their tent.", "Go on the game drive, feeling guilty but not wanting to miss out.", "Check on them once, then leave them with the camp medic.", "Avoid their tent completely so you don't catch it."],c:-1,out:["Affiliation/Harmony (+1)", "Threat/Vigilance (+1)", "Avoidance (+1)", "Agency/Control (+1)"]},
+{t:"C",m:"Affiliation vs. Threat",q:"You discover someone in the group has been secretly feeding the monkeys, causing aggressive behavior. Do you...",o:["Report them to the camp manager immediately.", "Confront them privately and ask them to stop.", "Join them, thinking it's harmless fun.", "Do nothing, assuming the staff will figure it out eventually."],c:-1,out:["Affiliation/Harmony (+1)", "Threat/Vigilance (+1)", "Avoidance (+1)", "Agency/Control (+1)"]},
+{t:"C",m:"Affiliation vs. Threat",q:"The guide favors you over the rest of the group, giving you the best views. Do you...",o:["Enjoy the VIP treatment and say nothing.", "Ask the guide to share the attention with the others.", "Step back and physically give your spot to someone else.", "Feel embarrassed but take the photos anyway."],c:-1,out:["Affiliation/Harmony (+1)", "Threat/Vigilance (+1)", "Avoidance (+1)", "Agency/Control (+1)"]},
+{t:"C",m:"Affiliation vs. Threat",q:"Your partner accidentally deletes all the photos from the first half of the trip. Do you...",o:["Forgive them instantly; memories are more important than pictures.", "Yell at them in frustration, ruining the mood for the day.", "Spend the rest of the trip obsessively taking duplicate photos.", "Refuse to take any more photos, feeling defeated."],c:-1,out:["Affiliation/Harmony (+1)", "Threat/Vigilance (+1)", "Avoidance (+1)", "Agency/Control (+1)"]},
+{t:"C",m:"Affiliation vs. Threat",q:"A group of loud tourists from another camp ruins a quiet sunset sundowner. Do you...",o:["Ask your guide to ask their guide to quiet them down.", "Yell over to them yourself to have some respect.", "Pack up and leave the beautiful spot early.", "Turn up your own music to drown them out."],c:-1,out:["Affiliation/Harmony (+1)", "Threat/Vigilance (+1)", "Avoidance (+1)", "Agency/Control (+1)"]},
+{t:"C",m:"Affiliation vs. Threat",q:"You are offered a local delicacy that you find repulsive. Do you...",o:["Eat it with a smile to honor the host's culture.", "Politely decline, citing a fake allergy.", "Refuse it bluntly, stating you don't like it.", "Take a bite and spit it out discreetly in a napkin."],c:-1,out:["Affiliation/Harmony (+1)", "Threat/Vigilance (+1)", "Avoidance (+1)", "Agency/Control (+1)"]},
+{t:"C",m:"Affiliation vs. Threat",q:"Your friend wants to buy an illegal ivory souvenir 'just to look at'. Do you...",o:["Physically stop them from making the purchase.", "Express your disgust but let them make their own choice.", "Walk away and pretend you didn't see it.", "Report them to the authorities at the airport."],c:-1,out:["Affiliation/Harmony (+1)", "Threat/Vigilance (+1)", "Avoidance (+1)", "Agency/Control (+1)"]},
+{t:"D",m:"Core Fear / Stress Shift",q:"You discover the Maasai women selling beadwork are doing so to avoid being sold into early marriages so their families can eat. You have $100. Do you...",o:["Buy the art, knowing you are participating in a desperate transactional economy.", "Refuse to buy, knowing your refusal means a family goes hungry tonight.", "Give them the money without taking the art, treating them as charity cases.", "Walk away entirely, overwhelmed by the systemic failure you cannot fix."],c:-1,out:["Harmony -> Vigilance (+2)", "Control -> Fragmentation (+2)", "Avoidance -> Action (+2)", "Radical Acceptance (+2)"]},
+{t:"D",m:"Core Fear / Stress Shift",q:"A nonprofit offers a local man $18 to be a porter so he doesn't poach animals. It's not enough to feed his family, while tourists pay $1,000s a night. Do you...",o:["Tip him heavily, temporarily fixing his problem but creating inequality among porters.", "Report the nonprofit for unfair wages, risking the man losing his job entirely.", "Do nothing, accepting that the global economic divide is beyond your control.", "Confront the lodge owner about their profit margins, ruining your own vacation experience."],c:-1,out:["Harmony -> Vigilance (+2)", "Control -> Fragmentation (+2)", "Avoidance -> Action (+2)", "Radical Acceptance (+2)"]},
+{t:"D",m:"Core Fear / Stress Shift",q:"Your friend aggressively insists you sing the 'Jambo' song to the local staff. You do, but the staff clearly look offended by the colonial stereotype. Do you...",o:["Stop singing immediately and apologize profusely to the staff.", "Keep singing to avoid embarrassing your friend, ignoring the staff's feelings.", "Pull your friend aside later and explain why it was inappropriate.", "Pretend you don't notice the offense and finish the song quickly."],c:-1,out:["Harmony -> Vigilance (+2)", "Control -> Fragmentation (+2)", "Avoidance -> Action (+2)", "Radical Acceptance (+2)"]},
+{t:"D",m:"Core Fear / Stress Shift",q:"You witness a lion critically injure a baby elephant, but the lion is starving and needs to feed its cubs. The elephant is suffering. Do you...",o:["Demand the guide intervene to euthanize the elephant and stop the suffering.", "Demand the guide intervene to scare the lion away and save the elephant.", "Watch in silence, radically accepting the brutality of nature.", "Turn away and cover your ears, unable to process the violence."],c:-1,out:["Harmony -> Vigilance (+2)", "Control -> Fragmentation (+2)", "Avoidance -> Action (+2)", "Radical Acceptance (+2)"]},
+{t:"D",m:"Core Fear / Stress Shift",q:"A critically endangered rhino is being aggressively tracked by poachers. The rangers suggest removing its horn safely to make it worthless. Do you...",o:["Support the removal; survival is more important than aesthetics.", "Oppose the removal; a rhino without a horn cannot defend itself in the wild.", "Fund an armed guard for the rhino instead, escalating the violence.", "Refuse to engage, feeling the species is already doomed."],c:-1,out:["Harmony -> Vigilance (+2)", "Control -> Fragmentation (+2)", "Avoidance -> Action (+2)", "Radical Acceptance (+2)"]},
+{t:"D",m:"Core Fear / Stress Shift",q:"The government plans to pave a road through the Serengeti to provide critical medicine to isolated villages, but it will disrupt the Great Migration. Do you...",o:["Support the road; human lives and medicine must come first.", "Oppose the road; the destruction of the ecosystem is irreversible.", "Suggest a multi-million dollar bridge, knowing the government cannot afford it.", "Accept that whatever happens, a tragedy is unavoidable."],c:-1,out:["Harmony -> Vigilance (+2)", "Control -> Fragmentation (+2)", "Avoidance -> Action (+2)", "Radical Acceptance (+2)"]},
+{t:"D",m:"Core Fear / Stress Shift",q:"You accidentally strike a villager's goat with your rental jeep. The villager demands an exorbitant amount of money, far more than the goat is worth. Do you...",o:["Pay the exorbitant fee immediately to avoid police involvement in a foreign country.", "Refuse to pay and drive away, knowing it was an accident.", "Argue the price down to a 'fair' market value, despite their anger.", "Call the local authorities to mediate, risking missing your flight home."],c:-1,out:["Harmony -> Vigilance (+2)", "Control -> Fragmentation (+2)", "Avoidance -> Action (+2)", "Radical Acceptance (+2)"]},
+{t:"D",m:"Core Fear / Stress Shift",q:"Climate change has dried up a vital watering hole. The lodge is secretly pumping in groundwater to keep animals nearby for tourists. Do you...",o:["Praise the lodge for saving the animals during the drought.", "Report the lodge; artificial watering disrupts natural migration and destroys the water table.", "Enjoy the sightings but feel deeply hypocritical about your eco-tourism.", "Leave the lodge early, refusing to participate in an artificial ecosystem."],c:-1,out:["Harmony -> Vigilance (+2)", "Control -> Fragmentation (+2)", "Avoidance -> Action (+2)", "Radical Acceptance (+2)"]},
+{t:"D",m:"Core Fear / Stress Shift",q:"You are offered a chance to visit a 'cultural village' that you quickly realize is a fabricated human zoo for tourists. Do you...",o:["Stay and take photos, deciding to support the locals financially anyway.", "Refuse to leave the jeep, silently protesting the exploitation.", "Demand a refund from your tour operator for promoting unethical tourism.", "Engage with the locals honestly, trying to break the artificial barrier yourself."],c:-1,out:["Harmony -> Vigilance (+2)", "Control -> Fragmentation (+2)", "Avoidance -> Action (+2)", "Radical Acceptance (+2)"]},
+{t:"D",m:"Core Fear / Stress Shift",q:"A massive bushfire is approaching the park boundary. You have space in your vehicle to save either rare botanical specimens or the camp's financial records. Do you...",o:["Save the plants; nature is irreplaceable.", "Save the records; the livelihoods of 50 local staff depend on the camp surviving.", "Take neither and use the space to pick up straggling wildlife.", "Take neither and speed out to ensure your own absolute safety."],c:-1,out:["Harmony -> Vigilance (+2)", "Control -> Fragmentation (+2)", "Avoidance -> Action (+2)", "Radical Acceptance (+2)"]}
+];
+
+// ═══ BIOME DEFINITIONS (Cynefin tiers) ═══
+const BIOMES={
+  A:{nm:'Short-Grass Plains',ds:'Orientation — fast recall, factual clarity',tier:'Simple'},
+  B:{nm:'Acacia Savanna',ds:'Tactical decisions — pattern recognition emerging',tier:'Complicated'},
+  C:{nm:'Montane Highlands',ds:'Relational complexity — trust begins to fray',tier:'Complex'},
+  D:{nm:'Woodland & River',ds:'Systemic chaos — moral weight, no clean answers',tier:'Chaotic'}
+};
+
+// ═══ AVATARS (animal archetypes with Enneagram mapping) ═══
+const AV=[
+  {id:'hippo',nm:'Hippo',ic:'🦛',rl:'The Anchor',ds:'Preserves cohesion, holds the center',en:9,fr:'rupture / fragmentation',cy:'Complicated'},
+  {id:'elephant',nm:'Elephant',ic:'🐘',rl:'The Memory Keeper',ds:'Follows structure, honors protocol',en:1,fr:'disorder / wrongness',cy:'Complicated'},
+  {id:'eagle',nm:'Eagle',ic:'🦅',rl:'The Seer',ds:'Pauses, gathers information, watches',en:5,fr:'overwhelm / incompetence',cy:'Complex'},
+  {id:'cheetah',nm:'Cheetah',ic:'🐆',rl:'The Tactician',ds:'Speed, precision, decisive action',en:3,fr:'stagnation / worthlessness',cy:'Clear'},
+  {id:'giraffe',nm:'Giraffe',ic:'🦒',rl:'The Far-Seer',ds:'Anticipatory insight, scans horizons',en:2,fr:'disconnection / invisibility',cy:'Complex'},
+  {id:'lion',nm:'Lion',ic:'🦁',rl:'The Guide',ds:'Asserts control, leads from the front',en:8,fr:'weakness / loss of control',cy:'Clear'},
+  {id:'monkey',nm:'Monkey',ic:'🐒',rl:'The Trickster',ds:'Improvises, plays, finds hidden paths',en:7,fr:'deprivation / entrapment',cy:'Chaotic'}
+];
+
+// ═══ INSTINCTS (9 response modes — the core personality engine) ═══
+// Each instinct maps to 6 hidden psychological dimensions:
+//   ag=Agency, af=Affiliation, st=Structure, th=Threat, mn=Meaning, im=Image
+const IN=[
+  {id:'elephant',lb:'🐘',nm:'Order',ds:'Structure, protocol',dm:{ag:1,af:0,st:2,th:1,mn:0,im:0}},
+  {id:'lion',lb:'🦁',nm:'Force',ds:'Assert control',dm:{ag:2,af:-1,st:0,th:1,mn:0,im:1}},
+  {id:'hippo',lb:'🦛',nm:'Harmony',ds:'De-escalate, hold',dm:{ag:0,af:2,st:1,th:0,mn:0,im:-1}},
+  {id:'monkey',lb:'🐒',nm:'Explore',ds:'Creative path',dm:{ag:1,af:1,st:-2,th:-1,mn:0,im:1}},
+  {id:'owl',lb:'🦉',nm:'Know',ds:'Pause, observe',dm:{ag:-1,af:-1,st:2,th:1,mn:1,im:-1}},
+  {id:'meerkat',lb:'🦡',nm:'Vigilance',ds:'Guard the group',dm:{ag:0,af:1,st:1,th:2,mn:0,im:-1}},
+  {id:'bonobo',lb:'🐵',nm:'Care',ds:'Repair bonds',dm:{ag:-1,af:2,st:0,th:0,mn:1,im:-1}},
+  {id:'peacock',lb:'🦚',nm:'Status',ds:'Manage optics',dm:{ag:1,af:0,st:0,th:-1,mn:0,im:2}},
+  {id:'songbird',lb:'🐦',nm:'Meaning',ds:'Honor purpose',dm:{ag:-1,af:1,st:-1,th:0,mn:2,im:0}}
+];
+
+// ═══ METER EFFECTS PER INSTINCT ═══
+// How each instinct shifts the shared ecosystem meters
+const MFX={
+  elephant:{survival:1,clarity:1,flexibility:-1},
+  lion:{survival:1,morale:1,trust:-1},
+  hippo:{cohesion:2,trust:1,clarity:-1},
+  monkey:{flexibility:2,morale:1,cohesion:-1},
+  owl:{clarity:2,survival:1,morale:-1},
+  meerkat:{survival:2,trust:1,morale:-1},
+  bonobo:{cohesion:1,trust:1,clarity:-1},
+  peacock:{morale:1,flexibility:-1},
+  songbird:{trust:1,cohesion:1,flexibility:-1}
+};
+
+// Meter display colors
+const MC={survival:'#4a8b9e',trust:'#C8A45A',cohesion:'#7b5ea7',clarity:'#6b8e6b',morale:'#D4603A',flexibility:'#8b6914'};
+
+// Dimension labels for portrait
+const DL={ag:'Agency',af:'Affiliation',st:'Structure',th:'Threat Sensitivity',mn:'Meaning-Making',im:'Image / Status'};
+
+// ═══ OUTCOME PARSER ═══
+// Parses the CSV outcome strings into scoring deltas
+// Maps outcome text to psychological dimension adjustments
+function parseOutcome(outcomeStr){
+  const r={dims:{},instinct:null,narrative:''};
+  if(!outcomeStr)return r;
+  r.narrative=outcomeStr;
+  // Parse common patterns
+  if(outcomeStr.includes('Correct'))r.correct=true;
+  if(outcomeStr.includes('Incorrect')){r.correct=false;r.dims.th=1;}
+  // Tier B/C/D outcome parsing
+  if(outcomeStr.includes('Structure'))r.dims.st=(r.dims.st||0)+1;
+  if(outcomeStr.includes('Agency'))r.dims.ag=(r.dims.ag||0)+1;
+  if(outcomeStr.includes('Affiliation'))r.dims.af=(r.dims.af||0)+1;
+  if(outcomeStr.includes('Threat'))r.dims.th=(r.dims.th||0)+1;
+  if(outcomeStr.includes('Avoidance'))r.dims.th=(r.dims.th||0)+1;
+  if(outcomeStr.includes('Control'))r.dims.ag=(r.dims.ag||0)+1;
+  if(outcomeStr.includes('Harmony'))r.dims.af=(r.dims.af||0)+1;
+  if(outcomeStr.includes('Vigilance'))r.dims.th=(r.dims.th||0)+1;
+  if(outcomeStr.includes('Radical Acceptance'))r.dims.mn=(r.dims.mn||0)+2;
+  if(outcomeStr.includes('Fragmentation'))r.dims.af=(r.dims.af||0)-1;
+  // Extract score modifier
+  const m=outcomeStr.match(/\(([+-]?\d+)\)/);
+  if(m)r.weight=parseInt(m[1]);
+  return r;
+}
+
+// ═══ FATE DICE CONSEQUENCES ═══
+// Generates narrative consequences based on instinct + dice roll
+const FATE_NARRATIVES={
+  elephant:{
+    high:['Protocol holds — the system works as designed.','Your adherence to structure creates a path others can follow.','Order prevails; the group draws strength from your certainty.'],
+    low:['The rules you trusted bend under pressure.','Structure becomes rigidity — the group needs flexibility now.','Protocol fails this time; the map does not match the territory.']
+  },
+  lion:{
+    high:['Your decisive force cuts through hesitation — the group moves.','Authority seized at the right moment — momentum shifts.','Leadership by example; others fall in behind your conviction.'],
+    low:['Force meets resistance — the group fractures under pressure.','Control demanded but not earned — trust erodes.','Your push forward leaves someone behind.']
+  },
+  hippo:{
+    high:['Harmony restored — the center holds, and wounds begin to mend.','Your steady presence absorbs the shock others cannot bear.','Cohesion deepens; the group remembers why they are together.'],
+    low:['Peace at any price — but the price is rising.','Holding the center costs you more than anyone knows.','Harmony masks the tension; the real conversation is postponed.']
+  },
+  monkey:{
+    high:['A creative leap — the unconventional path reveals hidden treasure.','Play unlocks what logic could not; the group finds a new angle.','Innovation thrives — your improvisation saves the moment.'],
+    low:['The creative gamble does not pay off this time.','Playfulness misread as carelessness — credibility takes a hit.','The branch you leaped for was not strong enough.']
+  },
+  owl:{
+    high:['Patient observation reveals the pattern everyone else missed.','Knowledge gathered in silence becomes the group\'s compass.','Your restraint was wisdom — the answer becomes clear.'],
+    low:['Analysis paralysis — by the time you act, the window has closed.','Observation without action; the group needed a decision, not a diagnosis.','Knowing is not the same as doing — the gap costs time.']
+  },
+  meerkat:{
+    high:['Vigilance rewarded — you spotted the danger before it struck.','The group survives because someone was watching the horizon.','Your alertness bought the group precious time to prepare.'],
+    low:['Hypervigilance drains resources — the threat was smaller than feared.','Watching for danger everywhere finds danger everywhere.','The alarm sounded, but the cost of constant readiness is exhaustion.']
+  },
+  bonobo:{
+    high:['Emotional repair restores a bond the group could not afford to lose.','Care offered without agenda — trust deepens naturally.','The relationship you tended becomes the group\'s anchor.'],
+    low:['Care without boundaries — your empathy absorbs pain you cannot process.','The relationship repair takes precedence over the urgent task.','Connection sought when distance was needed — boundaries blur.']
+  },
+  peacock:{
+    high:['Strategic presentation wins allies — optics become reality.','Your image management opens a door others could not see.','Influence wielded with precision — the narrative shifts in your favor.'],
+    low:['The performance is seen through — authenticity was the better play.','Managing appearances costs more energy than being honest.','Status sought where substance was needed — the gap is noticed.']
+  },
+  songbird:{
+    high:['Meaning found in chaos — the group remembers what truly matters.','Your moral clarity becomes the group\'s North Star.','Purpose articulated becomes purpose shared — the "why" holds.'],
+    low:['The search for meaning delays the search for solutions.','Narrating the story of suffering does not end the suffering.','Purpose without pragmatism — the ideal clashes with the real.']
+  }
+};
+
+// Background images (Unsplash safari scenes)
+const PH=[
+  "https://images.unsplash.com/photo-1516426122078-c23e76319801?w=1200&q=75",
+  "https://images.unsplash.com/photo-1534188753412-3e26d0d618d6?w=1200&q=75",
+  "https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=1200&q=75",
+  "https://images.unsplash.com/photo-1535338454528-1b5c8bb46e2e?w=1200&q=75",
+  "https://images.unsplash.com/photo-1564760055775-d63b17a55c44?w=1200&q=75",
+  "https://images.unsplash.com/photo-1517483000871-1dbf64a6e1c6?w=1200&q=75",
+  "https://images.unsplash.com/photo-1474511320723-9a56873571b7?w=1200&q=75",
+  "https://images.unsplash.com/photo-1551085254-e96b210db58a?w=1200&q=75"
+];
+
+// ═══ GAME STATE ═══
+const G={
+  av:null,        // Selected avatar index
+  name:'',        // Player name
+  mode:'solo',    // 'solo' or 'group'
+  qs:[],          // Shuffled question queue for this playthrough
+  qi:0,           // Current question index
+  tot:11,         // Total questions per game (5+3+2+1)
+  sc:0,           // Score
+  sk:0,           // Current streak
+  bk:0,           // Best streak
+  cc:0,           // Correct count (Tier A)
+  ans:false,      // Has current question been answered
+  inst:false,     // Has instinct been chosen (Tier A) / narrative answered (B/C/D)
+  pi:0,           // Photo index
+  lr:null,        // Last rendered biome
+  timerRef:null,  // Timer interval reference
+  timerVal:100,   // Timer percentage remaining
+  // Ecosystem meters (shared)
+  mt:{survival:3,trust:3,cohesion:3,clarity:3,morale:3,flexibility:3},
+  // Psychological profile (hidden)
+  pf:{
+    it:{elephant:0,lion:0,hippo:0,monkey:0,owl:0,meerkat:0,bonobo:0,peacock:0,songbird:0},
+    dm:{ag:0,af:0,st:0,th:0,mn:0,im:0},
+    ls:{elephant:0,lion:0,hippo:0,monkey:0,owl:0,meerkat:0,bonobo:0,peacock:0,songbird:0},
+    hs:{elephant:0,lion:0,hippo:0,monkey:0,owl:0,meerkat:0,bonobo:0,peacock:0,songbird:0},
+    cs:{},
+    t:0
+  }
+};
+
+// ═══ UTILITY FUNCTIONS ═══
+// Fisher-Yates shuffle — guaranteed uniform randomization
+function shuf(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function cl(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+function pick(a){return a[Math.floor(Math.random()*a.length)];}
+
+// ═══ SCREEN NAVIGATION ═══
+function go(id){
+  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  // Show global nav during gameplay and dashboard
+  const nav=document.getElementById('gNav');
+  if(id==='S2'||id==='S3')nav.classList.add('vis');
+  else nav.classList.remove('vis');
+}
+
+// ═══ INFO OVERLAY SYSTEM ═══
+// Opens World/Rules/Scoring/DBT overlays without destroying game state
+let activeTab=null;
+function showInfo(tab){
+  activeTab=tab;
+  document.querySelectorAll('.gnav button').forEach(b=>b.classList.remove('on'));
+  const tb=document.getElementById('nt-'+tab);
+  if(tb)tb.classList.add('on');
+  const ov=document.getElementById('infoOv');
+  const inner=document.getElementById('infoIn');
+  
+  if(tab==='play'){
+    ov.classList.remove('vis');
+    document.getElementById('nt-play').classList.add('on');
+    return;
+  }
+  
+  ov.classList.add('vis');
+  
+  if(tab==='world')inner.innerHTML=getWorldHTML();
+  else if(tab==='rules')inner.innerHTML=getRulesHTML();
+  else if(tab==='scoring')inner.innerHTML=getScoringHTML();
+  else if(tab==='dbt')inner.innerHTML=getDBTHTML();
+}
+
+function closeInfo(){
+  document.getElementById('infoOv').classList.remove('vis');
+  document.querySelectorAll('.gnav button').forEach(b=>b.classList.remove('on'));
+  document.getElementById('nt-play').classList.add('on');
+  activeTab=null;
+}
+
+// ═══ WORLD / LORE CONTENT ═══
+function getWorldHTML(){
+  return `
+  <h2 class="hdr">A Trick of the Thumb</h2>
+  <p class="sub2">The cost of our forgetting — a fable of long memory and short vision</p>
+  <div class="prose">
+    <p>There was a time — long before maps, before kings, before even language had hardened into law — when all living things drank from the same river. A river that carved deep into the land, but nourished <span class="hl">abundance — not borders.</span></p>
+    <p>The watering place had no name then. It was not the center of the savanna, but the place where the center revealed itself. It lay open to the sky, a shallow mirror where clouds bent to drink.</p>
+    <p>The great ones came — elephant, lion, hippo, giraffe, cheetah, eagle, monkey — each arriving as they had for thirty million years, not to conquer it, not to own it, but to be restored by it.</p>
+    <p>None of them had to speak to understand their place. They were bound by the same agreements. They came not for thirst — the pools were full — but brought together because <span class="hl">an old danger was stirring.</span></p>
+    <p>The first trace of chaos was a footprint. Mankind walking upright: advancing ahead, but a species too young to remember.</p>
+    <p class="wh">Three million years old and already forgetting. Simple sounds became words. Linked words created language. But it was a mirror polished too brightly. The gift of recognizing one's reflection became a sickness of self-obsession, and much knowledge of the external world was lost. The path back to The Covenant of Water had vanished.</p>
+    <p>What they did not understand — what the ancient animals had always known — is that abundance is not found by greater taking.</p>
+    <p style="font-size:1.35em;text-align:center;margin:1.5rem 0;color:var(--gold);font-weight:600">Abundance is found by taking turns.</p>
+    <p class="wh" style="text-align:center">There is always more than enough. But only if you don't want it all.</p>
+  </div>
+
+  <div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid rgba(200,164,90,.12)">
+    <h2 class="hdr">The Cynefin Landscape</h2>
+    <p class="sub2">Four biomes of escalating complexity — each demands a different kind of intelligence</p>
+    ${Object.entries(BIOMES).map(([k,b])=>`
+      <div class="card-i"><h4>${b.nm}</h4><p><span class="tag-i tag-g">${b.tier}</span> ${b.ds}</p></div>
+    `).join('')}
+  </div>
+
+  <div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid rgba(200,164,90,.12)">
+    <h2 class="hdr">Seven Archetypes</h2>
+    <p class="sub2">Each carries a gift and a cost</p>
+    ${AV.map(a=>`
+      <div class="card-i">
+        <h4>${a.ic} ${a.nm} — ${a.rl}</h4>
+        <p>${a.ds}. <span class="tag-i tag-g">Enneagram ${a.en}</span> <span class="tag-i tag-r">Fear: ${a.fr}</span></p>
+      </div>
+    `).join('')}
+  </div>`;
+}
+
+function getRulesHTML(){
+  return `
+  <h2 class="hdr">How to Play</h2>
+  <p class="sub2">Navigate four biomes of escalating complexity — keep the herd alive</p>
+
+  <div class="rule"><h4>The Goal</h4><p>Survive all four biomes. At the end, receive a psychological portrait revealing your adaptive style under pressure. The game is not asking "what's right?" — it's asking: <em>who do you become when the world becomes uncertain?</em></p></div>
+
+  <div class="rule"><h4>Biome 1: Short-Grass Plains (Simple)</h4><p>Fast-paced trivia. Timer-based. Absolute right/wrong answers. Test your ecological knowledge. Correct answers build your score; wrong answers increase your threat baseline.</p></div>
+
+  <div class="rule"><h4>Biome 2: Acacia Savanna (Complicated)</h4><p>Tactical scenarios with no single correct answer. Choose the response that resonates — each option secretly maps to psychological dimensions. Then Fate rolls the dice.</p></div>
+
+  <div class="rule"><h4>Biome 3: Montane Highlands (Complex)</h4><p>Relational dilemmas where trust, loyalty, and sacrifice collide. Your choices carry more weight here — the stress multiplier increases. Then choose your instinct response.</p></div>
+
+  <div class="rule"><h4>Biome 4: Woodland & River (Chaotic)</h4><p>Systemic moral dilemmas with no clean answers. Every option costs something. This is where the mirror becomes sharpest.</p></div>
+
+  <div class="rule"><h4>Shared Ecosystem Meters</h4><p>Six meters track the health of the herd: Survival, Trust, Cohesion, Clarity, Morale, Flexibility. Every instinct choice pushes and pulls them differently. Start at 3/6 each.</p></div>
+
+  <div class="rule"><h4>Nine Instincts</h4><p>🐘 Order · 🦁 Force · 🦛 Harmony · 🐒 Explore · 🦉 Know · 🦡 Vigilance · 🐵 Care · 🦚 Status · 🐦 Meaning — each instinct has strengths and costs. There are no wrong answers — only honest ones.</p></div>
+
+  <div class="rule"><h4>The Dice of Fate</h4><p>After choosing in Tiers B–D, fate intervenes. Rolling 4–6 amplifies your instinct's positive effects. Rolling 1–3 means friction — negative effects hit harder. Strategy alone isn't enough. You must also be lucky, or resilient.</p></div>`;
+}
+
+function getScoringHTML(){
+  return `
+  <h2 class="hdr">The Scoring Engine</h2>
+  <p class="sub2">How the game builds your psychological portrait — the math behind the mirror</p>
+
+  <div class="rule"><h4>Layer 1: Instinct Totals</h4><p>Every time you choose an instinct, it receives a weighted score. Over the game, the instinct you reach for most becomes your <strong>dominant strategy</strong> — the survival pattern you trust under uncertainty.</p></div>
+
+  <div class="rule"><h4>Layer 2: Six Hidden Dimensions</h4><p>Each instinct carries a hidden vector across six axes: <strong>Agency</strong> (passive → forceful), <strong>Affiliation</strong> (self-protective → relational), <strong>Structure</strong> (improvisational → rule-based), <strong>Threat Sensitivity</strong> (relaxed → vigilant), <strong>Meaning</strong> (pragmatic → symbolic), <strong>Image</strong> (authentic → strategic). Big Five-style math underneath Enneagram-style narrative.</p></div>
+
+  <div class="rule"><h4>Layer 3: Stress Buckets</h4><p>Low-stress choices (Tiers A–B) and high-stress choices (Tiers C–D) are tracked separately. This reveals your <strong>stress shift</strong> — the gap between who you are when relaxed and who you become when stakes are real.</p></div>
+
+  <div class="rule"><h4>Stress Weighting Formula</h4><p>Higher tiers count more heavily. The multiplier:<br><br>
+  <strong>Gain = 2 × (1 + (TierWeight − 1) × 0.15)</strong><br><br>
+  Tier A = ×1.00 · Tier B = ×1.15 · Tier C = ×1.30 · Tier D = ×1.60<br><br>
+  A choice made in the Woodland & River weighs 60% more than one made on the Plains.</p></div>
+
+  <div class="rule"><h4>The End-Game Portrait</h4><p>After all rounds, you receive: <strong>Dominant instinct</strong>, <strong>Secondary instinct</strong>, <strong>Stress shift</strong>, <strong>Hidden dimension signature</strong>, <strong>Inferred core fear</strong>, and a <strong>DBT-informed growth path</strong>. Not "you are a lion" — but a mirror of your adaptive decision style under these conditions.</p></div>`;
+}
+
+function getDBTHTML(){
+  return `
+  <h2 class="hdr">Psychology & DBT Tips</h2>
+  <p class="sub2">Dialectical Behavior Therapy principles woven into the game's design</p>
+
+  <div class="rule"><h4>Distress Tolerance</h4><p>The ability to survive a crisis without making it worse. In the game, this is tested when meters drop dangerously low or when Tier D dilemmas offer no clean solution. Can you tolerate the discomfort of an imperfect outcome?</p></div>
+
+  <div class="rule"><h4>Emotional Regulation</h4><p>Understanding and managing intense emotions. Watch for when your instinct choices shift under stress — that shift reveals your emotional regulation pattern. Are you reaching for control, care, or avoidance?</p></div>
+
+  <div class="rule"><h4>Interpersonal Effectiveness</h4><p>Balancing your needs with others' needs while maintaining self-respect. The ecosystem meters make this visible — every instinct helps one meter but often costs another. No one can optimize everything.</p></div>
+
+  <div class="rule"><h4>Mindfulness</h4><p>Observing without judgment. The game's deepest insight is often found not in what you chose, but in the gap between your chosen avatar (who you think you are) and your enacted instinct pattern (who you become under pressure).</p></div>
+
+  <div class="rule"><h4>Radical Acceptance</h4><p>Accepting reality as it is, not as you wish it were. The Dice of Fate embodies this — you can choose wisely and still face friction. Resilience is not avoiding pain but metabolizing it.</p></div>
+
+  <div class="rule"><h4>The Core Insight</h4><p style="font-style:italic;color:var(--gold-l)">"The game reveals not who you are — but who you become under pressure. This gap between self-concept and enacted behavior is where growth lives."</p></div>`;
+}
+
+// ═══ AVATAR SELECTION ═══
+(function initAv(){
+  const g=document.getElementById('avG');
+  AV.forEach((a,i)=>{
+    const d=document.createElement('div');d.className='av-c';d.dataset.i=i;
+    d.innerHTML=`<div class="ico">${a.ic}</div><div class="nm">${a.nm}</div><div class="rl">${a.rl}</div><div class="ds">${a.ds}</div>`;
+    d.onclick=()=>{
+      G.av=i;
+      document.querySelectorAll('.av-c').forEach((c,j)=>c.classList.toggle('sel',j===i));
+      document.getElementById('goBtn').disabled=false;
+    };
+    g.appendChild(d);
+  });
+})();
+
+// ═══ GROUP MODE (placeholder — shows prompt) ═══
+function startGroup(){
+  alert('Group Safari mode uses the same game engine with turn-based play. For now, please use Solo Journey — group mode coming soon!');
+}
+
+// ═══ START GAME ═══
+function startGame(){
+  if(G.av===null)return;
+  G.name=document.getElementById('nameIn').value.trim()||'Traveler';
+  
+  /* ═══ STRATIFIED QUESTION SAMPLING ═══
+     Fisher-Yates shuffle each tier, then pull:
+     5 from Plains (A), 3 from Savanna (B), 2 from Highlands (C), 1 from River (D)
+     = 11 questions total per playthrough */
+  const byTier={A:[],B:[],C:[],D:[]};
+  QB.forEach(q=>{if(byTier[q.t])byTier[q.t].push(q);});
+  Object.keys(byTier).forEach(k=>{byTier[k]=shuf(byTier[k]);});
+  
+  let pool=[];
+  pool.push(...byTier.A.slice(0,5));
+  pool.push(...byTier.B.slice(0,3));
+  pool.push(...byTier.C.slice(0,2));
+  pool.push(...byTier.D.slice(0,1));
+  
+  G.qs=pool; // Already in tier order (A,A,A,A,A,B,B,B,C,C,D)
+  G.qi=0;G.tot=pool.length;G.sc=0;G.sk=0;G.bk=0;G.cc=0;G.lr=null;G.pi=0;
+  G.mt={survival:3,trust:3,cohesion:3,clarity:3,morale:3,flexibility:3};
+  G.pf={
+    it:{elephant:0,lion:0,hippo:0,monkey:0,owl:0,meerkat:0,bonobo:0,peacock:0,songbird:0},
+    dm:{ag:0,af:0,st:0,th:0,mn:0,im:0},
+    ls:{elephant:0,lion:0,hippo:0,monkey:0,owl:0,meerkat:0,bonobo:0,peacock:0,songbird:0},
+    hs:{elephant:0,lion:0,hippo:0,monkey:0,owl:0,meerkat:0,bonobo:0,peacock:0,songbird:0},
+    cs:{},t:0
+  };
+  
+  go('S2');
+  showRT(G.qs[0].t,()=>renderQ());
+}
+
+// ═══ BIOME / ROUND TRANSITION ═══
+function showRT(tier,cb){
+  const b=BIOMES[tier];
+  document.getElementById('rTL').textContent=G.qi===0?'Your Safari Begins':'Entering';
+  document.getElementById('rTN').textContent=b.nm;
+  document.getElementById('rTD').textContent=b.ds;
+  document.getElementById('rT').classList.add('on');
+  setTimeout(()=>{document.getElementById('rT').classList.remove('on');if(cb)cb();},2200);
+}
+
+// ═══ DETERMINE STRESS WEIGHT ═══
+// Tier A=1, B=2, C=3, D=5 (used for scoring multiplier)
+function stressOf(tier){return{A:1,B:2,C:3,D:5}[tier]||1;}
+
+// ═══ RENDER QUESTION ═══
+function renderQ(){
+  if(G.qi>=G.qs.length){showDash();return;}
+  const q=G.qs[G.qi];
+  const curTier=q.t;
+  
+  // Check if we need a biome transition
+  if(curTier!==G.lr&&G.qi>0){
+    G.lr=curTier;
+    showRT(curTier,()=>doRender());
+    return;
+  }
+  if(G.lr===null)G.lr=curTier;
+  doRender();
+}
+
+function doRender(){
+  G.ans=false;G.inst=false;
+  if(G.timerRef){clearInterval(G.timerRef);G.timerRef=null;}
+  const q=G.qs[G.qi];
+  const tier=q.t;
+  const biome=BIOMES[tier];
+  
+  // Update HUD
+  document.getElementById('hS').textContent=G.sc;
+  document.getElementById('hK').textContent=G.sk;
+  document.getElementById('hR').textContent=biome.nm;
+  document.getElementById('hQ').textContent=`${G.qi+1} / ${G.tot}`;
+  document.getElementById('pF').style.width=`${(G.qi/G.tot)*100}%`;
+  G.pi=(G.pi+1)%PH.length;
+  document.getElementById('bgI').src=PH[G.pi];
+  renderM();
+  
+  const ar=document.getElementById('qA');
+  const lt=['A','B','C','D'];
+  
+  // Difficulty dots (based on tier)
+  const diff={A:1,B:3,C:4,D:5}[tier]||1;
+  let dots='';for(let i=1;i<=5;i++)dots+=`<div class="q-dot${i<=diff?' on':''}"></div>`;
+  
+  if(tier==='A'){
+    // ═══ TIER A: FACTUAL TRIVIA ═══
+    // Standard quiz with right/wrong, timer, NO instinct prompt
+    let oh='';
+    q.o.forEach((o,i)=>{
+      oh+=`<button class="ob" data-i="${i}" onclick="selAnsTierA(${i})"><span class="lt">${lt[i]}</span>${o}</button>`;
+    });
+    ar.innerHTML=`<div class="q-card" id="qC">
+      <div class="q-th">${(q.m||'ECOLOGY').toUpperCase()}</div>
+      <div class="q-str">${dots}</div>
+      <p class="q-txt">${q.q}</p>
+      <div class="timer-wrap"><div class="timer-fill" id="timerF"></div></div>
+      <div class="opts" id="oG">${oh}</div>
+      <div class="fb" id="fB"><div class="fb-l">Result</div><p class="fb-t" id="fT"></p></div>
+      <button class="btn btn-s nb" id="nB" onclick="nextQ()">Continue</button>
+    </div>`;
+    
+    // Start timer (15 seconds for trivia)
+    G.timerVal=100;
+    const timerEl=document.getElementById('timerF');
+    const startTime=Date.now();
+    const duration=15000;
+    G.timerRef=setInterval(()=>{
+      const elapsed=Date.now()-startTime;
+      const pct=Math.max(0,100-((elapsed/duration)*100));
+      G.timerVal=pct;
+      timerEl.style.width=pct+'%';
+      if(pct<30)timerEl.classList.add('danger');
+      if(pct<=0){
+        clearInterval(G.timerRef);G.timerRef=null;
+        if(!G.ans)selAnsTierA(-1); // Time's up
+      }
+    },50);
+    
+  } else {
+    // ═══ TIERS B/C/D: NARRATIVE CHOICES ═══
+    // No right/wrong — each option maps to psychological variables
+    // After choice, show Fate dice
+    let oh='';
+    q.o.forEach((o,i)=>{
+      oh+=`<button class="ob narrative" data-i="${i}" onclick="selAnsTierBCD(${i})"><span class="lt">${lt[i]}</span>${o}</button>`;
+    });
+    
+    const stressLvl=stressOf(tier);
+    ar.innerHTML=`<div class="q-card" id="qC">
+      <div class="q-th">${biome.nm.toUpperCase()} · ${biome.tier.toUpperCase()}</div>
+      <div class="q-str">${dots}</div>
+      <div style="display:flex;gap:.3rem;justify-content:center;margin-bottom:.5rem">
+        <span class="etag neg" style="font-size:.55rem">Stress: ${stressLvl}/5</span>
+      </div>
+      <p class="q-txt">${q.q}</p>
+      <div class="opts" id="oG">${oh}</div>
+      <div id="fateArea"></div>
+      <div class="fb" id="fB"><div class="fb-l">Consequence</div><p class="fb-t" id="fT"></p></div>
+      <button class="btn btn-s nb" id="nB" onclick="nextQ()">Continue</button>
+    </div>`;
+  }
+}
+
+// ═══ TIER A ANSWER HANDLING ═══
+// Pure factual — right or wrong, score-based, NO instinct prompt
+function selAnsTierA(idx){
+  if(G.ans)return;G.ans=true;
+  if(G.timerRef){clearInterval(G.timerRef);G.timerRef=null;}
+  
+  const q=G.qs[G.qi];
+  const isTimeout=(idx===-1);
+  const ok=!isTimeout&&idx===q.c;
+  
+  // Visual feedback on options
+  document.querySelectorAll('.ob').forEach((b,i)=>{
+    b.classList.add('lk');
+    if(i===q.c)b.classList.add('ok');
+    if(i===idx&&!ok&&!isTimeout)b.classList.add('no','ws');
+  });
+  
+  // Scoring
+  if(ok){
+    G.sk++;G.cc++;
+    const pts=diff_pts(q)+Math.min(G.sk-1,5)*5+Math.round(G.timerVal/10);
+    G.sc+=pts;
+    if(G.sk>G.bk)G.bk=G.sk;
+    if(pts>10){
+      const p=document.createElement('div');p.className='spop';p.textContent=`+${pts}`;
+      document.body.appendChild(p);setTimeout(()=>p.remove(),800);
+    }
+  } else {
+    G.sk=0;
+    // Wrong answers increase threat baseline
+    G.pf.dm.th+=1;
+  }
+  
+  // Track category
+  const cat=q.m||'General';
+  if(!G.pf.cs[cat])G.pf.cs[cat]={c:0,t:0};
+  G.pf.cs[cat].t++;
+  if(ok)G.pf.cs[cat].c++;
+  
+  document.getElementById('hS').textContent=G.sc;
+  document.getElementById('hK').textContent=G.sk;
+  
+  // Feedback
+  const fMsg=isTimeout?'Time\'s up! The savanna waits for no one.':(ok?'Correct! '+parseOutcome(q.out[idx]).narrative:'Incorrect. '+parseOutcome(q.out[q.c]).narrative);
+  document.getElementById('fT').textContent=fMsg;
+  document.getElementById('fB').classList.add('vis');
+  document.getElementById('nB').classList.add('vis');
+}
+
+function diff_pts(q){return{A:10,B:20,C:30,D:50}[q.t]||10;}
+
+// ═══ TIER B/C/D ANSWER HANDLING ═══
+// Narrative choice → psychological scoring → Fate dice roll
+function selAnsTierBCD(idx){
+  if(G.ans)return;G.ans=true;
+  
+  const q=G.qs[G.qi];
+  const tier=q.t;
+  const outcome=parseOutcome(q.out[idx]);
+  
+  // Visual: highlight chosen, dim others
+  document.querySelectorAll('.ob').forEach((b,i)=>{
+    b.classList.add('lk');
+    if(i===idx)b.classList.add('chosen');
+  });
+  
+  // Apply outcome dimensions to profile
+  const sw=1+(stressOf(tier)-1)*0.15; // Stress weight multiplier
+  Object.entries(outcome.dims).forEach(([k,v])=>{
+    if(G.pf.dm[k]!==undefined)G.pf.dm[k]+=v*sw;
+  });
+  
+  // Score points for engagement
+  const pts=diff_pts(q);
+  G.sc+=pts;
+  document.getElementById('hS').textContent=G.sc;
+  
+  // Now show instinct chooser
+  showInstBCD(idx);
+}
+
+// ═══ INSTINCT CHOOSER (Tiers B/C/D) ═══
+function showInstBCD(chosenOptionIdx){
+  const fateArea=document.getElementById('fateArea');
+  let bs='';
+  IN.forEach(i=>{
+    bs+=`<button class="ib" onclick="chInstBCD('${i.id}',${chosenOptionIdx})">
+      <div class="ii">${i.lb}</div><div class="in">${i.nm}</div><div class="id">${i.ds}</div>
+    </button>`;
+  });
+  fateArea.innerHTML=`<div class="inst-sec">
+    <div class="inst-lbl">How would you respond in this situation?</div>
+    <div class="inst-g">${bs}</div>
+  </div>`;
+}
+
+// ═══ INSTINCT SELECTION + FATE DICE (Tiers B/C/D) ═══
+function chInstBCD(instId,chosenOptionIdx){
+  if(G.inst)return;G.inst=true;
+  
+  const q=G.qs[G.qi];
+  const tier=q.t;
+  const inst=IN.find(i=>i.id===instId);
+  const sw=1+(stressOf(tier)-1)*0.15;
+  const gain=2*sw;
+  
+  // ═══ PSYCHOMETRIC SCORING ═══
+  // 1. Add weighted instinct total
+  G.pf.it[instId]+=gain;
+  
+  // 2. Apply instinct's hidden dimension vector (weighted by stress)
+  Object.entries(inst.dm).forEach(([k,v])=>{G.pf.dm[k]+=v*gain;});
+  
+  // 3. Track stress bucket (low stress = A/B, high stress = C/D)
+  if(tier==='A'||tier==='B'){G.pf.ls[instId]++;}
+  else{G.pf.hs[instId]++;}
+  G.pf.t++;
+  
+  // Dim instinct buttons, highlight chosen
+  document.querySelectorAll('.ib').forEach(b=>{
+    b.style.opacity='.25';b.style.pointerEvents='none';
+    if(b.querySelector('.in').textContent===inst.nm){
+      b.style.opacity='1';b.style.borderColor='var(--gold)';b.style.background='rgba(200,164,90,.12)';
+    }
+  });
+  
+  // ═══ FATE DICE ROLL ═══
+  const fateArea=document.getElementById('fateArea');
+  const diceHTML=`<div class="fate-sec" id="fateSec">
+    <div class="fate-label">The Dice of Fate</div>
+    <div class="dice-face rolling" id="diceF">⚀</div>
+    <div style="font-size:.7rem;color:var(--sand);opacity:.5;font-style:italic">Life is risk. The future, unknowable.</div>
+  </div>`;
+  fateArea.insertAdjacentHTML('beforeend',diceHTML);
+  
+  // Animate dice
+  const faces=['⚀','⚁','⚂','⚃','⚄','⚅'];
+  let count=0;
+  const diceEl=document.getElementById('diceF');
+  const iv=setInterval(()=>{
+    if(diceEl)diceEl.textContent=faces[Math.floor(Math.random()*6)];
+    count++;
+    if(count>18){
+      clearInterval(iv);
+      const roll=Math.floor(Math.random()*6)+1;
+      if(diceEl){
+        diceEl.textContent=faces[roll-1];
+        diceEl.classList.remove('rolling');
+      }
+      // Apply fate result
+      applyFate(instId,roll,q);
+    }
+  },90);
+}
+
+// ═══ APPLY FATE RESULT ═══
+function applyFate(instId,roll,q){
+  const lucky=roll>=4;
+  const inst=IN.find(i=>i.id===instId);
+  const fx=MFX[instId]||{};
+  const effects={};
+  
+  // Apply meter effects (amplified or dampened by fate)
+  Object.entries(fx).forEach(([k,v])=>{
+    const adj=lucky?(v>0?v+1:v):(v<0?v-1:v);
+    effects[k]=adj;
+    G.mt[k]=cl(G.mt[k]+adj,0,6);
+  });
+  renderM();
+  
+  // Generate narrative consequence
+  const narratives=FATE_NARRATIVES[instId];
+  const narr=lucky?pick(narratives.high):pick(narratives.low);
+  
+  // Build result display
+  const fateSec=document.getElementById('fateSec');
+  let effectTags='';
+  Object.entries(effects).forEach(([k,v])=>{
+    effectTags+=`<span class="etag ${v>0?'pos':'neg'}">${k} ${v>0?'+':''}${v}</span>`;
+  });
+  
+  fateSec.innerHTML=`
+    <div class="fate-label">Instinct Chosen</div>
+    <div style="font-size:2rem;margin:.2rem 0">${inst.lb}</div>
+    <div style="font-family:var(--serif);font-size:1rem;color:var(--gold)">${G.name} leads with ${inst.nm}</div>
+    <div style="font-size:2.5rem;margin:.3rem 0">${['⚀','⚁','⚂','⚃','⚄','⚅'][roll-1]}</div>
+    <div class="fate-result" style="color:${lucky?'var(--water)':'var(--red)'}">${lucky?'Fate amplifies — rolled '+roll:'Friction — rolled '+roll}</div>
+    <div class="effect-tags">${effectTags}</div>
+    <div class="shadow-note">Shadow: ${IN.find(i=>i.id===instId).ds}</div>
+    <div class="fate-note">${narr}</div>
+    <div style="margin-top:.6rem;font-size:.55rem;color:var(--sand);opacity:.4;font-style:italic">Your psychological profile is based on your intent, but the savanna dictates the outcome.</div>
+  `;
+  
+  // Show continue
+  document.getElementById('nB').classList.add('vis');
+}
+
+function nextQ(){G.qi++;renderQ();}
+
+// ═══ RENDER METERS ═══
+function renderM(){
+  const b=document.getElementById('mB');b.innerHTML='';
+  Object.entries(G.mt).forEach(([k,v])=>{
+    b.innerHTML+=`<div class="mi"><div class="ml">${k}</div><div class="mv">${v}/6</div><div class="mt"><div class="mf" style="width:${cl(v/6*100,0,100)}%;background:${MC[k]}"></div></div></div>`;
+  });
+}
+
+// ═══ DBT INSIGHT MAP ═══
+const dbtMap={
+  th:'When stressed, you moved toward vigilance and control. Your strongest apparent skill is distress tolerance — but over-reliance on threat detection can exhaust emotional resources. Growth: practice radical acceptance.',
+  af:'When stressed, you moved toward connection and care. Your strongest skill appears to be interpersonal effectiveness. Growth: practice self-validation — your worth does not depend on others\u2019 approval.',
+  ag:'When stressed, you moved toward action and force. Your strongest skill is decisive engagement. Growth: practice mindfulness — not every situation requires a response.',
+  st:'When stressed, you sought order and protocol. Your strongest skill is cognitive clarity. Growth: practice emotional regulation — allow feelings to exist without organizing them into frameworks.',
+  mn:'When stressed, you sought purpose and identity. Your strongest skill is meaning-making. Growth: practice distress tolerance — sit with discomfort rather than narrate it.',
+  im:'When stressed, you managed presentation and influence. Your strongest skill is strategic awareness. Growth: practice interpersonal authenticity — true connection requires vulnerability.'
+};
+
+// ═══ FINAL PORTRAIT — "THE MIRROR" ═══
+function showDash(){
+  go('S3');
+  const av=AV[G.av],p=G.pf;
+  
+  // ═══ PSYCHOMETRIC MATRIX CALCULATIONS ═══
+  // 1. Determine dominant instinct (highest total)
+  const so=Object.entries(p.it).sort((a,b)=>b[1]-a[1]);
+  const domId=so[0][0],dom=IN.find(i=>i.id===domId);
+  const secId=so[1]&&so[1][1]>0?so[1][0]:null,sec=secId?IN.find(i=>i.id===secId):null;
+  
+  // 2. Determine stress shift (low-stress vs high-stress dominant)
+  const lt=Object.entries(p.ls).sort((a,b)=>b[1]-a[1])[0];
+  const ht=Object.entries(p.hs).sort((a,b)=>b[1]-a[1])[0];
+  const lI=lt&&lt[1]>0?IN.find(i=>i.id===lt[0]):null;
+  const hI=ht&&ht[1]>0?IN.find(i=>i.id===ht[0]):null;
+  const shift=lI&&hI&&lI.id!==hI.id;
+  
+  // 3. Sort hidden dimensions by magnitude
+  const ds=Object.entries(p.dm).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
+  const pct=G.tot>0?Math.round((G.cc/G.tot)*100):0;
+  
+  // 4. Build dimension bar chart
+  const mxD=Math.max(...Object.values(p.dm).map(Math.abs))||1;
+  let dh='';
+  ds.forEach(([k,v])=>{
+    const w=Math.min(100,Math.abs(v)/mxD*100);
+    dh+=`<div class="db"><span class="dl">${DL[k]}</span><div class="dtr"><div class="dfl" style="width:${w}%;background:${v>0?'#4a8b9e':'#C0392B'}"></div></div><span class="dv" style="color:${v>0?'#4a8b9e':'#C0392B'}">${v>0?'+':''}${v.toFixed(1)}</span></div>`;
+  });
+  
+  // 5. Build stress shift callout
+  let sh='';
+  if(shift)sh=`<div class="shb"><div class="shl">\u26A1 Stress Shift Detected</div><div class="sht">You chose <strong>${av.ic} ${av.nm}</strong> (${av.rl}), but under low stress you favored <strong>${lI.lb} ${lI.nm}</strong> and under high stress you shifted toward <strong>${hI.lb} ${hI.nm}</strong>. This gap between self-concept and enacted behavior is the game\u2019s deepest insight.</div></div>`;
+  
+  // 6. Build psychological interpretation narrative
+  let interp=`Your chosen avatar was ${av.ic} ${av.nm} \u2014 the ${av.rl}. This suggests you see yourself as someone who ${av.ds.toLowerCase()}. `;
+  interp+=`Your gameplay revealed a dominant instinct of ${dom.lb} ${dom.nm}`;
+  if(sec)interp+=`, backed by ${sec.lb} ${sec.nm}`;interp+=`. `;
+  if(shift)interp+=`Under low stress, you gravitated toward ${lI.nm} \u2014 but when pressure mounted, you shifted toward ${hI.nm}. This stress shift reveals a deeper adaptive pattern that may surprise you. `;
+  const avInst=IN.find(i=>i.id===av.id);
+  if(avInst&&avInst.id!==domId)interp+=`Notably, your chosen identity (${av.nm}) did not match your most-used instinct (${dom.nm}), suggesting your self-image and your enacted behavior under pressure diverge.`;
+  else if(avInst&&avInst.id===domId)interp+=`Your chosen identity matched your most-used instinct \u2014 a rare alignment between self-concept and behavior under pressure.`;
+  
+  // 7. Enneagram × Cynefin narrative
+  const enN=`Based on your pattern, you resonate with Enneagram Type ${av.en} energy in your self-concept. Your core fear appears to be ${av.fr}. Under the Cynefin framework, your avatar operates best in ${av.cy} environments, but the game pushed you through all four domains \u2014 Clear, Complicated, Complex, and Chaotic \u2014 revealing how your strategy adapts or breaks.`;
+  
+  // 8. DBT-informed insight
+  const topD=ds[0][0];
+  const dbtT=dbtMap[topD]||dbtMap.ag;
+  
+  // 9. Dimensional score summary line
+  const dimLine=ds.slice(0,4).map(([k,v])=>`${DL[k]} ${v>0?'+':''}${v.toFixed(1)}`).join(' · ');
+  
+  // ═══ BUILD PORTRAIT DOM ═══
+  const el=document.getElementById('S3');
+  el.innerHTML=`<div class="dc" id="portraitContainer">
+    <div class="de">Your Safari is Complete</div>
+    <h2 class="dt">The Mirror</h2>
+    <p class="dd">Not your permanent essence \u2014 but who you become when the stakes are real</p>
+    <div class="ds-stats">
+      <div><div class="sn">${G.sc}</div><div class="sl">Points</div></div>
+      <div><div class="sn">${G.cc}/${G.tot}</div><div class="sl">Correct</div></div>
+      <div><div class="sn">${G.bk}</div><div class="sl">Best Streak</div></div>
+    </div>
+
+    <div class="dx" style="animation-delay:.9s">
+      <h3>${av.ic} Chosen Identity: ${G.name} the ${av.nm}</h3>
+      <p class="ip">${av.ds}. Enneagram resonance: Type ${av.en}. Core fear: ${av.fr}. Cynefin home: ${av.cy} domain.</p>
+    </div>
+
+    <div class="dx" style="animation-delay:1.1s">
+      <h3>${dom.lb} Observed Dominant: ${dom.nm}</h3>
+      <p class="ip">Your most-used response pattern across all scenarios.${sec?` Secondary: ${sec.lb} ${sec.nm}.`:''}</p>
+      ${sh}
+    </div>
+
+    <div class="dx" style="animation-delay:1.3s">
+      <h3>Hidden Dimensions</h3>
+      <p style="font-size:.65rem;color:var(--sand);margin-bottom:.6rem;font-style:italic">Six psychological axes tracked silently across every decision</p>
+      ${dh}
+    </div>
+
+    <div class="dx" style="animation-delay:1.5s">
+      <h3>Psychological Interpretation</h3>
+      <p class="ip">${interp}</p>
+    </div>
+
+    <div class="dx" style="animation-delay:1.7s">
+      <h3>Enneagram \u00D7 Cynefin Reading</h3>
+      <p class="ip">${enN}</p>
+    </div>
+
+    <div class="dx" style="animation-delay:1.9s">
+      <h3>DBT-Informed Insight</h3>
+      <p class="ip">${dbtT}</p>
+    </div>
+
+    <div class="dx" style="animation-delay:2.1s">
+      <h3>Ecosystem Final State</h3>
+      <div style="display:flex;gap:.8rem;flex-wrap:wrap;justify-content:center;margin-top:.5rem">
+        ${Object.entries(G.mt).map(([k,v])=>`<div style="text-align:center"><div style="font-size:.5rem;letter-spacing:.08em;text-transform:uppercase;color:rgba(200,164,90,.5)">${k}</div><div style="font-family:var(--serif);font-size:1rem;font-weight:700;color:${MC[k]}">${v}/6</div></div>`).join('')}
+      </div>
+    </div>
+
+    <div class="dx" style="animation-delay:2.3s;text-align:center;background:rgba(200,164,90,.08);border-color:rgba(200,164,90,.2)">
+      <div style="font-size:2.5rem;margin-bottom:.3rem">${av.ic}</div>
+      <div style="font-family:var(--serif);font-size:1.3rem;font-weight:900;color:var(--gold)">${G.name} the ${av.nm}</div>
+      <div style="font-size:.7rem;color:var(--sand);margin:.3rem 0">Dominant: ${dom.lb} ${dom.nm}${shift?' · Stress shift: '+lI.nm+' → '+hI.nm:''}</div>
+      <div style="font-size:.65rem;color:var(--sand);opacity:.7">Core fear: ${av.fr}</div>
+      <div style="font-size:.6rem;color:var(--gold);margin-top:.4rem">${dimLine}</div>
+    </div>
+
+    <div class="dq">\u201CThe game reveals not who you are \u2014<br>but who you become under pressure.\u201D</div>
+    
+    <div style="display:flex;gap:.8rem;flex-wrap:wrap;justify-content:center;opacity:0;animation:fu .8s 2.5s forwards">
+      <button class="btn btn-s" onclick="downloadPortrait()" style="font-size:.68rem">Download Portrait</button>
+      <button class="btn btn-s btn-ghost" onclick="restart()" style="font-size:.68rem">Walk the Path Again</button>
+    </div>
+  </div>`;
+}
+
+// ═══ PORTRAIT DOWNLOAD (html2canvas) ═══
+function downloadPortrait(){
+  const container=document.getElementById('portraitContainer');
+  if(!container)return;
+  
+  // Ensure all animations are complete
+  container.querySelectorAll('.dx,.de,.dt,.dd,.ds-stats').forEach(el=>{
+    el.style.opacity='1';el.style.transform='translateY(0)';el.style.animation='none';
+  });
+  
+  html2canvas(container,{
+    backgroundColor:'#1A0E0A',
+    scale:2,
+    useCORS:true,
+    logging:false
+  }).then(canvas=>{
+    const link=document.createElement('a');
+    link.download=`watering-hole-${G.name.toLowerCase().replace(/\s+/g,'-')}-portrait.png`;
+    link.href=canvas.toDataURL('image/png');
+    link.click();
+  }).catch(err=>{
+    console.error('Portrait capture failed:',err);
+    alert('Portrait download failed. Try taking a screenshot instead.');
+  });
+}
+
+// ═══ RESTART ═══
+function restart(){
+  G.av=null;G.lr=null;G.name='';
+  document.querySelectorAll('.av-c').forEach(c=>c.classList.remove('sel'));
+  document.getElementById('goBtn').disabled=true;
+  document.getElementById('nameIn').value='';
+  go('S0');
+}
+
+// ═══ PRELOAD IMAGES ═══
+window.addEventListener('load',()=>{
+  PH.slice(0,3).forEach(s=>{const i=new Image();i.src=s;});
+});
+</script>
+</body>
+</html>
