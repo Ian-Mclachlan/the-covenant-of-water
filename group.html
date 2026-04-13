@@ -635,10 +635,14 @@ ce("p",{style:{fontSize:13,lineHeight:1.65,color:C.cream+"77",margin:0}},d))))
 return null;
 }
 // ═══════════════════════════════════════════════════════════════
-// MULTIPLAYER VIEWS — Self-contained style constants + components
-// Paste this entire block into group.html, replacing everything
-// from the old "function getViewMode()" down to and including
-// the old "ReactDOM.render(...)" line.
+// MULTIPLAYER VIEWS v2 — Fixed from playtest feedback
+// Fixes:
+//   1. Prediction double-tap prevention (ref-based lock)
+//   2. Drift results actually displayed in reveal phase
+//   3. Scenario text + options visible during campfire discussion
+//   4. Capstone scenario text displayed on host
+//   5. Mirror/analyze flow completed end-to-end
+//   6. Minimum campfire discussion time (30 sec) for computation
 // ═══════════════════════════════════════════════════════════════
 
 // ── Multiplayer style constants (independent of App scope) ──
@@ -651,7 +655,6 @@ var ob=function(sel){return{background:sel?C.gold+"15":C.cream+"06",border:"2px 
 var tg=function(c){return{display:"inline-block",background:c+"18",color:c,border:"1px solid "+c+"44",borderRadius:20,padding:"2px 10px",fontSize:11,fontWeight:700,marginRight:5}};
 var dm={color:C.cream+"55",fontSize:12.7};
 
-
 // ── Utility: read hash route ──
 function getViewMode() {
   var hash = (window.location.hash || '').replace('#', '').toLowerCase();
@@ -662,43 +665,27 @@ function getViewMode() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// Splash Screen — Mode Selection
+// Splash Screen
 // ══════════════════════════════════════════════════════════════
 
 function SplashScreen() {
-  var _useState1 = useState(''), joinCode = _useState1[0], setJoinCode = _useState1[1];
-  var _useState2 = useState(''), error = _useState2[0], setError = _useState2[1];
-  var _useState3 = useState(false), joining = _useState3[0], setJoining = _useState3[1];
+  var _s1 = useState(''), joinCode = _s1[0], setJoinCode = _s1[1];
+  var _s2 = useState(''), error = _s2[0], setError = _s2[1];
+  var _s3 = useState(false), joining = _s3[0], setJoining = _s3[1];
 
-  var handleHost = function() {
-    window.location.hash = '#host';
-    window.location.reload();
-  };
+  var handleHost = function() { window.location.hash = '#host'; window.location.reload(); };
+  var handleClassic = function() { window.location.hash = '#classic'; window.location.reload(); };
 
   var handleJoin = function() {
     if (!joinCode.trim()) { setError('Enter a join code'); return; }
-    setJoining(true);
-    setError('');
+    setJoining(true); setError('');
     CovenantFirebase.init();
-    CovenantFirebase.findSessionByCode(joinCode.trim()).then(function(sessionId) {
-      if (!sessionId) {
-        setError('Session not found. Check the code.');
-        setJoining(false);
-        return;
-      }
-      sessionStorage.setItem('cov_session_id', sessionId);
+    CovenantFirebase.findSessionByCode(joinCode.trim()).then(function(sid) {
+      if (!sid) { setError('Session not found. Check the code.'); setJoining(false); return; }
+      sessionStorage.setItem('cov_session_id', sid);
       sessionStorage.setItem('cov_join_code', joinCode.trim().toUpperCase());
-      window.location.hash = '#play';
-      window.location.reload();
-    }).catch(function(e) {
-      setError(e.message);
-      setJoining(false);
-    });
-  };
-
-  var handleClassic = function() {
-    window.location.hash = '#classic';
-    window.location.reload();
+      window.location.hash = '#play'; window.location.reload();
+    }).catch(function(e) { setError(e.message); setJoining(false); });
   };
 
   return ce('div', { style: W },
@@ -706,127 +693,62 @@ function SplashScreen() {
       ce('div', { style: { fontSize: 64, marginBottom: 8 } }, '\ud83e\udd81'),
       ce('h1', { style: Object.assign({}, h1, { fontSize: 28 }), className: 'dsp' }, 'The Covenant of Water'),
       ce('div', { style: sb }, 'Group Safari'),
-
-      ce('p', { style: Object.assign({}, dm, { marginBottom: 28 }) },
-        'A psychometric expedition. 9 moral crises. No right answers.'),
-
-      ce('button', {
-        style: Object.assign({}, bt, { marginBottom: 12, fontSize: 17, padding: '16px 24px' }),
-        onClick: handleHost
-      }, '\ud83d\udd25 Host a Campfire'),
-
-      ce('p', { style: { color: C.cream + '44', fontSize: 13, marginBottom: 20 } },
-        'Display this screen for the group. Players join on their phones.'),
-
-      ce('div', { style: {
-        display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20
-      }},
+      ce('p', { style: Object.assign({}, dm, { marginBottom: 28 }) }, 'A psychometric expedition. 9 moral crises. No right answers.'),
+      ce('button', { style: Object.assign({}, bt, { marginBottom: 12, fontSize: 17, padding: '16px 24px' }), onClick: handleHost }, '\ud83d\udd25 Host a Campfire'),
+      ce('p', { style: { color: C.cream + '44', fontSize: 13, marginBottom: 20 } }, 'Display this screen for the group. Players join on their phones.'),
+      ce('div', { style: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 } },
         ce('div', { style: { flex: 1, height: 1, background: C.cream + '15' } }),
         ce('span', { style: { color: C.cream + '33', fontSize: 13 } }, 'or join'),
         ce('div', { style: { flex: 1, height: 1, background: C.cream + '15' } })
       ),
-
       ce('div', { style: { display: 'flex', gap: 8, marginBottom: 8 } },
-        ce('input', {
-          value: joinCode,
-          placeholder: 'Enter join code',
+        ce('input', { value: joinCode, placeholder: 'Enter join code',
           onChange: function(e) { setJoinCode(e.target.value.toUpperCase()); },
           onKeyDown: function(e) { if (e.key === 'Enter') handleJoin(); },
           maxLength: 8,
-          style: {
-            flex: 1, background: C.cream + '08', border: '1px solid ' + C.cream + '15',
-            borderRadius: 10, padding: '14px 16px', color: C.cream, fontSize: 18,
-            fontFamily: 'monospace', letterSpacing: 3, textAlign: 'center',
-            textTransform: 'uppercase', outline: 'none'
-          }
+          style: { flex: 1, background: C.cream + '08', border: '1px solid ' + C.cream + '15', borderRadius: 10, padding: '14px 16px', color: C.cream, fontSize: 18, fontFamily: 'monospace', letterSpacing: 3, textAlign: 'center', textTransform: 'uppercase', outline: 'none' }
         }),
-        ce('button', {
-          style: Object.assign({}, bt, { padding: '14px 20px', minWidth: 80, width: 'auto' }),
-          onClick: handleJoin,
-          disabled: joining
-        }, joining ? '...' : 'Join')
+        ce('button', { style: Object.assign({}, bt, { padding: '14px 20px', minWidth: 80, width: 'auto' }), onClick: handleJoin, disabled: joining }, joining ? '...' : 'Join')
       ),
-
       error && ce('p', { style: { color: C.rust, fontSize: 13, marginTop: 4 } }, error),
-
       ce('div', { style: { marginTop: 32, paddingTop: 20, borderTop: '1px solid ' + C.cream + '0A' } },
-        ce('button', {
-          style: Object.assign({}, bt, {
-            background: 'transparent', border: '1px dashed ' + C.cream + '22',
-            color: C.cream + '55', fontSize: 14, padding: '10px 20px'
-          }),
-          onClick: handleClassic
-        }, '\ud83d\udcf1 Classic Mode (pass-the-device)')
+        ce('button', { style: Object.assign({}, bt, { background: 'transparent', border: '1px dashed ' + C.cream + '22', color: C.cream + '55', fontSize: 14, padding: '10px 20px' }), onClick: handleClassic }, '\ud83d\udcf1 Classic Mode (pass-the-device)')
       )
     )
   );
 }
 
 // ══════════════════════════════════════════════════════════════
-// Host Lobby — Waiting for players to join
+// Host Lobby
 // ══════════════════════════════════════════════════════════════
 
 function HostLobby(props) {
-  var sessionId = props.sessionId;
-  var joinCode = props.joinCode;
-  var players = props.players;
-  var onStart = props.onStart;
-  var playerList = Object.entries(players).sort(function(a, b) { return a[0].localeCompare(b[0]); });
+  var sessionId=props.sessionId, joinCode=props.joinCode, players=props.players, onStart=props.onStart;
+  var playerList = Object.entries(players).sort(function(a,b){return a[0].localeCompare(b[0]);});
   var canStart = playerList.length >= 2;
-
   return ce('div', { style: W },
     ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }), className: 'fade-up' },
       ce('div', { style: { fontSize: 52, marginBottom: 8 } }, '\ud83d\udd25'),
       ce('div', { style: sb }, 'The Campfire is Lit'),
-
-      ce('div', { style: {
-        background: C.cream + '06', border: '2px dashed ' + C.gold + '44',
-        borderRadius: 16, padding: '20px 24px', margin: '20px 0', textAlign: 'center'
-      }},
-        ce('div', { style: { color: C.cream + '55', fontSize: 13, marginBottom: 6 } }, 'JOIN CODE'),
-        ce('div', { style: {
-          fontSize: 48, fontWeight: 700, color: C.gold, fontFamily: 'monospace',
-          letterSpacing: 6, marginBottom: 4
-        }}, joinCode),
-        ce('div', { style: { color: C.cream + '44', fontSize: 12 } },
-          'Players: open group.html on your phone and enter this code')
+      ce('div', { style: { background: C.cream+'06', border: '2px dashed '+C.gold+'44', borderRadius: 16, padding: '20px 24px', margin: '20px 0' } },
+        ce('div', { style: { color: C.cream+'55', fontSize: 13, marginBottom: 6 } }, 'JOIN CODE'),
+        ce('div', { style: { fontSize: 48, fontWeight: 700, color: C.gold, fontFamily: 'monospace', letterSpacing: 6, marginBottom: 4 } }, joinCode),
+        ce('div', { style: { color: C.cream+'44', fontSize: 12 } }, 'Players: open group.html on your phone and enter this code')
       ),
-
       ce('div', { style: { margin: '20px 0', textAlign: 'left' } },
-        ce('div', { style: Object.assign({}, sb, { marginBottom: 12 }) },
-          'Expedition Roster (' + playerList.length + '/8)'),
-        playerList.length === 0 &&
-          ce('p', { style: Object.assign({}, dm, { fontStyle: 'italic' }) }, 'Waiting for players to join...'),
+        ce('div', { style: Object.assign({}, sb, { marginBottom: 12 }) }, 'Expedition Roster (' + playerList.length + '/8)'),
+        playerList.length===0 && ce('p', { style: Object.assign({}, dm, { fontStyle:'italic' }) }, 'Waiting for players to join...'),
         playerList.map(function(entry) {
-          var pid = entry[0], p = entry[1];
-          return ce('div', { key: pid, style: {
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '10px 14px', marginBottom: 6,
-            background: C.cream + '05', borderRadius: 10,
-            border: '1px solid ' + C.cream + '0A'
-          }},
-            ce('div', { style: {
-              width: 10, height: 10, borderRadius: '50%',
-              background: p.connected ? C.green : C.rust
-            }}),
-            ce('span', { style: { color: C.cream, fontSize: 16, fontWeight: 500 } }, p.name),
-            ce('span', { style: { color: C.cream + '33', fontSize: 12, marginLeft: 'auto' } },
-              p.connected ? 'connected' : 'disconnected')
+          var pid=entry[0], p=entry[1];
+          return ce('div', { key: pid, style: { display:'flex', alignItems:'center', gap:10, padding:'10px 14px', marginBottom:6, background:C.cream+'05', borderRadius:10, border:'1px solid '+C.cream+'0A' } },
+            ce('div', { style: { width:10, height:10, borderRadius:'50%', background: p.connected?C.green:C.rust } }),
+            ce('span', { style: { color:C.cream, fontSize:16, fontWeight:500 } }, p.name),
+            ce('span', { style: { color:C.cream+'33', fontSize:12, marginLeft:'auto' } }, p.connected?'connected':'disconnected')
           );
         })
       ),
-
-      ce('button', {
-        style: Object.assign({}, bt, {
-          opacity: canStart ? 1 : 0.4,
-          fontSize: 17, padding: '16px 24px'
-        }),
-        onClick: onStart,
-        disabled: !canStart
-      }, canStart
-        ? 'Begin the Expedition (' + playerList.length + ' players) \u2192'
-        : 'Need at least 2 players to start'
-      )
+      ce('button', { style: Object.assign({}, bt, { opacity:canStart?1:0.4, fontSize:17, padding:'16px 24px' }), onClick: onStart, disabled: !canStart },
+        canStart ? 'Begin the Expedition ('+playerList.length+' players) \u2192' : 'Need at least 2 players to start')
     )
   );
 }
@@ -845,6 +767,13 @@ function HostView() {
   var _s7=useState(null),results=_s7[0],setResults=_s7[1];
   var _s8=useState(null),campfireStart=_s8[0],setCampfireStart=_s8[1];
   var _s9=useState(0),campfireElapsed=_s9[0],setCampfireElapsed=_s9[1];
+  // FIX #2: Store round pulses for drift calculation in reveal
+  var _s10=useState({}),roundPulses=_s10[0],setRoundPulses=_s10[1];
+  var _s11=useState(-1),lastGroupVote=_s11[0],setLastGroupVote=_s11[1];
+  // FIX #5: Store all group votes for analyze
+  var _s12=useState([]),allGroupVotes=_s12[0],setAllGroupVotes=_s12[1];
+  // FIX #5: Store capstone vote
+  var _s13=useState(null),capstoneVote=_s13[0],setCapstoneVote=_s13[1];
   var campfireTimer=useRef(null);
   var unsubs=useRef([]);
 
@@ -857,58 +786,62 @@ function HostView() {
       unsubs.current.push(CovenantFirebase.onConfigChanged(sess.sessionId, setConfig));
       unsubs.current.push(CovenantFirebase.onRoundChanged(sess.sessionId, function(r) {
         setRound(r);
-        if (r.phase === 'campfire' || r.phase === 'capstone_discuss') {
-          setCampfireStart(Date.now());
-        }
+        if (r.phase==='campfire'||r.phase==='capstone_discuss') setCampfireStart(Date.now());
       }));
     });
-    return function() { unsubs.current.forEach(function(fn) { fn(); }); };
+    return function() { unsubs.current.forEach(function(fn){fn();}); };
   }, []);
 
   useEffect(function() {
     if (campfireStart) {
-      campfireTimer.current = setInterval(function() {
-        setCampfireElapsed(Date.now() - campfireStart);
-      }, 250);
-      return function() { clearInterval(campfireTimer.current); };
+      campfireTimer.current=setInterval(function(){setCampfireElapsed(Date.now()-campfireStart);},250);
+      return function(){clearInterval(campfireTimer.current);};
     }
   }, [campfireStart]);
+
+  // FIX #2: Listen to pulses for current round (for drift display)
+  var pulseUnsub = useRef(null);
+  useEffect(function() {
+    if (sessionId && round.roundIndex >= 0 && round.phase === 'pulsing') {
+      if (pulseUnsub.current) pulseUnsub.current();
+      pulseUnsub.current = CovenantFirebase.onPulsesForRound(sessionId, round.roundIndex, function(p) {
+        setRoundPulses(p);
+      });
+    }
+    return function() { if (pulseUnsub.current) pulseUnsub.current(); };
+  }, [sessionId, round.roundIndex, round.phase]);
 
   var playerCount = Object.keys(players).length;
   var phase = round.phase;
   var ri = round.roundIndex;
   var s = scenarios[ri] || null;
-
-  var fmt = function(ms) {
-    var sec = Math.floor(ms / 1000);
-    var m = Math.floor(sec / 60);
-    var ss = sec % 60;
-    return m + ':' + String(ss).padStart(2, '0');
-  };
+  var fmt = function(ms) { var sec=Math.floor(ms/1000); return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0'); };
 
   var handleStart = function() {
     var selected = selSess();
     setScenarios(selected);
+    setAllGroupVotes([]);
     CovenantFirebase.startGame(sessionId, selected);
   };
 
+  // FIX #3: Store group vote locally + in allGroupVotes array
   var handleGroupVote = function(optionIndex) {
     var scenario = scenarios[ri];
     var option = scenario.options[optionIndex];
-    var campDuration = campfireStart ? Date.now() - campfireStart : 0;
+    var campDuration = campfireStart ? Date.now()-campfireStart : 0;
+    setLastGroupVote(optionIndex);
+    setAllGroupVotes(function(prev) { var n=prev.slice(); n[ri]=optionIndex; return n; });
     CovenantFirebase.submitGroupVote(sessionId, ri, {
-      selected_option_index: optionIndex,
-      selected_foundation: option.f,
-      campfire_duration_ms: campDuration
+      selected_option_index: optionIndex, selected_foundation: option.f, campfire_duration_ms: campDuration
     }).then(function() {
       return CovenantFirebase.setPhase(sessionId, 'predicting', { predictionsSubmitted: 0 });
     });
-    setCampfireStart(null);
-    setCampfireElapsed(0);
+    setCampfireStart(null); setCampfireElapsed(0);
   };
 
   var handleNextRound = function() {
     var nextIndex = ri + 1;
+    setLastGroupVote(-1); setRoundPulses({});
     if (nextIndex >= scenarios.length) {
       CovenantFirebase.setPhase(sessionId, 'capstone_intro');
     } else {
@@ -916,198 +849,256 @@ function HostView() {
     }
   };
 
+  // FIX #5: Capstone vote handler
+  var handleCapstoneVote = function(optionIndex) {
+    setCapstoneVote(optionIndex);
+    var campDuration = campfireStart ? Date.now()-campfireStart : 0;
+    CovenantFirebase.submitGroupVote(sessionId, 'capstone', {
+      selected_option_index: optionIndex, selected_foundation: 'Synthesis', campfire_duration_ms: campDuration
+    }).then(function() {
+      // Move to analyze
+      handleAnalyze();
+    });
+  };
+
+  // FIX #5: Robust analyze that assembles data from Firebase
   var handleAnalyze = function() {
     CovenantFirebase.setPhase(sessionId, 'analyzing');
     CovenantFirebase.getSessionData(sessionId).then(function(sessionData) {
       var transformed = CovenantFirebase.transformForAnalyze(sessionData);
-      var analysisResults = analyze(transformed.pl, transformed.sc, transformed.gv, transformed.sy);
-      setResults(analysisResults);
-      CovenantFirebase.writeResults(sessionId, analysisResults);
+      try {
+        var analysisResults = analyze(transformed.pl, transformed.sc, transformed.gv, transformed.sy);
+        setResults(analysisResults);
+        CovenantFirebase.writeResults(sessionId, analysisResults);
+      } catch(e) {
+        console.error('[CovenantFirebase] analyze() failed:', e);
+        // Write a minimal result so players see something
+        var minResult = { error: e.message, players: {}, group: {} };
+        CovenantFirebase.writeResults(sessionId, minResult);
+        CovenantFirebase.setPhase(sessionId, 'mirror');
+      }
     });
   };
 
-  // LOBBY
-  if (phase === 'lobby') {
-    return ce(HostLobby, { sessionId: sessionId, joinCode: joinCode, players: players, onStart: handleStart });
+  // FIX #2: Compute drift data for reveal phase
+  var driftData = null;
+  if (phase === 'reveal' && lastGroupVote >= 0 && Object.keys(roundPulses).length > 0) {
+    var drifters = []; var holders = [];
+    Object.entries(roundPulses).forEach(function(entry) {
+      var pid=entry[0], pulse=entry[1];
+      var pName = players[pid] ? players[pid].name : pid;
+      if (pulse.selected_option_index !== lastGroupVote) {
+        drifters.push(pName);
+      } else {
+        holders.push(pName);
+      }
+    });
+    driftData = { drifters: drifters, holders: holders, total: drifters.length };
   }
 
-  // READING
+  // ── LOBBY ──
+  if (phase === 'lobby') return ce(HostLobby, { sessionId:sessionId, joinCode:joinCode, players:players, onStart:handleStart });
+
+  // ── READING ──
   if (phase === 'reading' && s) {
     return ce('div', { style: W },
       ce('div', { style: cd, className: 'fade-up' },
-        ce('div', { style: { display: 'flex', justifyContent: 'space-between', marginBottom: 12 } },
-          ce('div', { style: sb }, 'Scenario ' + (ri + 1) + ' of ' + scenarios.length),
-          ce('div', null,
-            ce('span', { style: tg(C.rust) }, s.tier),
-            ce('span', { style: tg(C.gold) }, 'Stress ' + s.stress + '/10')
-          )
+        ce('div', { style: { display:'flex', justifyContent:'space-between', marginBottom:12 } },
+          ce('div', { style: sb }, 'Scenario '+(ri+1)+' of '+scenarios.length),
+          ce('div', null, ce('span', { style: tg(C.rust) }, s.tier), ce('span', { style: tg(C.gold) }, 'Stress '+s.stress+'/10'))
         ),
-        ce('p', { style: { fontSize: 17, lineHeight: 1.85, marginBottom: 20, fontFamily: "'Playfair Display',Georgia,serif" } }, s.text),
-        ce('div', { style: { marginBottom: 20 } },
-          s.options.map(function(o, i) {
-            return ce('div', { key: i, style: Object.assign({}, ob(false), { cursor: 'default', opacity: 0.6 }) },
-              ce('span', { style: { color: C.gold, fontWeight: 700, marginRight: 8 } }, String.fromCharCode(65 + i) + '.'), o.t);
+        ce('p', { style: { fontSize:17, lineHeight:1.85, marginBottom:20, fontFamily:"'Playfair Display',Georgia,serif" } }, s.text),
+        ce('div', { style: { marginBottom:20 } },
+          s.options.map(function(o,i) {
+            return ce('div', { key:i, style: Object.assign({}, ob(false), { cursor:'default', opacity:0.6 }) },
+              ce('span', { style: { color:C.gold, fontWeight:700, marginRight:8 } }, String.fromCharCode(65+i)+'.'), o.t);
           })
         ),
-        ce('p', { style: Object.assign({}, dm, { textAlign: 'center', marginBottom: 16 }) },
-          'Read aloud. Then players submit their 12-second gut pulse on their phones.'),
-        ce('button', { style: bt, onClick: function() {
-          CovenantFirebase.setPhase(sessionId, 'pulsing', { pulsesSubmitted: 0 });
-        }}, 'Open Pulse Windows \u2192')
+        ce('p', { style: Object.assign({}, dm, { textAlign:'center', marginBottom:16 }) }, 'Read aloud. Then players submit their 12-second gut pulse on their phones.'),
+        ce('button', { style: bt, onClick: function() { CovenantFirebase.setPhase(sessionId, 'pulsing', { pulsesSubmitted:0 }); } }, 'Open Pulse Windows \u2192')
       )
     );
   }
 
-  // PULSING
+  // ── PULSING ──
   if (phase === 'pulsing') {
-    var submitted = round.pulsesSubmitted || 0;
+    var submitted = round.pulsesSubmitted||0;
     var allIn = submitted >= playerCount;
     return ce('div', { style: W },
-      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }), className: 'fade-up' },
-        ce('div', { style: { fontSize: 52, marginBottom: 8 } }, '\ud83d\udd12'),
+      ce('div', { style: Object.assign({}, cd, { textAlign:'center' }), className: 'fade-up' },
+        ce('div', { style: { fontSize:52, marginBottom:8 } }, '\ud83d\udd12'),
         ce('div', { style: sb }, 'Private Pulses'),
-        ce('h1', { style: Object.assign({}, h1, { fontSize: 24 }), className: 'dsp' },
-          allIn ? 'All pulses received' : 'Waiting for gut instincts...'),
-        ce('div', { style: { fontSize: 64, fontWeight: 300, color: allIn ? C.green : C.gold, fontFamily: 'monospace', margin: '20px 0' } },
-          submitted + ' / ' + playerCount),
+        ce('h1', { style: Object.assign({}, h1, { fontSize:24 }), className: 'dsp' }, allIn ? 'All pulses received' : 'Waiting for gut instincts...'),
+        ce('div', { style: { fontSize:64, fontWeight:300, color:allIn?C.green:C.gold, fontFamily:'monospace', margin:'20px 0' } }, submitted+' / '+playerCount),
         ce('p', { style: dm }, allIn ? 'Ready for the campfire discussion.' : 'Players are making their private choices on their phones.'),
-        allIn && ce('button', { style: Object.assign({}, bt, { marginTop: 20 }), onClick: function() {
+        allIn && ce('button', { style: Object.assign({}, bt, { marginTop:20 }), onClick: function() {
           setCampfireStart(Date.now()); setCampfireElapsed(0);
           CovenantFirebase.setPhase(sessionId, 'campfire');
-        }}, '\ud83d\udd25 Light the Campfire')
+        } }, '\ud83d\udd25 Light the Campfire')
       )
     );
   }
 
-  // CAMPFIRE
+  // ── CAMPFIRE — FIX #3: Show scenario text + options during discussion ──
   if (phase === 'campfire' && s) {
+    var minTime = 30000; // 30 second minimum discussion
+    var canVote = campfireElapsed >= minTime;
     return ce('div', { style: W },
-      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }), className: 'fade-up' },
-        ce('div', { style: { fontSize: 56, marginBottom: 4 } }, '\ud83d\udd25'),
-        ce('div', { style: sb }, 'The Campfire'),
-        ce('h1', { style: Object.assign({}, h1, { fontSize: 24 }), className: 'dsp' }, 'Discuss. Persuade. Listen.'),
-        ce('p', { style: { color: C.cream + '55', fontSize: 14, lineHeight: 1.7, marginBottom: 20, padding: '0 12px', fontStyle: 'italic', fontFamily: "'Playfair Display'" } },
-          '\u201C' + s.text + '\u201D'),
-        ce('div', { style: { fontSize: 48, fontWeight: 300, color: C.gold, fontFamily: 'monospace', marginBottom: 4 } }, fmt(campfireElapsed)),
-        ce('p', { style: Object.assign({}, dm, { marginBottom: 28 }) }, playerCount <= 3 ? 'Suggested: ~3 min discussion' : 'Suggested: ~5 min discussion'),
-        ce('button', { style: bt, onClick: function() {
-          CovenantFirebase.setPhase(sessionId, 'groupVote');
-        }}, "We\u2019re Ready \u2014 Group Vote")
+      ce('div', { style: cd, className: 'fade-up' },
+        ce('div', { style: { textAlign:'center', marginBottom:16 } },
+          ce('div', { style: { fontSize:56, marginBottom:4 } }, '\ud83d\udd25'),
+          ce('div', { style: sb }, 'The Campfire'),
+          ce('h1', { style: Object.assign({}, h1, { fontSize:24 }), className: 'dsp' }, 'Discuss. Persuade. Listen.'),
+          ce('div', { style: { fontSize:48, fontWeight:300, color:C.gold, fontFamily:'monospace', marginBottom:4 } }, fmt(campfireElapsed)),
+          ce('p', { style: dm }, playerCount<=3 ? 'Suggested: ~3 min discussion' : 'Suggested: ~5 min discussion')
+        ),
+        // FIX #3: Show the scenario text during campfire
+        ce('div', { style: { borderTop:'1px solid '+C.cream+'15', paddingTop:16, marginTop:8 } },
+          ce('p', { style: { fontSize:15, lineHeight:1.8, color:C.cream+'88', marginBottom:16, fontStyle:'italic', fontFamily:"'Playfair Display'" } }, '\u201C'+s.text+'\u201D'),
+          ce('div', { style: { marginBottom:16 } },
+            s.options.map(function(o,i) {
+              return ce('div', { key:i, style: Object.assign({}, ob(false), { cursor:'default', opacity:0.6, marginBottom:4 }) },
+                ce('span', { style: { color:C.gold, fontWeight:700, marginRight:8 } }, String.fromCharCode(65+i)+'.'), o.t);
+            })
+          )
+        ),
+        ce('div', { style: { textAlign:'center' } },
+          ce('button', { style: Object.assign({}, bt, { opacity:canVote?1:0.4 }), onClick: function() {
+            if (canVote) CovenantFirebase.setPhase(sessionId, 'groupVote');
+          }, disabled: !canVote }, canVote ? "We\u2019re Ready \u2014 Group Vote" : "Discuss for at least 30 seconds...")
+        )
       )
     );
   }
 
-  // GROUP VOTE
+  // ── GROUP VOTE ──
   if (phase === 'groupVote' && s) {
     return ce('div', { style: W },
       ce('div', { style: cd, className: 'fade-up' },
         ce('div', { style: sb }, 'Group Consensus'),
-        ce('h1', { style: Object.assign({}, h1, { fontSize: 22 }), className: 'dsp' }, 'What did the group decide?'),
-        ce('p', { style: Object.assign({}, dm, { marginBottom: 16 }) }, "One tap for the group\u2019s final answer."),
-        s.options.map(function(o, i) {
-          return ce('button', { key: i, style: ob(false), onClick: function() { handleGroupVote(i); } },
-            ce('span', { style: { color: C.gold, fontWeight: 700, marginRight: 8 } }, String.fromCharCode(65 + i) + '.'), o.t);
+        ce('h1', { style: Object.assign({}, h1, { fontSize:22 }), className: 'dsp' }, 'What did the group decide?'),
+        ce('p', { style: Object.assign({}, dm, { marginBottom:16 }) }, "One tap for the group\u2019s final answer."),
+        s.options.map(function(o,i) {
+          return ce('button', { key:i, style: ob(false), onClick: function(){handleGroupVote(i);} },
+            ce('span', { style: { color:C.gold, fontWeight:700, marginRight:8 } }, String.fromCharCode(65+i)+'.'), o.t);
         })
       )
     );
   }
 
-  // PREDICTING
+  // ── PREDICTING ──
   if (phase === 'predicting') {
-    var submitted2 = round.predictionsSubmitted || 0;
-    var allIn2 = submitted2 >= playerCount;
+    var sub2 = round.predictionsSubmitted||0;
+    var allIn2 = sub2 >= playerCount;
     return ce('div', { style: W },
-      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }), className: 'fade-up' },
-        ce('div', { style: { fontSize: 52, marginBottom: 8 } }, '\ud83d\udd2e'),
+      ce('div', { style: Object.assign({}, cd, { textAlign:'center' }), className: 'fade-up' },
+        ce('div', { style: { fontSize:52, marginBottom:8 } }, '\ud83d\udd2e'),
         ce('div', { style: sb }, 'Predictions'),
-        ce('h1', { style: Object.assign({}, h1, { fontSize: 22 }), className: 'dsp' },
-          allIn2 ? 'All predictions received' : 'Players are predicting drift...'),
-        ce('div', { style: { fontSize: 64, fontWeight: 300, color: allIn2 ? C.green : C.gold, fontFamily: 'monospace', margin: '20px 0' } },
-          submitted2 + ' / ' + playerCount),
-        allIn2 && ce('button', { style: Object.assign({}, bt, { marginTop: 20 }), onClick: function() {
+        ce('h1', { style: Object.assign({}, h1, { fontSize:22 }), className: 'dsp' }, allIn2 ? 'All predictions received' : 'Players are predicting drift...'),
+        ce('div', { style: { fontSize:64, fontWeight:300, color:allIn2?C.green:C.gold, fontFamily:'monospace', margin:'20px 0' } }, sub2+' / '+playerCount),
+        allIn2 && ce('button', { style: Object.assign({}, bt, { marginTop:20 }), onClick: function() {
           CovenantFirebase.setPhase(sessionId, 'reveal');
-        }}, 'Reveal the Drift \u2192')
+        } }, 'Reveal the Drift \u2192')
       )
     );
   }
 
-  // REVEAL
+  // ── REVEAL — FIX #2: Actually show drift data ──
   if (phase === 'reveal') {
     return ce('div', { style: W },
-      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }), className: 'fade-up' },
-        ce('div', { style: { fontSize: 52, marginBottom: 8 } }, '\ud83e\ude9e'),
+      ce('div', { style: Object.assign({}, cd, { textAlign:'center' }), className: 'fade-up' },
+        ce('div', { style: { fontSize:52, marginBottom:8 } }, '\ud83e\ude9e'),
         ce('div', { style: sb }, 'The Drift Revealed'),
-        ce('p', { style: Object.assign({}, dm, { marginBottom: 24 }) }, 'Players can see their own drift results on their phones.'),
-        ce('button', { style: bt, onClick: handleNextRound },
-          ri < scenarios.length - 1 ? 'Next Scenario \u2192' : '\u26A1 The Capstone Crisis')
+
+        driftData ? ce('div', null,
+          ce('div', { style: { fontSize:64, fontWeight:300, color:driftData.total>0?C.rust:C.green, fontFamily:'monospace', margin:'16px 0' } },
+            driftData.total + ' of ' + (driftData.drifters.length+driftData.holders.length)),
+          ce('p', { style: Object.assign({}, dm, { fontSize:16, marginBottom:16 }) },
+            driftData.total > 0
+              ? 'player'+(driftData.total>1?'s':'')+' chose differently in private than the group decided.'
+              : 'Everyone\u2019s private choice matched the group decision.'),
+          driftData.total > 0 && ce('div', { style: { textAlign:'left', marginBottom:16 } },
+            ce('div', { style: { marginBottom:8 } },
+              ce('span', { style: { color:C.rust, fontWeight:700, fontSize:13 } }, 'DRIFTED: '),
+              ce('span', { style: { color:C.cream+'88', fontSize:14 } }, driftData.drifters.join(', '))
+            ),
+            ce('div', null,
+              ce('span', { style: { color:C.green, fontWeight:700, fontSize:13 } }, 'HELD GROUND: '),
+              ce('span', { style: { color:C.cream+'88', fontSize:14 } }, driftData.holders.join(', '))
+            )
+          )
+        ) : ce('p', { style: dm }, 'Computing drift...'),
+
+        ce('button', { style: Object.assign({}, bt, { marginTop:12 }), onClick: handleNextRound },
+          ri < scenarios.length-1 ? 'Next Scenario \u2192' : '\u26A1 The Capstone Crisis')
       )
     );
   }
 
-  // CAPSTONE INTRO
+  // ── CAPSTONE INTRO — FIX #4: Show capstone text ──
   if (phase === 'capstone_intro') {
     return ce('div', { style: W },
-      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }), className: 'fade-up' },
-        ce('div', { style: { fontSize: 52 } }, '\u26A1'),
-        ce('div', { style: Object.assign({}, sb, { color: C.rust }) }, 'THE CHAOTIC CAPSTONE'),
-        ce('h1', { style: Object.assign({}, h1, { fontSize: 24 }), className: 'dsp' }, 'No single person has enough information to act.'),
-        ce('p', { style: { fontSize: 15, lineHeight: 1.8, color: C.cream + '88', marginBottom: 20 } },
-          'Each player will receive a secret fragment on their phone. Share verbally, then decide together.'),
-        ce('button', { style: bt, onClick: function() {
-          CovenantFirebase.setPhase(sessionId, 'capstone_fragments');
-        }}, 'Distribute Fragments to Phones')
+      ce('div', { style: Object.assign({}, cd, { textAlign:'center' }), className: 'fade-up' },
+        ce('div', { style: { fontSize:52 } }, '\u26A1'),
+        ce('div', { style: Object.assign({}, sb, { color:C.rust }) }, 'THE CHAOTIC CAPSTONE'),
+        ce('h1', { style: Object.assign({}, h1, { fontSize:24 }), className: 'dsp' }, 'No single person has enough information to act.'),
+        typeof CAP !== 'undefined' && ce('p', { style: { fontSize:15, lineHeight:1.8, color:C.cream+'88', marginBottom:8 } }, CAP.text),
+        ce('p', { style: { fontSize:14, lineHeight:1.7, color:C.cream+'55', marginBottom:20 } }, 'Each player will receive a secret fragment on their phone. Share verbally, then decide together.'),
+        ce('button', { style: bt, onClick: function() { CovenantFirebase.setPhase(sessionId, 'capstone_fragments'); } }, 'Distribute Fragments to Phones')
       )
     );
   }
 
-  // CAPSTONE FRAGMENTS
   if (phase === 'capstone_fragments') {
     return ce('div', { style: W },
-      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }), className: 'fade-up' },
-        ce('div', { style: { fontSize: 52 } }, '\ud83d\udd12'),
+      ce('div', { style: Object.assign({}, cd, { textAlign:'center' }), className: 'fade-up' },
+        ce('div', { style: { fontSize:52 } }, '\ud83d\udd12'),
         ce('div', { style: sb }, 'Fragment Distribution'),
-        ce('p', { style: Object.assign({}, dm, { marginBottom: 20 }) },
-          'Each player has received their secret fragment on their phone. Give everyone a moment to read.'),
+        ce('p', { style: Object.assign({}, dm, { marginBottom:20 }) }, 'Each player has received their secret fragment on their phone. Give everyone a moment to read.'),
         ce('button', { style: bt, onClick: function() {
           setCampfireStart(Date.now()); setCampfireElapsed(0);
           CovenantFirebase.setPhase(sessionId, 'capstone_discuss');
-        }}, 'Begin Synthesis Discussion \ud83d\udd25')
+        } }, 'Begin Synthesis Discussion \ud83d\udd25')
       )
     );
   }
 
-  // CAPSTONE DISCUSS
   if (phase === 'capstone_discuss') {
     return ce('div', { style: W },
-      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }), className: 'fade-up' },
-        ce('div', { style: { fontSize: 56 } }, '\ud83d\udd25'),
-        ce('div', { style: Object.assign({}, sb, { color: C.rust }) }, 'SYNTHESIS'),
-        ce('h1', { style: Object.assign({}, h1, { fontSize: 22 }), className: 'dsp' }, 'Share your fragments. Piece together the truth.'),
-        ce('div', { style: { fontSize: 48, fontWeight: 300, color: C.gold, fontFamily: 'monospace', marginBottom: 4 } }, fmt(campfireElapsed)),
+      ce('div', { style: Object.assign({}, cd, { textAlign:'center' }), className: 'fade-up' },
+        ce('div', { style: { fontSize:56 } }, '\ud83d\udd25'),
+        ce('div', { style: Object.assign({}, sb, { color:C.rust }) }, 'SYNTHESIS'),
+        ce('h1', { style: Object.assign({}, h1, { fontSize:22 }), className: 'dsp' }, 'Share your fragments. Piece together the truth.'),
+        ce('div', { style: { fontSize:48, fontWeight:300, color:C.gold, fontFamily:'monospace', marginBottom:4 } }, fmt(campfireElapsed)),
         ce('button', { style: bt, onClick: function() {
           setCampfireStart(null);
           CovenantFirebase.setPhase(sessionId, 'capstone_vote');
-        }}, "We\u2019ve Synthesized \u2014 Vote Now")
+        } }, "We\u2019ve Synthesized \u2014 Vote Now")
       )
     );
   }
 
-  // CAPSTONE VOTE
+  // ── CAPSTONE VOTE — FIX #4: Show actual capstone options ──
   if (phase === 'capstone_vote') {
+    var capOptions = typeof CAP !== 'undefined' ? CAP.options : [];
     return ce('div', { style: W },
       ce('div', { style: cd, className: 'fade-up' },
-        ce('div', { style: Object.assign({}, sb, { color: C.rust }) }, 'Capstone \u2014 Group Decision'),
-        ce('h1', { style: Object.assign({}, h1, { fontSize: 20 }), className: 'dsp' }, 'Knowing everything, what do you do?'),
-        ce('button', { style: bt, onClick: handleAnalyze }, '\ud83e\ude9e Generate the Mirror')
+        ce('div', { style: Object.assign({}, sb, { color:C.rust }) }, 'Capstone \u2014 Group Decision'),
+        ce('h1', { style: Object.assign({}, h1, { fontSize:20 }), className: 'dsp' }, 'Knowing everything, what do you do?'),
+        typeof CAP !== 'undefined' && ce('p', { style: { fontSize:14, lineHeight:1.7, color:C.cream+'77', marginBottom:16, fontStyle:'italic' } }, CAP.text),
+        capOptions.length > 0 ? capOptions.map(function(o,i) {
+          return ce('button', { key:i, style: ob(false), onClick: function(){handleCapstoneVote(i);} },
+            ce('span', { style: { color:C.gold, fontWeight:700, marginRight:8 } }, String.fromCharCode(65+i)+'.'), o.t);
+        }) : ce('button', { style: bt, onClick: function(){handleAnalyze();} }, '\ud83e\ude9e Generate the Mirror')
       )
     );
   }
 
-  // ANALYZING
+  // ── ANALYZING ──
   if (phase === 'analyzing') {
     return ce('div', { style: W },
-      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }), className: 'fade-up' },
-        ce('div', { style: { fontSize: 52 } }, '\ud83e\ude9e'),
+      ce('div', { style: Object.assign({}, cd, { textAlign:'center' }), className: 'fade-up' },
+        ce('div', { style: { fontSize:52 } }, '\ud83e\ude9e'),
         ce('div', { style: sb }, 'The Mirror'),
         ce('h1', { style: h1, className: 'dsp' }, 'Computing your portrait...'),
         ce('p', { style: dm }, 'Analyzing moral patterns, drift trajectories, shadow scores, and breaking points.')
@@ -1115,27 +1106,20 @@ function HostView() {
     );
   }
 
-  // MIRROR
+  // ── MIRROR ──
   if (phase === 'mirror' || config.status === 'mirror') {
     if (results) {
       return ce('div', { style: W },
         ce('div', { style: cd },
           ce('div', { style: sb }, 'The Mirror is Ready'),
-          ce('p', { style: dm },
-            'Players can view their individual portraits on their phones. Group results are displayed below.'),
-          ce('p', { style: Object.assign({}, dm, { marginTop: 20, color: C.green }) },
-            '\u2713 Results computed and shared with all players.')
+          ce('p', { style: dm }, 'Players can view their individual portraits on their phones. Group results are displayed below.'),
+          ce('p', { style: Object.assign({}, dm, { marginTop:20, color:C.green }) }, '\u2713 Results computed and shared with all players.')
         )
       );
     }
   }
 
-  // Fallback
-  return ce('div', { style: W },
-    ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
-      ce('p', { style: dm }, 'Loading... (phase: ' + phase + ')')
-    )
-  );
+  return ce('div', { style: W }, ce('div', { style: Object.assign({}, cd, { textAlign:'center' }) }, ce('p', { style: dm }, 'Loading... ('+phase+')')));
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1156,189 +1140,182 @@ function PlayerView() {
   var _s11=useState(false),pulseSubmitted=_s11[0],setPulseSubmitted=_s11[1];
   var _s12=useState(false),predSubmitted=_s12[0],setPredSubmitted=_s12[1];
   var _s13=useState(null),pulseStart=_s13[0],setPulseStart=_s13[1];
+  // FIX #2: Track player's own pulse + group vote for drift display
+  var _s14=useState(-1),myPulseChoice=_s14[0],setMyPulseChoice=_s14[1];
+  var _s15=useState(null),groupVoteForRound=_s15[0],setGroupVoteForRound=_s15[1];
   var timerRef=useRef(null);
   var unsubs=useRef([]);
+  // FIX #1: Ref-based lock to prevent double-tap
+  var predLocked=useRef(false);
+  var pulseLocked=useRef(false);
 
   useEffect(function() {
     if (!sessionId) return;
     CovenantFirebase.init();
-    var scenRef = firebase.database().ref('sessions/' + sessionId + '/scenarios');
-    scenRef.on('value', function(snap) { var val = snap.val(); if (val) setScenarios(val); });
+    var scenRef = firebase.database().ref('sessions/'+sessionId+'/scenarios');
+    scenRef.on('value', function(snap) { var val=snap.val(); if (val) setScenarios(val); });
     unsubs.current.push(CovenantFirebase.onRoundChanged(sessionId, function(r) {
       setRound(r);
-      if (r.phase === 'pulsing') { setPulseSubmitted(false); setPulseTimer(12); setPulseStart(Date.now()); }
-      if (r.phase === 'predicting') { setPredSubmitted(false); }
+      if (r.phase==='pulsing') { setPulseSubmitted(false); setPulseTimer(12); setPulseStart(Date.now()); pulseLocked.current=false; setMyPulseChoice(-1); setGroupVoteForRound(null); }
+      if (r.phase==='predicting') { setPredSubmitted(false); predLocked.current=false; }
     }));
     unsubs.current.push(CovenantFirebase.onConfigChanged(sessionId, setConfig));
-    unsubs.current.push(CovenantFirebase.onResults(sessionId, function(results) {
-      if (results && playerId) setMyResults(results);
-    }));
-    return function() { scenRef.off(); unsubs.current.forEach(function(fn) { fn(); }); };
+    unsubs.current.push(CovenantFirebase.onResults(sessionId, function(r) { if (r&&playerId) setMyResults(r); }));
+    // FIX #2: Listen for group votes to compute drift
+    var gvRef = firebase.database().ref('sessions/'+sessionId+'/groupVotes');
+    gvRef.on('value', function(snap) {
+      var val=snap.val();
+      // We'll grab the latest round's vote
+      if (val) {
+        var keys=Object.keys(val).sort();
+        var lastKey=keys[keys.length-1];
+        if (val[lastKey]) setGroupVoteForRound(val[lastKey].selected_option_index);
+      }
+    });
+    return function() { scenRef.off(); gvRef.off(); unsubs.current.forEach(function(fn){fn();}); };
   }, [sessionId, playerId]);
 
   useEffect(function() {
-    if (round.phase === 'pulsing' && !pulseSubmitted) {
+    if (round.phase==='pulsing' && !pulseSubmitted) {
       setPulseTimer(12);
-      timerRef.current = setInterval(function() {
-        setPulseTimer(function(v) {
-          if (v <= 1) { clearInterval(timerRef.current); handlePulse(0); return 0; }
-          return v - 1;
-        });
+      timerRef.current=setInterval(function() {
+        setPulseTimer(function(v) { if(v<=1){clearInterval(timerRef.current);handlePulse(0);return 0;} return v-1; });
       }, 1000);
-      return function() { clearInterval(timerRef.current); };
+      return function(){clearInterval(timerRef.current);};
     }
   }, [round.phase, round.roundIndex, pulseSubmitted]);
 
   var handleJoin = function() {
     if (!playerName.trim()) { setError('Enter your name'); return; }
     CovenantFirebase.joinSession(sessionId, playerName.trim()).then(function(result) {
-      setPlayerId(result.playerId);
-      sessionStorage.setItem('cov_player_id', result.playerId);
-      setJoined(true);
+      setPlayerId(result.playerId); sessionStorage.setItem('cov_player_id', result.playerId); setJoined(true);
     }).catch(function(e) { setError(e.message); });
   };
 
+  // FIX #1: Ref-based lock on pulse
   var handlePulse = function(optionIndex) {
-    if (pulseSubmitted) return;
+    if (pulseLocked.current) return;
+    pulseLocked.current = true;
     clearInterval(timerRef.current);
     setPulseSubmitted(true);
-    var scenario = scenarios[round.roundIndex];
-    var option = scenario.options[optionIndex];
-    var latencyMs = pulseStart ? Date.now() - pulseStart : 0;
-    var timerPct = (pulseTimer / 12) * 100;
-    var pulseData = {
-      selected_option_index: optionIndex,
-      selected_foundation_primary: option.f || null,
-      selected_foundation_secondary: null,
-      foundation_weights: option.fw || {},
-      rejected_foundations: scenario.options.filter(function(_, i) { return i !== optionIndex; }).map(function(o) { return o.f; }).filter(Boolean),
-      pulse_latency_ms: latencyMs,
-      timer_remaining_pct: timerPct
-    };
-    CovenantFirebase.submitPulse(sessionId, round.roundIndex, playerId, pulseData);
+    setMyPulseChoice(optionIndex);
+    var scenario=scenarios[round.roundIndex]; var option=scenario.options[optionIndex];
+    var latencyMs=pulseStart?Date.now()-pulseStart:0;
+    var timerPct=(pulseTimer/12)*100;
+    CovenantFirebase.submitPulse(sessionId, round.roundIndex, playerId, {
+      selected_option_index:optionIndex,
+      selected_foundation_primary:option.f||null, selected_foundation_secondary:null,
+      foundation_weights:option.fw||{},
+      rejected_foundations:scenario.options.filter(function(_,i){return i!==optionIndex;}).map(function(o){return o.f;}).filter(Boolean),
+      pulse_latency_ms:latencyMs, timer_remaining_pct:timerPct
+    });
   };
 
+  // FIX #1: Ref-based lock on prediction
   var handlePrediction = function(count) {
-    if (predSubmitted) return;
+    if (predLocked.current) return;
+    predLocked.current = true;
     setPredSubmitted(true);
     CovenantFirebase.submitPrediction(sessionId, round.roundIndex, playerId, count);
   };
 
-  var phase = round.phase;
-  var ri = round.roundIndex;
-  var s = scenarios[ri] || null;
-  var playerCount = config.playerCount || 0;
+  var phase=round.phase, ri=round.roundIndex, s=scenarios[ri]||null, playerCount=config.playerCount||0;
 
   // NAME ENTRY
   if (!joined) {
     return ce('div', { style: W },
-      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
-        ce('div', { style: { fontSize: 48, marginBottom: 8 } }, '\ud83e\udd81'),
+      ce('div', { style: Object.assign({}, cd, { textAlign:'center' }) },
+        ce('div', { style: { fontSize:48, marginBottom:8 } }, '\ud83e\udd81'),
         ce('div', { style: sb }, 'Join the Expedition'),
-        ce('input', {
-          value: playerName, placeholder: 'Your name',
-          onChange: function(e) { setPlayerName(e.target.value); },
-          onKeyDown: function(e) { if (e.key === 'Enter') handleJoin(); },
-          style: {
-            width: '100%', background: C.cream + '08', border: '1px solid ' + C.cream + '15',
-            borderRadius: 10, padding: '14px 16px', color: C.cream, fontSize: 18,
-            fontFamily: 'inherit', outline: 'none', textAlign: 'center',
-            marginBottom: 12, boxSizing: 'border-box'
-          }
+        ce('input', { value:playerName, placeholder:'Your name',
+          onChange:function(e){setPlayerName(e.target.value);},
+          onKeyDown:function(e){if(e.key==='Enter')handleJoin();},
+          style:{ width:'100%', background:C.cream+'08', border:'1px solid '+C.cream+'15', borderRadius:10, padding:'14px 16px', color:C.cream, fontSize:18, fontFamily:'inherit', outline:'none', textAlign:'center', marginBottom:12, boxSizing:'border-box' }
         }),
-        error && ce('p', { style: { color: C.rust, fontSize: 13 } }, error),
+        error && ce('p', { style: { color:C.rust, fontSize:13 } }, error),
         ce('button', { style: bt, onClick: handleJoin }, 'Join \u2192')
       )
     );
   }
 
   // LOBBY
-  if (phase === 'lobby') {
+  if (phase==='lobby') {
     return ce('div', { style: W },
-      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
-        ce('div', { style: { fontSize: 48, marginBottom: 8 } }, '\ud83d\udd25'),
+      ce('div', { style: Object.assign({}, cd, { textAlign:'center' }) },
+        ce('div', { style: { fontSize:48, marginBottom:8 } }, '\ud83d\udd25'),
         ce('div', { style: sb }, 'Waiting at the Campfire'),
-        ce('h1', { style: Object.assign({}, h1, { fontSize: 22 }), className: 'dsp' }, 'You\u2019re in.'),
+        ce('h1', { style: Object.assign({}, h1, { fontSize:22 }), className:'dsp' }, 'You\u2019re in.'),
         ce('p', { style: dm }, 'The host will start the expedition when everyone is ready.'),
-        ce('div', { style: { background: C.cream + '06', borderRadius: 12, padding: 16, marginTop: 20 } },
-          ce('div', { style: { color: C.gold, fontSize: 14, fontWeight: 600 } }, playerCount + ' players connected'))
+        ce('div', { style: { background:C.cream+'06', borderRadius:12, padding:16, marginTop:20 } },
+          ce('div', { style: { color:C.gold, fontSize:14, fontWeight:600 } }, playerCount+' players connected'))
       )
     );
   }
 
   // READING
-  if (phase === 'reading') {
-    return ce('div', { style: W },
-      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
-        ce('div', { style: { fontSize: 48, marginBottom: 8 } }, '\ud83d\udcd6'),
-        ce('div', { style: sb }, 'Scenario ' + (ri + 1)),
-        ce('h1', { style: Object.assign({}, h1, { fontSize: 22 }), className: 'dsp' }, 'Read the scenario on the shared screen'),
-        ce('p', { style: dm }, 'The host will open pulse windows when everyone has read.')
-      )
-    );
+  if (phase==='reading') {
+    return ce('div', { style: W }, ce('div', { style: Object.assign({}, cd, { textAlign:'center' }) },
+      ce('div', { style: { fontSize:48, marginBottom:8 } }, '\ud83d\udcd6'),
+      ce('div', { style: sb }, 'Scenario '+(ri+1)),
+      ce('h1', { style: Object.assign({}, h1, { fontSize:22 }), className:'dsp' }, 'Read the scenario on the shared screen'),
+      ce('p', { style: dm }, 'The host will open pulse windows when everyone has read.')
+    ));
   }
 
   // PULSING
-  if (phase === 'pulsing' && s) {
+  if (phase==='pulsing' && s) {
     if (pulseSubmitted) {
-      return ce('div', { style: W },
-        ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
-          ce('div', { style: { fontSize: 48 } }, '\u2713'),
-          ce('div', { style: Object.assign({}, sb, { color: C.green }) }, 'Pulse Submitted'),
-          ce('p', { style: dm }, 'Waiting for other players...')
-        )
-      );
+      return ce('div', { style: W }, ce('div', { style: Object.assign({}, cd, { textAlign:'center' }) },
+        ce('div', { style: { fontSize:48 } }, '\u2713'),
+        ce('div', { style: Object.assign({}, sb, { color:C.green }) }, 'Pulse Submitted'),
+        ce('p', { style: dm }, 'Waiting for other players...')
+      ));
     }
     return ce('div', { style: W },
-      ce('div', { style: cd, className: 'fade-up' },
-        ce('div', { style: { display: 'flex', justifyContent: 'space-between', marginBottom: 12 } },
-          ce('div', { style: Object.assign({}, sb, { color: C.rust }) }, '\ud83d\udd12 Your Gut Pulse'),
-          ce('div', { style: { fontSize: 32, fontWeight: 300, color: pulseTimer <= 3 ? C.rust : C.gold, fontFamily: 'monospace' } }, pulseTimer + 's')
+      ce('div', { style: cd, className:'fade-up' },
+        ce('div', { style: { display:'flex', justifyContent:'space-between', marginBottom:12 } },
+          ce('div', { style: Object.assign({}, sb, { color:C.rust }) }, '\ud83d\udd12 Your Gut Pulse'),
+          ce('div', { style: { fontSize:32, fontWeight:300, color:pulseTimer<=3?C.rust:C.gold, fontFamily:'monospace' } }, pulseTimer+'s')
         ),
-        ce('div', { style: { height: 4, background: C.cream + '11', borderRadius: 2, marginBottom: 16, overflow: 'hidden' } },
-          ce('div', { style: { height: '100%', background: pulseTimer <= 3 ? C.rust : C.gold, width: (pulseTimer / 12) * 100 + '%', borderRadius: 2, transition: 'width .9s linear' } })
+        ce('div', { style: { height:4, background:C.cream+'11', borderRadius:2, marginBottom:16, overflow:'hidden' } },
+          ce('div', { style: { height:'100%', background:pulseTimer<=3?C.rust:C.gold, width:(pulseTimer/12)*100+'%', borderRadius:2, transition:'width .9s linear' } })
         ),
-        s.options.map(function(o, i) {
-          return ce('button', { key: i, style: ob(false), onClick: function() { handlePulse(i); } },
-            ce('span', { style: { color: C.gold, fontWeight: 700, marginRight: 8 } }, String.fromCharCode(65 + i) + '.'), o.t);
+        s.options.map(function(o,i) {
+          return ce('button', { key:i, style: ob(false), onClick: function(){handlePulse(i);} },
+            ce('span', { style: { color:C.gold, fontWeight:700, marginRight:8 } }, String.fromCharCode(65+i)+'.'), o.t);
         })
       )
     );
   }
 
   // CAMPFIRE / GROUP VOTE
-  if (phase === 'campfire' || phase === 'groupVote') {
-    return ce('div', { style: W },
-      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
-        ce('div', { style: { fontSize: 48 } }, '\ud83d\udd25'),
-        ce('div', { style: sb }, 'Campfire Discussion'),
-        ce('h1', { style: Object.assign({}, h1, { fontSize: 20 }), className: 'dsp' }, 'Discuss with your group'),
-        ce('p', { style: dm }, 'Look up from your phone. The campfire is on the shared screen.')
-      )
-    );
+  if (phase==='campfire'||phase==='groupVote') {
+    return ce('div', { style: W }, ce('div', { style: Object.assign({}, cd, { textAlign:'center' }) },
+      ce('div', { style: { fontSize:48 } }, '\ud83d\udd25'),
+      ce('div', { style: sb }, 'Campfire Discussion'),
+      ce('h1', { style: Object.assign({}, h1, { fontSize:20 }), className:'dsp' }, 'Discuss with your group'),
+      ce('p', { style: dm }, 'Look up from your phone. The campfire is on the shared screen.')
+    ));
   }
 
-  // PREDICTING
-  if (phase === 'predicting') {
+  // PREDICTING — FIX #1: double-tap prevention
+  if (phase==='predicting') {
     if (predSubmitted) {
-      return ce('div', { style: W },
-        ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
-          ce('div', { style: { fontSize: 48 } }, '\u2713'),
-          ce('div', { style: Object.assign({}, sb, { color: C.green }) }, 'Prediction Submitted'),
-          ce('p', { style: dm }, 'Waiting for other players...')
-        )
-      );
+      return ce('div', { style: W }, ce('div', { style: Object.assign({}, cd, { textAlign:'center' }) },
+        ce('div', { style: { fontSize:48 } }, '\u2713'),
+        ce('div', { style: Object.assign({}, sb, { color:C.green }) }, 'Prediction Submitted'),
+        ce('p', { style: dm }, 'Waiting for other players...')
+      ));
     }
     return ce('div', { style: W },
-      ce('div', { style: cd, className: 'fade-up' },
+      ce('div', { style: cd, className:'fade-up' },
         ce('div', { style: sb }, '\ud83d\udd2e Your Prediction'),
-        ce('h1', { style: Object.assign({}, h1, { fontSize: 20 }), className: 'dsp' },
-          'How many people chose differently in private vs. the group vote?'),
-        ce('p', { style: Object.assign({}, dm, { marginBottom: 16 }) }, 'Including yourself. (0 to ' + playerCount + ')'),
-        ce('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' } },
-          Array.from({ length: playerCount + 1 }, function(_, i) {
-            return ce('button', { key: i, style: Object.assign({}, bt, { width: 56, height: 56, padding: 0, fontSize: 20, borderRadius: '50%' }),
-              onClick: function() { handlePrediction(i); }
+        ce('h1', { style: Object.assign({}, h1, { fontSize:20 }), className:'dsp' }, 'How many people chose differently in private vs. the group vote?'),
+        ce('p', { style: Object.assign({}, dm, { marginBottom:16 }) }, 'Including yourself. (0 to '+playerCount+')'),
+        ce('div', { style: { display:'flex', flexWrap:'wrap', gap:10, justifyContent:'center' } },
+          Array.from({length:playerCount+1}, function(_,i) {
+            return ce('button', { key:i, style: Object.assign({}, bt, { width:56, height:56, padding:0, fontSize:20, borderRadius:'50%' }),
+              onClick: function(){handlePrediction(i);}
             }, String(i));
           })
         )
@@ -1346,28 +1323,38 @@ function PlayerView() {
     );
   }
 
-  // REVEAL
-  if (phase === 'reveal') {
+  // REVEAL — FIX #2: Show player's own drift status
+  if (phase==='reveal') {
+    var didDrift = myPulseChoice>=0 && groupVoteForRound!==null && myPulseChoice!==groupVoteForRound;
+
     return ce('div', { style: W },
-      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
-        ce('div', { style: { fontSize: 48 } }, '\ud83e\ude9e'),
+      ce('div', { style: Object.assign({}, cd, { textAlign:'center' }) },
+        ce('div', { style: { fontSize:48 } }, '\ud83e\ude9e'),
         ce('div', { style: sb }, 'The Drift Revealed'),
-        ce('p', { style: dm }, 'Look at the shared screen for group results. The host will advance when ready.')
+        groupVoteForRound!==null && myPulseChoice>=0 ? ce('div', null,
+          ce('div', { style: { fontSize:48, color:didDrift?C.rust:C.green, fontWeight:700, margin:'16px 0' } },
+            didDrift ? 'You Drifted' : 'You Held Ground'),
+          ce('p', { style: Object.assign({}, dm, { fontSize:14 }) },
+            didDrift
+              ? 'Your private instinct was different from the group\u2019s decision. The question is whether the group persuaded you \u2014 or pressured you.'
+              : 'Your private choice matched the group\u2019s decision. Conviction held.')
+        ) : ce('p', { style: dm }, 'Loading drift data...'),
+        ce('p', { style: Object.assign({}, dm, { marginTop:16 }) }, 'The host will advance when ready.')
       )
     );
   }
 
   // CAPSTONE FRAGMENTS
-  if (phase === 'capstone_fragments') {
-    var playerIndex = parseInt((playerId || '').split('_')[1]) || 0;
-    var fragmentIndex = typeof CAP !== 'undefined' ? playerIndex % CAP.fragments.length : 0;
-    var fragmentText = typeof CAP !== 'undefined' ? CAP.fragments[fragmentIndex] : 'Fragment loading...';
+  if (phase==='capstone_fragments') {
+    var pIdx = parseInt((playerId||'').split('_')[1])||0;
+    var fIdx = typeof CAP!=='undefined' ? pIdx%CAP.fragments.length : 0;
+    var fText = typeof CAP!=='undefined' ? CAP.fragments[fIdx] : 'Fragment loading...';
     return ce('div', { style: W },
-      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }), className: 'fade-up' },
-        ce('div', { style: { fontSize: 36 } }, '\ud83d\udd12'),
-        ce('div', { style: Object.assign({}, sb, { color: C.rust }) }, 'Your Secret Fragment'),
-        ce('div', { style: { background: C.rust + '12', border: '1px solid ' + C.rust + '33', borderRadius: 12, padding: 20, margin: '16px 0', textAlign: 'left' } },
-          ce('p', { style: { fontSize: 16, lineHeight: 1.8, margin: 0, fontFamily: "'Playfair Display'" } }, fragmentText)
+      ce('div', { style: Object.assign({}, cd, { textAlign:'center' }), className:'fade-up' },
+        ce('div', { style: { fontSize:36 } }, '\ud83d\udd12'),
+        ce('div', { style: Object.assign({}, sb, { color:C.rust }) }, 'Your Secret Fragment'),
+        ce('div', { style: { background:C.rust+'12', border:'1px solid '+C.rust+'33', borderRadius:12, padding:20, margin:'16px 0', textAlign:'left' } },
+          ce('p', { style: { fontSize:16, lineHeight:1.8, margin:0, fontFamily:"'Playfair Display'" } }, fText)
         ),
         ce('p', { style: dm }, 'Memorize this. Share verbally with the group when the campfire starts.')
       )
@@ -1375,80 +1362,73 @@ function PlayerView() {
   }
 
   // CAPSTONE DISCUSS/VOTE
-  if (phase === 'capstone_discuss' || phase === 'capstone_vote') {
-    return ce('div', { style: W },
-      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
-        ce('div', { style: { fontSize: 48 } }, '\ud83d\udd25'),
-        ce('div', { style: sb }, 'Capstone Synthesis'),
-        ce('p', { style: dm }, 'Share your fragment with the group. The vote is on the shared screen.')
-      )
-    );
+  if (phase==='capstone_discuss'||phase==='capstone_vote') {
+    return ce('div', { style: W }, ce('div', { style: Object.assign({}, cd, { textAlign:'center' }) },
+      ce('div', { style: { fontSize:48 } }, '\ud83d\udd25'),
+      ce('div', { style: sb }, 'Capstone Synthesis'),
+      ce('p', { style: dm }, 'Share your fragment with the group. The vote is on the shared screen.')
+    ));
   }
 
   // ANALYZING
-  if (phase === 'analyzing') {
-    return ce('div', { style: W },
-      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
-        ce('div', { style: { fontSize: 48 } }, '\ud83e\ude9e'),
-        ce('div', { style: sb }, 'The Mirror'),
-        ce('p', { style: dm }, 'Computing your portrait...')
-      )
-    );
+  if (phase==='analyzing') {
+    return ce('div', { style: W }, ce('div', { style: Object.assign({}, cd, { textAlign:'center' }) },
+      ce('div', { style: { fontSize:48 } }, '\ud83e\ude9e'),
+      ce('div', { style: sb }, 'The Mirror'),
+      ce('p', { style: dm }, 'Computing your portrait...')
+    ));
   }
 
   // MIRROR
-  if (phase === 'mirror' || config.status === 'mirror') {
+  if (phase==='mirror'||config.status==='mirror') {
     if (myResults && playerId) {
-      var playerIndex2 = parseInt(playerId.split('_')[1]) || 0;
-      var myProfile = myResults.players ? (myResults.players[playerId] || myResults.players[playerIndex2]) : null;
-      if (myProfile) {
+      var pIdx2 = parseInt(playerId.split('_')[1])||0;
+      var myP = myResults.players ? (myResults.players[playerId]||myResults.players[pIdx2]) : null;
+      if (myP) {
         return ce('div', { style: W },
           ce('div', { style: cd },
             ce('div', { style: sb }, 'Your Mirror Portrait'),
-            ce('h1', { style: h1, className: 'dsp' }, myProfile.arch ? myProfile.arch.nm : 'Your Profile'),
-            ce('p', { style: { fontSize: 15, lineHeight: 1.8, color: C.cream + '88' } }, myProfile.arch ? myProfile.arch.de : 'Your results are ready.'),
-            ce('div', { style: { background: C.cream + '05', borderRadius: 12, padding: 16, marginTop: 16 } },
-              ce('p', { style: { color: C.cream + '66', fontSize: 13 } }, 'View the full group Mirror on the shared Campfire screen.')
-            )
+            ce('h1', { style: h1, className:'dsp' }, myP.arch?myP.arch.nm:'Your Profile'),
+            ce('p', { style: { fontSize:15, lineHeight:1.8, color:C.cream+'88' } }, myP.arch?myP.arch.de:'Your results are ready.'),
+            ce('div', { style: { background:C.cream+'05', borderRadius:12, padding:16, marginTop:16 } },
+              ce('p', { style: { color:C.cream+'66', fontSize:13 } }, 'View the full group Mirror on the shared Campfire screen.'))
           )
         );
       }
+      if (myResults.error) {
+        return ce('div', { style: W }, ce('div', { style: Object.assign({}, cd, { textAlign:'center' }) },
+          ce('div', { style: sb }, 'Mirror'),
+          ce('p', { style: { color:C.rust, fontSize:14 } }, 'Analysis encountered an issue: '+myResults.error),
+          ce('p', { style: dm }, 'The classic pass-the-device mode has the full Mirror experience. Try that next time!')
+        ));
+      }
     }
-    return ce('div', { style: W },
-      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
-        ce('div', { style: { fontSize: 48 } }, '\ud83e\ude9e'),
-        ce('div', { style: sb }, 'The Mirror'),
-        ce('p', { style: dm }, 'Waiting for results...')
-      )
-    );
+    return ce('div', { style: W }, ce('div', { style: Object.assign({}, cd, { textAlign:'center' }) },
+      ce('div', { style: { fontSize:48 } }, '\ud83e\ude9e'), ce('div', { style: sb }, 'The Mirror'),
+      ce('p', { style: dm }, 'Waiting for results...')
+    ));
   }
 
-  // Fallback
-  return ce('div', { style: W },
-    ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
-      ce('p', { style: dm }, 'Syncing... (' + phase + ')')
-    )
-  );
+  return ce('div', { style: W }, ce('div', { style: Object.assign({}, cd, { textAlign:'center' }) }, ce('p', { style: dm }, 'Syncing... ('+phase+')')));
 }
 
 // ══════════════════════════════════════════════════════════════
-// View Router — The Root Component
+// View Router
 // ══════════════════════════════════════════════════════════════
 
 function ViewRouter() {
-  var _s = useState(getViewMode()), mode = _s[0], setMode = _s[1];
+  var _s=useState(getViewMode()), mode=_s[0], setMode=_s[1];
   useEffect(function() {
-    var handler = function() { setMode(getViewMode()); };
+    var handler=function(){setMode(getViewMode());};
     window.addEventListener('hashchange', handler);
-    return function() { window.removeEventListener('hashchange', handler); };
+    return function(){window.removeEventListener('hashchange', handler);};
   }, []);
-
-  switch (mode) {
-    case 'host':    return ce(HostView);
-    case 'play':    return ce(PlayerView);
+  switch(mode) {
+    case 'host': return ce(HostView);
+    case 'play': return ce(PlayerView);
     case 'classic': return ce(App);
-    case 'splash':  return ce(SplashScreen);
-    default:        return ce(SplashScreen);
+    case 'splash': return ce(SplashScreen);
+    default: return ce(SplashScreen);
   }
 }
 
