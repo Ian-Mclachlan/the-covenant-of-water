@@ -8,6 +8,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="firebase-bridge.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Source Sans 3',Georgia,serif;background:#0A1A0C;color:#F2ECDF;min-height:100vh;-webkit-font-smoothing:antialiased}
@@ -631,7 +634,1029 @@ ce("p",{style:{fontSize:13,lineHeight:1.65,color:C.cream+"77",margin:0}},d))))
 }
 return null;
 }
-ReactDOM.render(ce(App),document.getElementById("root"));
+function getViewMode() {
+  const hash = (window.location.hash || '').replace('#', '').toLowerCase();
+  if (hash === 'host') return 'host';
+  if (hash === 'play') return 'play';
+  if (hash === 'classic') return 'classic';
+  return 'splash'; // default: show splash with mode selection
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// BLOCK 3: Splash Screen — Mode Selection
+// ══════════════════════════════════════════════════════════════
+
+function SplashScreen() {
+  const [joinCode, setJoinCode] = useState('');
+  const [error, setError] = useState('');
+  const [joining, setJoining] = useState(false);
+
+  const handleHost = () => {
+    window.location.hash = '#host';
+    window.location.reload();
+  };
+
+  const handleJoin = async () => {
+    if (!joinCode.trim()) { setError('Enter a join code'); return; }
+    setJoining(true);
+    setError('');
+    try {
+      CovenantFirebase.init();
+      const sessionId = await CovenantFirebase.findSessionByCode(joinCode.trim());
+      if (!sessionId) {
+        setError('Session not found. Check the code.');
+        setJoining(false);
+        return;
+      }
+      // Store session ID for the player view
+      sessionStorage.setItem('cov_session_id', sessionId);
+      sessionStorage.setItem('cov_join_code', joinCode.trim().toUpperCase());
+      window.location.hash = '#play';
+      window.location.reload();
+    } catch (e) {
+      setError(e.message);
+      setJoining(false);
+    }
+  };
+
+  const handleClassic = () => {
+    window.location.hash = '#classic';
+    window.location.reload();
+  };
+
+  return ce('div', { style: W },
+    ce('div', { style: { ...cd, textAlign: 'center' } },
+      ce('div', { style: { fontSize: 64, marginBottom: 8 } }, '\u{1F981}'),
+      ce('h1', { style: { ...h1, fontSize: 28 }, className: 'dsp' }, 'The Covenant of Water'),
+      ce('div', { style: sb }, 'Group Safari'),
+
+      ce('p', { style: { ...dm, marginBottom: 28 } },
+        'A psychometric expedition. 9 moral crises. No right answers.'),
+
+      // Host button
+      ce('button', {
+        style: { ...bt, marginBottom: 12, fontSize: 17, padding: '16px 24px' },
+        onClick: handleHost
+      }, '\u{1F525} Host a Campfire'),
+
+      ce('p', { style: { color: C.cream + '44', fontSize: 13, marginBottom: 20 } },
+        'Display this screen for the group. Players join on their phones.'),
+
+      // Divider
+      ce('div', { style: {
+        display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20
+      }},
+        ce('div', { style: { flex: 1, height: 1, background: C.cream + '15' } }),
+        ce('span', { style: { color: C.cream + '33', fontSize: 13 } }, 'or join'),
+        ce('div', { style: { flex: 1, height: 1, background: C.cream + '15' } })
+      ),
+
+      // Join input
+      ce('div', { style: { display: 'flex', gap: 8, marginBottom: 8 } },
+        ce('input', {
+          value: joinCode,
+          placeholder: 'Enter join code',
+          onChange: e => setJoinCode(e.target.value.toUpperCase()),
+          onKeyDown: e => { if (e.key === 'Enter') handleJoin(); },
+          maxLength: 8,
+          style: {
+            flex: 1, background: C.cream + '08', border: '1px solid ' + C.cream + '15',
+            borderRadius: 10, padding: '14px 16px', color: C.cream, fontSize: 18,
+            fontFamily: 'monospace', letterSpacing: 3, textAlign: 'center',
+            textTransform: 'uppercase', outline: 'none'
+          }
+        }),
+        ce('button', {
+          style: { ...bt, padding: '14px 20px', minWidth: 80 },
+          onClick: handleJoin,
+          disabled: joining
+        }, joining ? '...' : 'Join')
+      ),
+
+      error && ce('p', { style: { color: C.rust, fontSize: 13, marginTop: 4 } }, error),
+
+      // Classic mode link
+      ce('div', { style: { marginTop: 32, paddingTop: 20, borderTop: '1px solid ' + C.cream + '0A' } },
+        ce('button', {
+          style: {
+            ...bt, background: 'transparent', border: '1px dashed ' + C.cream + '22',
+            color: C.cream + '55', fontSize: 14, padding: '10px 20px'
+          },
+          onClick: handleClassic
+        }, '\u{1F4F1} Classic Mode (pass-the-device)')
+      )
+    )
+  );
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// BLOCK 4: Host Lobby — Waiting for players to join
+// ══════════════════════════════════════════════════════════════
+
+function HostLobby({ sessionId, joinCode, players, onStart }) {
+  const playerList = Object.entries(players).sort(([a], [b]) => a.localeCompare(b));
+  const canStart = playerList.length >= 2;
+
+  return ce('div', { style: W },
+    ce('div', { style: { ...cd, textAlign: 'center' }, className: 'fade-up' },
+      ce('div', { style: { fontSize: 52, marginBottom: 8 } }, '\u{1F525}'),
+      ce('div', { style: sb }, 'The Campfire is Lit'),
+
+      // Join code display
+      ce('div', { style: {
+        background: C.cream + '06', border: '2px dashed ' + C.gold + '44',
+        borderRadius: 16, padding: '20px 24px', margin: '20px 0', textAlign: 'center'
+      }},
+        ce('div', { style: { color: C.cream + '55', fontSize: 13, marginBottom: 6 } }, 'JOIN CODE'),
+        ce('div', { style: {
+          fontSize: 48, fontWeight: 700, color: C.gold, fontFamily: 'monospace',
+          letterSpacing: 6, marginBottom: 4
+        }}, joinCode),
+        ce('div', { style: { color: C.cream + '44', fontSize: 12 } },
+          'Players: open group.html on your phone and enter this code')
+      ),
+
+      // Player roster
+      ce('div', { style: { margin: '20px 0', textAlign: 'left' } },
+        ce('div', { style: { ...sb, marginBottom: 12 } },
+          'Expedition Roster (' + playerList.length + '/8)'),
+        playerList.length === 0 &&
+          ce('p', { style: { ...dm, fontStyle: 'italic' } }, 'Waiting for players to join...'),
+        playerList.map(([pid, p]) =>
+          ce('div', { key: pid, style: {
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '10px 14px', marginBottom: 6,
+            background: C.cream + '05', borderRadius: 10,
+            border: '1px solid ' + C.cream + '0A'
+          }},
+            ce('div', { style: {
+              width: 10, height: 10, borderRadius: '50%',
+              background: p.connected ? C.green : C.rust
+            }}),
+            ce('span', { style: { color: C.cream, fontSize: 16, fontWeight: 500 } }, p.name),
+            ce('span', { style: { color: C.cream + '33', fontSize: 12, marginLeft: 'auto' } },
+              p.connected ? 'connected' : 'disconnected')
+          )
+        )
+      ),
+
+      // Start button
+      ce('button', {
+        style: {
+          ...bt, opacity: canStart ? 1 : 0.4,
+          fontSize: 17, padding: '16px 24px'
+        },
+        onClick: onStart,
+        disabled: !canStart
+      }, canStart
+        ? 'Begin the Expedition (' + playerList.length + ' players) \u2192'
+        : 'Need at least 2 players to start'
+      )
+    )
+  );
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// BLOCK 5: Host View — The Campfire Shared Screen
+// ══════════════════════════════════════════════════════════════
+
+function HostView() {
+  const [sessionId, setSessionId] = useState(null);
+  const [joinCode, setJoinCode] = useState('');
+  const [players, setPlayers] = useState({});
+  const [config, setConfig] = useState({});
+  const [round, setRound] = useState({ roundIndex: -1, phase: 'lobby' });
+  const [scenarios, setScenarios] = useState([]);
+  const [results, setResults] = useState(null);
+  const [campfireStart, setCampfireStart] = useState(null);
+  const [campfireElapsed, setCampfireElapsed] = useState(0);
+  const campfireTimer = useRef(null);
+
+  // Unsubscribe refs
+  const unsubs = useRef([]);
+
+  // Initialize session on mount
+  useEffect(() => {
+    async function init() {
+      CovenantFirebase.init();
+      const sess = await CovenantFirebase.createSession();
+      setSessionId(sess.sessionId);
+      setJoinCode(sess.joinCode);
+
+      // Subscribe to real-time updates
+      unsubs.current.push(
+        CovenantFirebase.onPlayersChanged(sess.sessionId, setPlayers)
+      );
+      unsubs.current.push(
+        CovenantFirebase.onConfigChanged(sess.sessionId, setConfig)
+      );
+      unsubs.current.push(
+        CovenantFirebase.onRoundChanged(sess.sessionId, r => {
+          setRound(r);
+          // Start campfire timer when entering campfire phase
+          if (r.phase === 'campfire' || r.phase === 'capstone_discuss') {
+            setCampfireStart(Date.now());
+          }
+        })
+      );
+    }
+    init();
+    return () => unsubs.current.forEach(fn => fn());
+  }, []);
+
+  // Campfire timer tick
+  useEffect(() => {
+    if (campfireStart) {
+      campfireTimer.current = setInterval(() => {
+        setCampfireElapsed(Date.now() - campfireStart);
+      }, 250);
+      return () => clearInterval(campfireTimer.current);
+    }
+  }, [campfireStart]);
+
+  const playerCount = Object.keys(players).length;
+  const phase = round.phase;
+  const ri = round.roundIndex;
+  const s = scenarios[ri] || null;
+
+  // Format elapsed time
+  const fmt = ms => {
+    const sec = Math.floor(ms / 1000);
+    const m = Math.floor(sec / 60);
+    const ss = sec % 60;
+    return m + ':' + String(ss).padStart(2, '0');
+  };
+
+  // ── Handle game start ──
+  const handleStart = async () => {
+    // Use the existing selSess() function from group.html
+    const selected = selSess();
+    setScenarios(selected);
+    await CovenantFirebase.startGame(sessionId, selected);
+  };
+
+  // ── Handle group vote ──
+  const handleGroupVote = async (optionIndex) => {
+    const scenario = scenarios[ri];
+    const option = scenario.options[optionIndex];
+    const campDuration = campfireStart ? Date.now() - campfireStart : 0;
+
+    await CovenantFirebase.submitGroupVote(sessionId, ri, {
+      selected_option_index: optionIndex,
+      selected_foundation: option.f,
+      campfire_duration_ms: campDuration
+    });
+
+    // Advance to prediction phase
+    await CovenantFirebase.setPhase(sessionId, 'predicting', {
+      predictionsSubmitted: 0
+    });
+    setCampfireStart(null);
+    setCampfireElapsed(0);
+  };
+
+  // ── Handle next round ──
+  const handleNextRound = async () => {
+    const nextIndex = ri + 1;
+    if (nextIndex >= scenarios.length) {
+      // Move to capstone
+      await CovenantFirebase.setPhase(sessionId, 'capstone_intro');
+    } else {
+      await CovenantFirebase.setRound(sessionId, nextIndex);
+    }
+  };
+
+  // ── Handle analyze ──
+  const handleAnalyze = async () => {
+    await CovenantFirebase.setPhase(sessionId, 'analyzing');
+    const sessionData = await CovenantFirebase.getSessionData(sessionId);
+    const transformed = CovenantFirebase.transformForAnalyze(sessionData);
+
+    // Call the existing analyze() function with transformed data
+    // analyze() is already defined in group.html
+    const analysisResults = analyze(
+      transformed.pl,
+      transformed.sc,
+      transformed.gv,
+      transformed.sy
+    );
+
+    setResults(analysisResults);
+    await CovenantFirebase.writeResults(sessionId, analysisResults);
+  };
+
+  // ── LOBBY ──
+  if (phase === 'lobby') {
+    return ce(HostLobby, {
+      sessionId, joinCode, players,
+      onStart: handleStart
+    });
+  }
+
+  // ── READING PHASE — Show scenario, wait for host to start pulses ──
+  if (phase === 'reading' && s) {
+    return ce('div', { style: W },
+      ce('div', { style: cd, className: 'fade-up' },
+        ce('div', { style: { display: 'flex', justifyContent: 'space-between', marginBottom: 12 } },
+          ce('div', { style: sb }, 'Scenario ' + (ri + 1) + ' of ' + scenarios.length),
+          ce('div', null,
+            ce('span', { style: tg(C.rust) }, s.tier),
+            ce('span', { style: tg(C.gold) }, 'Stress ' + s.stress + '/10')
+          )
+        ),
+        ce('p', { style: {
+          fontSize: 17, lineHeight: 1.85, marginBottom: 20,
+          fontFamily: "'Playfair Display',Georgia,serif"
+        }}, s.text),
+        ce('div', { style: { marginBottom: 20 } },
+          s.options.map((o, i) =>
+            ce('div', { key: i, style: { ...ob(false), cursor: 'default', opacity: 0.6 } },
+              ce('span', { style: { color: C.gold, fontWeight: 700, marginRight: 8 } },
+                String.fromCharCode(65 + i) + '.'),
+              o.t
+            )
+          )
+        ),
+        ce('p', { style: { ...dm, textAlign: 'center', marginBottom: 16 } },
+          'Read aloud. Then players submit their 12-second gut pulse on their own phones.'),
+        ce('button', {
+          style: bt,
+          onClick: () => CovenantFirebase.setPhase(sessionId, 'pulsing', { pulsesSubmitted: 0 })
+        }, 'Open Pulse Windows \u2192')
+      )
+    );
+  }
+
+  // ── PULSING PHASE — Show pulse count, wait for all ──
+  if (phase === 'pulsing') {
+    const submitted = round.pulsesSubmitted || 0;
+    const allIn = submitted >= playerCount;
+
+    return ce('div', { style: W },
+      ce('div', { style: { ...cd, textAlign: 'center' }, className: 'fade-up' },
+        ce('div', { style: { fontSize: 52, marginBottom: 8 } }, '\u{1F512}'),
+        ce('div', { style: sb }, 'Private Pulses'),
+        ce('h1', { style: { ...h1, fontSize: 24 }, className: 'dsp' },
+          allIn ? 'All pulses received' : 'Waiting for gut instincts...'),
+        ce('div', { style: {
+          fontSize: 64, fontWeight: 300, color: allIn ? C.green : C.gold,
+          fontFamily: 'monospace', margin: '20px 0'
+        }}, submitted + ' / ' + playerCount),
+        ce('p', { style: dm },
+          allIn ? 'Ready for the campfire discussion.'
+                : 'Players are making their private choices on their phones.'),
+        allIn && ce('button', {
+          style: { ...bt, marginTop: 20 },
+          onClick: () => {
+            setCampfireStart(Date.now());
+            setCampfireElapsed(0);
+            CovenantFirebase.setPhase(sessionId, 'campfire');
+          }
+        }, '\u{1F525} Light the Campfire')
+      )
+    );
+  }
+
+  // ── CAMPFIRE — Discussion timer + group vote ──
+  if (phase === 'campfire' && s) {
+    return ce('div', { style: W },
+      ce('div', { style: { ...cd, textAlign: 'center' }, className: 'fade-up' },
+        ce('div', { style: { fontSize: 56, marginBottom: 4 } }, '\u{1F525}'),
+        ce('div', { style: sb }, 'The Campfire'),
+        ce('h1', { style: { ...h1, fontSize: 24 }, className: 'dsp' },
+          'Discuss. Persuade. Listen.'),
+        ce('p', { style: {
+          color: C.cream + '55', fontSize: 14, lineHeight: 1.7,
+          marginBottom: 20, padding: '0 12px', fontStyle: 'italic',
+          fontFamily: "'Playfair Display'"
+        }}, '\u201C' + s.text + '\u201D'),
+        ce('div', { style: {
+          fontSize: 48, fontWeight: 300, color: C.gold,
+          fontFamily: 'monospace', marginBottom: 4
+        }}, fmt(campfireElapsed)),
+        ce('p', { style: { ...dm, marginBottom: 28 } },
+          playerCount <= 3 ? 'Suggested: ~3 min discussion' : 'Suggested: ~5 min discussion'),
+        ce('button', {
+          style: bt,
+          onClick: () => CovenantFirebase.setPhase(sessionId, 'groupVote')
+        }, "We\u2019re Ready \u2014 Group Vote")
+      )
+    );
+  }
+
+  // ── GROUP VOTE — Host selects the consensus answer ──
+  if (phase === 'groupVote' && s) {
+    return ce('div', { style: W },
+      ce('div', { style: cd, className: 'fade-up' },
+        ce('div', { style: sb }, 'Group Consensus'),
+        ce('h1', { style: { ...h1, fontSize: 22 }, className: 'dsp' },
+          'What did the group decide?'),
+        ce('p', { style: { ...dm, marginBottom: 16 } },
+          "One tap for the group\u2019s final answer."),
+        s.options.map((o, i) =>
+          ce('button', {
+            key: i, style: ob(false),
+            onClick: () => handleGroupVote(i)
+          },
+            ce('span', { style: { color: C.gold, fontWeight: 700, marginRight: 8 } },
+              String.fromCharCode(65 + i) + '.'),
+            o.t
+          )
+        )
+      )
+    );
+  }
+
+  // ── PREDICTING — Wait for all predictions ──
+  if (phase === 'predicting') {
+    const submitted = round.predictionsSubmitted || 0;
+    const allIn = submitted >= playerCount;
+
+    return ce('div', { style: W },
+      ce('div', { style: { ...cd, textAlign: 'center' }, className: 'fade-up' },
+        ce('div', { style: { fontSize: 52, marginBottom: 8 } }, '\u{1F52E}'),
+        ce('div', { style: sb }, 'Predictions'),
+        ce('h1', { style: { ...h1, fontSize: 22 }, className: 'dsp' },
+          allIn ? 'All predictions received' : 'Players are predicting drift...'),
+        ce('div', { style: {
+          fontSize: 64, fontWeight: 300, color: allIn ? C.green : C.gold,
+          fontFamily: 'monospace', margin: '20px 0'
+        }}, submitted + ' / ' + playerCount),
+        allIn && ce('button', {
+          style: { ...bt, marginTop: 20 },
+          onClick: () => CovenantFirebase.setPhase(sessionId, 'reveal')
+        }, 'Reveal the Drift \u2192')
+      )
+    );
+  }
+
+  // ── REVEAL — Show drift results, advance to next round ──
+  if (phase === 'reveal') {
+    return ce('div', { style: W },
+      ce('div', { style: { ...cd, textAlign: 'center' }, className: 'fade-up' },
+        ce('div', { style: { fontSize: 52, marginBottom: 8 } }, '\u{1FA9E}'),
+        ce('div', { style: sb }, 'The Drift Revealed'),
+        ce('p', { style: { ...dm, marginBottom: 24 } },
+          'Players can see their own drift results on their phones.'),
+        ce('button', {
+          style: bt,
+          onClick: handleNextRound
+        }, ri < scenarios.length - 1
+          ? 'Next Scenario \u2192'
+          : '\u26A1 The Capstone Crisis')
+      )
+    );
+  }
+
+  // ── CAPSTONE PHASES ──
+  if (phase === 'capstone_intro') {
+    return ce('div', { style: W },
+      ce('div', { style: { ...cd, textAlign: 'center' }, className: 'fade-up' },
+        ce('div', { style: { fontSize: 52 } }, '\u26A1'),
+        ce('div', { style: { ...sb, color: C.rust } }, 'THE CHAOTIC CAPSTONE'),
+        ce('h1', { style: { ...h1, fontSize: 24 }, className: 'dsp' },
+          'No single person has enough information to act.'),
+        ce('p', { style: { fontSize: 15, lineHeight: 1.8, color: C.cream + '88', marginBottom: 20 } },
+          'Each player will receive a secret fragment on their phone. Share verbally, then decide together.'),
+        ce('button', { style: bt,
+          onClick: () => CovenantFirebase.setPhase(sessionId, 'capstone_fragments')
+        }, 'Distribute Fragments to Phones')
+      )
+    );
+  }
+
+  if (phase === 'capstone_fragments') {
+    return ce('div', { style: W },
+      ce('div', { style: { ...cd, textAlign: 'center' }, className: 'fade-up' },
+        ce('div', { style: { fontSize: 52 } }, '\u{1F512}'),
+        ce('div', { style: sb }, 'Fragment Distribution'),
+        ce('p', { style: { ...dm, marginBottom: 20 } },
+          'Each player has received their secret fragment on their phone. Give everyone a moment to read.'),
+        ce('button', { style: bt,
+          onClick: () => {
+            setCampfireStart(Date.now());
+            setCampfireElapsed(0);
+            CovenantFirebase.setPhase(sessionId, 'capstone_discuss');
+          }
+        }, 'Begin Synthesis Discussion \u{1F525}')
+      )
+    );
+  }
+
+  if (phase === 'capstone_discuss') {
+    return ce('div', { style: W },
+      ce('div', { style: { ...cd, textAlign: 'center' }, className: 'fade-up' },
+        ce('div', { style: { fontSize: 56 } }, '\u{1F525}'),
+        ce('div', { style: { ...sb, color: C.rust } }, 'SYNTHESIS'),
+        ce('h1', { style: { ...h1, fontSize: 22 }, className: 'dsp' },
+          'Share your fragments. Piece together the truth.'),
+        ce('div', { style: {
+          fontSize: 48, fontWeight: 300, color: C.gold,
+          fontFamily: 'monospace', marginBottom: 4
+        }}, fmt(campfireElapsed)),
+        ce('button', { style: bt,
+          onClick: () => {
+            setCampfireStart(null);
+            CovenantFirebase.setPhase(sessionId, 'capstone_vote');
+          }
+        }, "We\u2019ve Synthesized \u2014 Vote Now")
+      )
+    );
+  }
+
+  if (phase === 'capstone_vote' && s) {
+    // For capstone, use the CAP object from existing code
+    return ce('div', { style: W },
+      ce('div', { style: cd, className: 'fade-up' },
+        ce('div', { style: { ...sb, color: C.rust } }, 'Capstone \u2014 Group Decision'),
+        ce('h1', { style: { ...h1, fontSize: 20 }, className: 'dsp' },
+          'Knowing everything, what do you do?'),
+        // Options from the capstone scenario
+        ce('p', { style: { ...dm, marginBottom: 16 } },
+          'This is rendered from the CAP object in existing code.'),
+        ce('button', { style: bt,
+          onClick: handleAnalyze
+        }, '\u{1FA9E} Generate the Mirror')
+      )
+    );
+  }
+
+  // ── ANALYZING ──
+  if (phase === 'analyzing') {
+    return ce('div', { style: W },
+      ce('div', { style: { ...cd, textAlign: 'center' }, className: 'fade-up' },
+        ce('div', { style: { fontSize: 52 } }, '\u{1FA9E}'),
+        ce('div', { style: sb }, 'The Mirror'),
+        ce('h1', { style: h1, className: 'dsp' }, 'Computing your portrait...'),
+        ce('p', { style: dm },
+          'Analyzing moral patterns, drift trajectories, shadow scores, and breaking points.')
+      )
+    );
+  }
+
+  // ── MIRROR — Render results using existing Mirror component ──
+  if (phase === 'mirror' || config.status === 'mirror') {
+    // The results are available — render using the existing Mirror rendering code
+    // from the original App component. The results object has the same shape.
+    if (results) {
+      return ce('div', { style: W },
+        ce('div', { style: cd },
+          ce('div', { style: sb }, 'The Mirror is Ready'),
+          ce('p', { style: dm },
+            'Players can view their individual portraits on their phones. ' +
+            'Group results are displayed below.'),
+          // Insert existing Mirror rendering here — it expects the same
+          // data.res and data.grp structure from analyze()
+          ce('p', { style: { ...dm, marginTop: 20, color: C.green } },
+            '\u2713 Results computed and shared with all players.')
+        )
+      );
+    }
+  }
+
+  // Fallback
+  return ce('div', { style: W },
+    ce('div', { style: { ...cd, textAlign: 'center' } },
+      ce('p', { style: dm }, 'Loading... (phase: ' + phase + ')')
+    )
+  );
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// BLOCK 6: Player View — The Phone Screen
+// ══════════════════════════════════════════════════════════════
+
+function PlayerView() {
+  const [sessionId, setSessionId] = useState(sessionStorage.getItem('cov_session_id'));
+  const [playerId, setPlayerId] = useState(sessionStorage.getItem('cov_player_id'));
+  const [playerName, setPlayerName] = useState('');
+  const [joined, setJoined] = useState(!!playerId);
+  const [error, setError] = useState('');
+  const [round, setRound] = useState({ roundIndex: -1, phase: 'lobby' });
+  const [scenarios, setScenarios] = useState([]);
+  const [config, setConfig] = useState({});
+  const [myResults, setMyResults] = useState(null);
+  const [pulseTimer, setPulseTimer] = useState(12);
+  const [pulseSubmitted, setPulseSubmitted] = useState(false);
+  const [predSubmitted, setPredSubmitted] = useState(false);
+  const [pulseStart, setPulseStart] = useState(null);
+  const timerRef = useRef(null);
+  const unsubs = useRef([]);
+
+  // Load scenarios once when game starts
+  useEffect(() => {
+    if (!sessionId) return;
+    CovenantFirebase.init();
+
+    // One-shot read of scenarios when they appear
+    const scenRef = firebase.database().ref('sessions/' + sessionId + '/scenarios');
+    scenRef.on('value', snap => {
+      const val = snap.val();
+      if (val) setScenarios(val);
+    });
+
+    unsubs.current.push(
+      CovenantFirebase.onRoundChanged(sessionId, r => {
+        setRound(r);
+        // Reset submission flags on new round/phase
+        if (r.phase === 'pulsing') {
+          setPulseSubmitted(false);
+          setPulseTimer(12);
+          setPulseStart(Date.now());
+        }
+        if (r.phase === 'predicting') {
+          setPredSubmitted(false);
+        }
+      })
+    );
+
+    unsubs.current.push(
+      CovenantFirebase.onConfigChanged(sessionId, setConfig)
+    );
+
+    // Listen for results
+    unsubs.current.push(
+      CovenantFirebase.onResults(sessionId, results => {
+        if (results && playerId) {
+          setMyResults(results);
+        }
+      })
+    );
+
+    return () => {
+      scenRef.off();
+      unsubs.current.forEach(fn => fn());
+    };
+  }, [sessionId, playerId]);
+
+  // Pulse countdown timer
+  useEffect(() => {
+    if (round.phase === 'pulsing' && !pulseSubmitted) {
+      setPulseTimer(12);
+      timerRef.current = setInterval(() => {
+        setPulseTimer(v => {
+          if (v <= 1) {
+            clearInterval(timerRef.current);
+            // Auto-submit first option on timeout
+            handlePulse(0);
+            return 0;
+          }
+          return v - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timerRef.current);
+    }
+  }, [round.phase, round.roundIndex, pulseSubmitted]);
+
+  // ── Join handler ──
+  const handleJoin = async () => {
+    if (!playerName.trim()) { setError('Enter your name'); return; }
+    try {
+      const result = await CovenantFirebase.joinSession(sessionId, playerName.trim());
+      setPlayerId(result.playerId);
+      sessionStorage.setItem('cov_player_id', result.playerId);
+      setJoined(true);
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  // ── Pulse handler ──
+  const handlePulse = async (optionIndex) => {
+    if (pulseSubmitted) return;
+    clearInterval(timerRef.current);
+    setPulseSubmitted(true);
+
+    const scenario = scenarios[round.roundIndex];
+    const option = scenario.options[optionIndex];
+    const latencyMs = pulseStart ? Date.now() - pulseStart : 0;
+    const timerPct = (pulseTimer / 12) * 100;
+
+    // Build pulse payload per spec Section 3.1.1
+    const pulseData = {
+      selected_option_index: optionIndex,
+      selected_foundation_primary: option.f || null,
+      selected_foundation_secondary: null,
+      foundation_weights: option.fw || {},
+      rejected_foundations: scenario.options
+        .filter((_, i) => i !== optionIndex)
+        .map(o => o.f)
+        .filter(Boolean),
+      pulse_latency_ms: latencyMs,
+      timer_remaining_pct: timerPct
+    };
+
+    await CovenantFirebase.submitPulse(sessionId, round.roundIndex, playerId, pulseData);
+  };
+
+  // ── Prediction handler ──
+  const handlePrediction = async (count) => {
+    if (predSubmitted) return;
+    setPredSubmitted(true);
+    await CovenantFirebase.submitPrediction(sessionId, round.roundIndex, playerId, count);
+  };
+
+  const phase = round.phase;
+  const ri = round.roundIndex;
+  const s = scenarios[ri] || null;
+  const playerCount = config.playerCount || 0;
+
+  // ── NAME ENTRY (not yet joined) ──
+  if (!joined) {
+    return ce('div', { style: W },
+      ce('div', { style: { ...cd, textAlign: 'center' } },
+        ce('div', { style: { fontSize: 48, marginBottom: 8 } }, '\u{1F981}'),
+        ce('div', { style: sb }, 'Join the Expedition'),
+        ce('input', {
+          value: playerName,
+          placeholder: 'Your name',
+          onChange: e => setPlayerName(e.target.value),
+          onKeyDown: e => { if (e.key === 'Enter') handleJoin(); },
+          style: {
+            width: '100%', background: C.cream + '08',
+            border: '1px solid ' + C.cream + '15', borderRadius: 10,
+            padding: '14px 16px', color: C.cream, fontSize: 18,
+            fontFamily: 'inherit', outline: 'none', textAlign: 'center',
+            marginBottom: 12, boxSizing: 'border-box'
+          }
+        }),
+        error && ce('p', { style: { color: C.rust, fontSize: 13 } }, error),
+        ce('button', { style: bt, onClick: handleJoin }, 'Join \u2192')
+      )
+    );
+  }
+
+  // ── LOBBY — Waiting for host to start ──
+  if (phase === 'lobby') {
+    return ce('div', { style: W },
+      ce('div', { style: { ...cd, textAlign: 'center' } },
+        ce('div', { style: { fontSize: 48, marginBottom: 8 } }, '\u{1F525}'),
+        ce('div', { style: sb }, 'Waiting at the Campfire'),
+        ce('h1', { style: { ...h1, fontSize: 22 }, className: 'dsp' }, 'You\u2019re in.'),
+        ce('p', { style: dm }, 'The host will start the expedition when everyone is ready.'),
+        ce('div', { style: {
+          background: C.cream + '06', borderRadius: 12, padding: 16, marginTop: 20
+        }},
+          ce('div', { style: { color: C.gold, fontSize: 14, fontWeight: 600 } },
+            playerCount + ' players connected')
+        )
+      )
+    );
+  }
+
+  // ── READING — Scenario is on the shared screen ──
+  if (phase === 'reading') {
+    return ce('div', { style: W },
+      ce('div', { style: { ...cd, textAlign: 'center' } },
+        ce('div', { style: { fontSize: 48, marginBottom: 8 } }, '\u{1F4D6}'),
+        ce('div', { style: sb }, 'Scenario ' + (ri + 1)),
+        ce('h1', { style: { ...h1, fontSize: 22 }, className: 'dsp' },
+          'Read the scenario on the shared screen'),
+        ce('p', { style: dm },
+          'The host will open pulse windows when everyone has read.')
+      )
+    );
+  }
+
+  // ── PULSING — The 12-second gut pulse ──
+  if (phase === 'pulsing' && s) {
+    if (pulseSubmitted) {
+      return ce('div', { style: W },
+        ce('div', { style: { ...cd, textAlign: 'center' } },
+          ce('div', { style: { fontSize: 48 } }, '\u2713'),
+          ce('div', { style: { ...sb, color: C.green } }, 'Pulse Submitted'),
+          ce('p', { style: dm }, 'Waiting for other players...')
+        )
+      );
+    }
+
+    return ce('div', { style: W },
+      ce('div', { style: cd, className: 'fade-up' },
+        ce('div', { style: { display: 'flex', justifyContent: 'space-between', marginBottom: 12 } },
+          ce('div', { style: { ...sb, color: C.rust } }, '\u{1F512} Your Gut Pulse'),
+          ce('div', { style: {
+            fontSize: 32, fontWeight: 300,
+            color: pulseTimer <= 3 ? C.rust : C.gold,
+            fontFamily: 'monospace'
+          }}, pulseTimer + 's')
+        ),
+        ce('div', { style: {
+          height: 4, background: C.cream + '11', borderRadius: 2,
+          marginBottom: 16, overflow: 'hidden'
+        }},
+          ce('div', { style: {
+            height: '100%', background: pulseTimer <= 3 ? C.rust : C.gold,
+            width: (pulseTimer / 12) * 100 + '%', borderRadius: 2,
+            transition: 'width .9s linear'
+          }})
+        ),
+        s.options.map((o, i) =>
+          ce('button', {
+            key: i, style: ob(false),
+            onClick: () => handlePulse(i)
+          },
+            ce('span', { style: { color: C.gold, fontWeight: 700, marginRight: 8 } },
+              String.fromCharCode(65 + i) + '.'),
+            o.t
+          )
+        )
+      )
+    );
+  }
+
+  // ── CAMPFIRE — Player waits while group discusses ──
+  if (phase === 'campfire' || phase === 'groupVote') {
+    return ce('div', { style: W },
+      ce('div', { style: { ...cd, textAlign: 'center' } },
+        ce('div', { style: { fontSize: 48 } }, '\u{1F525}'),
+        ce('div', { style: sb }, 'Campfire Discussion'),
+        ce('h1', { style: { ...h1, fontSize: 20 }, className: 'dsp' },
+          'Discuss with your group'),
+        ce('p', { style: dm },
+          'Look up from your phone. The campfire is on the shared screen.')
+      )
+    );
+  }
+
+  // ── PREDICTING — How many people drifted? ──
+  if (phase === 'predicting') {
+    if (predSubmitted) {
+      return ce('div', { style: W },
+        ce('div', { style: { ...cd, textAlign: 'center' } },
+          ce('div', { style: { fontSize: 48 } }, '\u2713'),
+          ce('div', { style: { ...sb, color: C.green } }, 'Prediction Submitted'),
+          ce('p', { style: dm }, 'Waiting for other players...')
+        )
+      );
+    }
+
+    return ce('div', { style: W },
+      ce('div', { style: cd, className: 'fade-up' },
+        ce('div', { style: sb }, '\u{1F52E} Your Prediction'),
+        ce('h1', { style: { ...h1, fontSize: 20 }, className: 'dsp' },
+          'How many people chose differently in private vs. the group vote?'),
+        ce('p', { style: { ...dm, marginBottom: 16 } },
+          'Including yourself. (0 to ' + playerCount + ')'),
+        ce('div', { style: {
+          display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center'
+        }},
+          Array.from({ length: playerCount + 1 }, (_, i) =>
+            ce('button', {
+              key: i,
+              style: {
+                ...bt, width: 56, height: 56, padding: 0,
+                fontSize: 20, borderRadius: '50%'
+              },
+              onClick: () => handlePrediction(i)
+            }, String(i))
+          )
+        )
+      )
+    );
+  }
+
+  // ── REVEAL — Player sees if they drifted ──
+  if (phase === 'reveal') {
+    return ce('div', { style: W },
+      ce('div', { style: { ...cd, textAlign: 'center' } },
+        ce('div', { style: { fontSize: 48 } }, '\u{1FA9E}'),
+        ce('div', { style: sb }, 'The Drift Revealed'),
+        ce('p', { style: dm },
+          'Look at the shared screen for group results. ' +
+          'The host will advance when ready.')
+      )
+    );
+  }
+
+  // ── CAPSTONE FRAGMENTS — Player sees their secret fragment ──
+  if (phase === 'capstone_fragments') {
+    // Fragment assignment: player index mod number of fragments
+    const playerIndex = parseInt(playerId.split('_')[1]) || 0;
+    // CAP.fragments is defined in the existing group.html code
+    const fragmentIndex = playerIndex % (typeof CAP !== 'undefined' ? CAP.fragments.length : 1);
+    const fragmentText = typeof CAP !== 'undefined' ? CAP.fragments[fragmentIndex] : 'Fragment loading...';
+
+    return ce('div', { style: W },
+      ce('div', { style: { ...cd, textAlign: 'center' }, className: 'fade-up' },
+        ce('div', { style: { fontSize: 36 } }, '\u{1F512}'),
+        ce('div', { style: { ...sb, color: C.rust } }, 'Your Secret Fragment'),
+        ce('div', { style: {
+          background: C.rust + '12', border: '1px solid ' + C.rust + '33',
+          borderRadius: 12, padding: 20, margin: '16px 0', textAlign: 'left'
+        }},
+          ce('p', { style: {
+            fontSize: 16, lineHeight: 1.8, margin: 0,
+            fontFamily: "'Playfair Display'"
+          }}, fragmentText)
+        ),
+        ce('p', { style: dm },
+          'Memorize this. Share verbally with the group when the campfire starts.')
+      )
+    );
+  }
+
+  // ── CAPSTONE DISCUSSION/VOTE — Look at shared screen ──
+  if (phase === 'capstone_discuss' || phase === 'capstone_vote') {
+    return ce('div', { style: W },
+      ce('div', { style: { ...cd, textAlign: 'center' } },
+        ce('div', { style: { fontSize: 48 } }, '\u{1F525}'),
+        ce('div', { style: sb }, 'Capstone Synthesis'),
+        ce('p', { style: dm },
+          'Share your fragment with the group. The vote is on the shared screen.')
+      )
+    );
+  }
+
+  // ── ANALYZING ──
+  if (phase === 'analyzing') {
+    return ce('div', { style: W },
+      ce('div', { style: { ...cd, textAlign: 'center' } },
+        ce('div', { style: { fontSize: 48 } }, '\u{1FA9E}'),
+        ce('div', { style: sb }, 'The Mirror'),
+        ce('p', { style: dm }, 'Computing your portrait...')
+      )
+    );
+  }
+
+  // ── MIRROR — Show player's personal results ──
+  if (phase === 'mirror' || config.status === 'mirror') {
+    if (myResults) {
+      const playerIndex = parseInt(playerId.split('_')[1]) || 0;
+      const myProfile = myResults.players
+        ? myResults.players[playerId] || myResults.players[playerIndex]
+        : null;
+
+      if (myProfile) {
+        return ce('div', { style: W },
+          ce('div', { style: cd },
+            ce('div', { style: sb }, 'Your Mirror Portrait'),
+            ce('h1', { style: h1, className: 'dsp' }, myProfile.arch?.nm || 'Your Profile'),
+            ce('p', { style: { fontSize: 15, lineHeight: 1.8, color: C.cream + '88' } },
+              myProfile.arch?.de || 'Your results are ready.'),
+            // Full results rendering would use the existing Mirror component
+            // from the classic App. For now, show key metrics.
+            ce('div', { style: {
+              background: C.cream + '05', borderRadius: 12,
+              padding: 16, marginTop: 16
+            }},
+              ce('p', { style: { color: C.cream + '66', fontSize: 13 } },
+                'View the full group Mirror on the shared Campfire screen.')
+            )
+          )
+        );
+      }
+    }
+
+    return ce('div', { style: W },
+      ce('div', { style: { ...cd, textAlign: 'center' } },
+        ce('div', { style: { fontSize: 48 } }, '\u{1FA9E}'),
+        ce('div', { style: sb }, 'The Mirror'),
+        ce('p', { style: dm }, 'Waiting for results...')
+      )
+    );
+  }
+
+  // Fallback
+  return ce('div', { style: W },
+    ce('div', { style: { ...cd, textAlign: 'center' } },
+      ce('p', { style: dm }, 'Syncing... (' + phase + ')')
+    )
+  );
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// BLOCK 7: View Router — The Root Component
+// ══════════════════════════════════════════════════════════════
+
+function ViewRouter() {
+  const [mode, setMode] = useState(getViewMode());
+
+  // Listen for hash changes
+  useEffect(() => {
+    const handler = () => setMode(getViewMode());
+    window.addEventListener('hashchange', handler);
+    return () => window.removeEventListener('hashchange', handler);
+  }, []);
+
+  switch (mode) {
+    case 'host':    return ce(HostView);
+    case 'play':    return ce(PlayerView);
+    case 'classic': return ce(App);        // The existing single-device App
+    case 'splash':  return ce(SplashScreen);
+    default:        return ce(SplashScreen);
+  }
+}
+
+// ── Mount ──
+// Replace:  ReactDOM.render(ce(App), document.getElementById("root"));
+// With:
+ReactDOM.render(ce(ViewRouter), document.getElementById("root"));
+
 
 </script>
 </body>
