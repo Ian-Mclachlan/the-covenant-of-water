@@ -634,76 +634,90 @@ ce("p",{style:{fontSize:13,lineHeight:1.65,color:C.cream+"77",margin:0}},d))))
 }
 return null;
 }
+// ═══════════════════════════════════════════════════════════════
+// MULTIPLAYER VIEWS — Self-contained style constants + components
+// Paste this entire block into group.html, replacing everything
+// from the old "function getViewMode()" down to and including
+// the old "ReactDOM.render(...)" line.
+// ═══════════════════════════════════════════════════════════════
+
+// ── Multiplayer style constants (independent of App scope) ──
+var W={minHeight:"100vh",background:"linear-gradient(170deg,#0A1A0C,#0F2012 30%,#183620 70%,#1E3322)",color:C.cream,fontFamily:"'Source Sans 3',Georgia,serif",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"20px",boxSizing:"border-box"};
+var cd={background:C.bg1+"DD",border:"1px solid "+C.gold+"22",borderRadius:16,padding:"28px 24px",maxWidth:620,width:"100%",backdropFilter:"blur(12px)"};
+var bt={background:"linear-gradient(135deg,"+C.rust+","+C.gold+")",color:C.bg1,border:"none",borderRadius:12,padding:"16px 28px",fontSize:16,fontWeight:700,cursor:"pointer",fontFamily:"inherit",width:"100%",marginTop:8};
+var sb={color:C.gold,fontSize:11,letterSpacing:2.5,textTransform:"uppercase",fontWeight:700,marginBottom:4};
+var h1={fontSize:38,fontWeight:400,lineHeight:1.25,marginBottom:16,fontFamily:"'Playfair Display',Georgia,serif"};
+var ob=function(sel){return{background:sel?C.gold+"15":C.cream+"06",border:"2px solid "+(sel?C.gold+"44":C.cream+"12"),borderRadius:12,padding:"14px 18px",color:C.cream,cursor:"pointer",fontFamily:"inherit",fontSize:14.5,textAlign:"left",lineHeight:1.55,width:"100%",marginBottom:5}};
+var tg=function(c){return{display:"inline-block",background:c+"18",color:c,border:"1px solid "+c+"44",borderRadius:20,padding:"2px 10px",fontSize:11,fontWeight:700,marginRight:5}};
+var dm={color:C.cream+"55",fontSize:12.7};
+var ce=React.createElement;
+
+// ── Utility: read hash route ──
 function getViewMode() {
-  const hash = (window.location.hash || '').replace('#', '').toLowerCase();
+  var hash = (window.location.hash || '').replace('#', '').toLowerCase();
   if (hash === 'host') return 'host';
   if (hash === 'play') return 'play';
   if (hash === 'classic') return 'classic';
-  return 'splash'; // default: show splash with mode selection
+  return 'splash';
 }
 
-
 // ══════════════════════════════════════════════════════════════
-// BLOCK 3: Splash Screen — Mode Selection
+// Splash Screen — Mode Selection
 // ══════════════════════════════════════════════════════════════
 
 function SplashScreen() {
-  const [joinCode, setJoinCode] = useState('');
-  const [error, setError] = useState('');
-  const [joining, setJoining] = useState(false);
+  var _useState1 = useState(''), joinCode = _useState1[0], setJoinCode = _useState1[1];
+  var _useState2 = useState(''), error = _useState2[0], setError = _useState2[1];
+  var _useState3 = useState(false), joining = _useState3[0], setJoining = _useState3[1];
 
-  const handleHost = () => {
+  var handleHost = function() {
     window.location.hash = '#host';
     window.location.reload();
   };
 
-  const handleJoin = async () => {
+  var handleJoin = function() {
     if (!joinCode.trim()) { setError('Enter a join code'); return; }
     setJoining(true);
     setError('');
-    try {
-      CovenantFirebase.init();
-      const sessionId = await CovenantFirebase.findSessionByCode(joinCode.trim());
+    CovenantFirebase.init();
+    CovenantFirebase.findSessionByCode(joinCode.trim()).then(function(sessionId) {
       if (!sessionId) {
         setError('Session not found. Check the code.');
         setJoining(false);
         return;
       }
-      // Store session ID for the player view
       sessionStorage.setItem('cov_session_id', sessionId);
       sessionStorage.setItem('cov_join_code', joinCode.trim().toUpperCase());
       window.location.hash = '#play';
       window.location.reload();
-    } catch (e) {
+    }).catch(function(e) {
       setError(e.message);
       setJoining(false);
-    }
+    });
   };
 
-  const handleClassic = () => {
+  var handleClassic = function() {
     window.location.hash = '#classic';
     window.location.reload();
   };
 
   return ce('div', { style: W },
-    ce('div', { style: { ...cd, textAlign: 'center' } },
-      ce('div', { style: { fontSize: 64, marginBottom: 8 } }, '\u{1F981}'),
-      ce('h1', { style: { ...h1, fontSize: 28 }, className: 'dsp' }, 'The Covenant of Water'),
+    ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
+      ce('div', { style: { fontSize: 64, marginBottom: 8 } }, '\ud83e\udd81'),
+      ce('h1', { style: Object.assign({}, h1, { fontSize: 28 }), className: 'dsp' }, 'The Covenant of Water'),
       ce('div', { style: sb }, 'Group Safari'),
 
-      ce('p', { style: { ...dm, marginBottom: 28 } },
+      ce('p', { style: Object.assign({}, dm, { marginBottom: 28 }) },
         'A psychometric expedition. 9 moral crises. No right answers.'),
 
-      // Host button
       ce('button', {
-        style: { ...bt, marginBottom: 12, fontSize: 17, padding: '16px 24px' },
+        style: Object.assign({}, bt, { marginBottom: 12, fontSize: 17, padding: '16px 24px' }),
         onClick: handleHost
-      }, '\u{1F525} Host a Campfire'),
+      }, '\ud83d\udd25 Host a Campfire'),
 
       ce('p', { style: { color: C.cream + '44', fontSize: 13, marginBottom: 20 } },
         'Display this screen for the group. Players join on their phones.'),
 
-      // Divider
       ce('div', { style: {
         display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20
       }},
@@ -712,13 +726,12 @@ function SplashScreen() {
         ce('div', { style: { flex: 1, height: 1, background: C.cream + '15' } })
       ),
 
-      // Join input
       ce('div', { style: { display: 'flex', gap: 8, marginBottom: 8 } },
         ce('input', {
           value: joinCode,
           placeholder: 'Enter join code',
-          onChange: e => setJoinCode(e.target.value.toUpperCase()),
-          onKeyDown: e => { if (e.key === 'Enter') handleJoin(); },
+          onChange: function(e) { setJoinCode(e.target.value.toUpperCase()); },
+          onKeyDown: function(e) { if (e.key === 'Enter') handleJoin(); },
           maxLength: 8,
           style: {
             flex: 1, background: C.cream + '08', border: '1px solid ' + C.cream + '15',
@@ -728,7 +741,7 @@ function SplashScreen() {
           }
         }),
         ce('button', {
-          style: { ...bt, padding: '14px 20px', minWidth: 80 },
+          style: Object.assign({}, bt, { padding: '14px 20px', minWidth: 80, width: 'auto' }),
           onClick: handleJoin,
           disabled: joining
         }, joining ? '...' : 'Join')
@@ -736,35 +749,36 @@ function SplashScreen() {
 
       error && ce('p', { style: { color: C.rust, fontSize: 13, marginTop: 4 } }, error),
 
-      // Classic mode link
       ce('div', { style: { marginTop: 32, paddingTop: 20, borderTop: '1px solid ' + C.cream + '0A' } },
         ce('button', {
-          style: {
-            ...bt, background: 'transparent', border: '1px dashed ' + C.cream + '22',
+          style: Object.assign({}, bt, {
+            background: 'transparent', border: '1px dashed ' + C.cream + '22',
             color: C.cream + '55', fontSize: 14, padding: '10px 20px'
-          },
+          }),
           onClick: handleClassic
-        }, '\u{1F4F1} Classic Mode (pass-the-device)')
+        }, '\ud83d\udcf1 Classic Mode (pass-the-device)')
       )
     )
   );
 }
 
-
 // ══════════════════════════════════════════════════════════════
-// BLOCK 4: Host Lobby — Waiting for players to join
+// Host Lobby — Waiting for players to join
 // ══════════════════════════════════════════════════════════════
 
-function HostLobby({ sessionId, joinCode, players, onStart }) {
-  const playerList = Object.entries(players).sort(([a], [b]) => a.localeCompare(b));
-  const canStart = playerList.length >= 2;
+function HostLobby(props) {
+  var sessionId = props.sessionId;
+  var joinCode = props.joinCode;
+  var players = props.players;
+  var onStart = props.onStart;
+  var playerList = Object.entries(players).sort(function(a, b) { return a[0].localeCompare(b[0]); });
+  var canStart = playerList.length >= 2;
 
   return ce('div', { style: W },
-    ce('div', { style: { ...cd, textAlign: 'center' }, className: 'fade-up' },
-      ce('div', { style: { fontSize: 52, marginBottom: 8 } }, '\u{1F525}'),
+    ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }), className: 'fade-up' },
+      ce('div', { style: { fontSize: 52, marginBottom: 8 } }, '\ud83d\udd25'),
       ce('div', { style: sb }, 'The Campfire is Lit'),
 
-      // Join code display
       ce('div', { style: {
         background: C.cream + '06', border: '2px dashed ' + C.gold + '44',
         borderRadius: 16, padding: '20px 24px', margin: '20px 0', textAlign: 'center'
@@ -778,14 +792,14 @@ function HostLobby({ sessionId, joinCode, players, onStart }) {
           'Players: open group.html on your phone and enter this code')
       ),
 
-      // Player roster
       ce('div', { style: { margin: '20px 0', textAlign: 'left' } },
-        ce('div', { style: { ...sb, marginBottom: 12 } },
+        ce('div', { style: Object.assign({}, sb, { marginBottom: 12 }) },
           'Expedition Roster (' + playerList.length + '/8)'),
         playerList.length === 0 &&
-          ce('p', { style: { ...dm, fontStyle: 'italic' } }, 'Waiting for players to join...'),
-        playerList.map(([pid, p]) =>
-          ce('div', { key: pid, style: {
+          ce('p', { style: Object.assign({}, dm, { fontStyle: 'italic' }) }, 'Waiting for players to join...'),
+        playerList.map(function(entry) {
+          var pid = entry[0], p = entry[1];
+          return ce('div', { key: pid, style: {
             display: 'flex', alignItems: 'center', gap: 10,
             padding: '10px 14px', marginBottom: 6,
             background: C.cream + '05', borderRadius: 10,
@@ -798,16 +812,15 @@ function HostLobby({ sessionId, joinCode, players, onStart }) {
             ce('span', { style: { color: C.cream, fontSize: 16, fontWeight: 500 } }, p.name),
             ce('span', { style: { color: C.cream + '33', fontSize: 12, marginLeft: 'auto' } },
               p.connected ? 'connected' : 'disconnected')
-          )
-        )
+          );
+        })
       ),
 
-      // Start button
       ce('button', {
-        style: {
-          ...bt, opacity: canStart ? 1 : 0.4,
+        style: Object.assign({}, bt, {
+          opacity: canStart ? 1 : 0.4,
           fontSize: 17, padding: '16px 24px'
-        },
+        }),
         onClick: onStart,
         disabled: !canStart
       }, canStart
@@ -818,145 +831,107 @@ function HostLobby({ sessionId, joinCode, players, onStart }) {
   );
 }
 
-
 // ══════════════════════════════════════════════════════════════
-// BLOCK 5: Host View — The Campfire Shared Screen
+// Host View — The Campfire Shared Screen
 // ══════════════════════════════════════════════════════════════
 
 function HostView() {
-  const [sessionId, setSessionId] = useState(null);
-  const [joinCode, setJoinCode] = useState('');
-  const [players, setPlayers] = useState({});
-  const [config, setConfig] = useState({});
-  const [round, setRound] = useState({ roundIndex: -1, phase: 'lobby' });
-  const [scenarios, setScenarios] = useState([]);
-  const [results, setResults] = useState(null);
-  const [campfireStart, setCampfireStart] = useState(null);
-  const [campfireElapsed, setCampfireElapsed] = useState(0);
-  const campfireTimer = useRef(null);
+  var _s1=useState(null),sessionId=_s1[0],setSessionId=_s1[1];
+  var _s2=useState(''),joinCode=_s2[0],setJoinCode=_s2[1];
+  var _s3=useState({}),players=_s3[0],setPlayers=_s3[1];
+  var _s4=useState({}),config=_s4[0],setConfig=_s4[1];
+  var _s5=useState({roundIndex:-1,phase:'lobby'}),round=_s5[0],setRound=_s5[1];
+  var _s6=useState([]),scenarios=_s6[0],setScenarios=_s6[1];
+  var _s7=useState(null),results=_s7[0],setResults=_s7[1];
+  var _s8=useState(null),campfireStart=_s8[0],setCampfireStart=_s8[1];
+  var _s9=useState(0),campfireElapsed=_s9[0],setCampfireElapsed=_s9[1];
+  var campfireTimer=useRef(null);
+  var unsubs=useRef([]);
 
-  // Unsubscribe refs
-  const unsubs = useRef([]);
-
-  // Initialize session on mount
-  useEffect(() => {
-    async function init() {
-      CovenantFirebase.init();
-      const sess = await CovenantFirebase.createSession();
+  useEffect(function() {
+    CovenantFirebase.init();
+    CovenantFirebase.createSession().then(function(sess) {
       setSessionId(sess.sessionId);
       setJoinCode(sess.joinCode);
-
-      // Subscribe to real-time updates
-      unsubs.current.push(
-        CovenantFirebase.onPlayersChanged(sess.sessionId, setPlayers)
-      );
-      unsubs.current.push(
-        CovenantFirebase.onConfigChanged(sess.sessionId, setConfig)
-      );
-      unsubs.current.push(
-        CovenantFirebase.onRoundChanged(sess.sessionId, r => {
-          setRound(r);
-          // Start campfire timer when entering campfire phase
-          if (r.phase === 'campfire' || r.phase === 'capstone_discuss') {
-            setCampfireStart(Date.now());
-          }
-        })
-      );
-    }
-    init();
-    return () => unsubs.current.forEach(fn => fn());
+      unsubs.current.push(CovenantFirebase.onPlayersChanged(sess.sessionId, setPlayers));
+      unsubs.current.push(CovenantFirebase.onConfigChanged(sess.sessionId, setConfig));
+      unsubs.current.push(CovenantFirebase.onRoundChanged(sess.sessionId, function(r) {
+        setRound(r);
+        if (r.phase === 'campfire' || r.phase === 'capstone_discuss') {
+          setCampfireStart(Date.now());
+        }
+      }));
+    });
+    return function() { unsubs.current.forEach(function(fn) { fn(); }); };
   }, []);
 
-  // Campfire timer tick
-  useEffect(() => {
+  useEffect(function() {
     if (campfireStart) {
-      campfireTimer.current = setInterval(() => {
+      campfireTimer.current = setInterval(function() {
         setCampfireElapsed(Date.now() - campfireStart);
       }, 250);
-      return () => clearInterval(campfireTimer.current);
+      return function() { clearInterval(campfireTimer.current); };
     }
   }, [campfireStart]);
 
-  const playerCount = Object.keys(players).length;
-  const phase = round.phase;
-  const ri = round.roundIndex;
-  const s = scenarios[ri] || null;
+  var playerCount = Object.keys(players).length;
+  var phase = round.phase;
+  var ri = round.roundIndex;
+  var s = scenarios[ri] || null;
 
-  // Format elapsed time
-  const fmt = ms => {
-    const sec = Math.floor(ms / 1000);
-    const m = Math.floor(sec / 60);
-    const ss = sec % 60;
+  var fmt = function(ms) {
+    var sec = Math.floor(ms / 1000);
+    var m = Math.floor(sec / 60);
+    var ss = sec % 60;
     return m + ':' + String(ss).padStart(2, '0');
   };
 
-  // ── Handle game start ──
-  const handleStart = async () => {
-    // Use the existing selSess() function from group.html
-    const selected = selSess();
+  var handleStart = function() {
+    var selected = selSess();
     setScenarios(selected);
-    await CovenantFirebase.startGame(sessionId, selected);
+    CovenantFirebase.startGame(sessionId, selected);
   };
 
-  // ── Handle group vote ──
-  const handleGroupVote = async (optionIndex) => {
-    const scenario = scenarios[ri];
-    const option = scenario.options[optionIndex];
-    const campDuration = campfireStart ? Date.now() - campfireStart : 0;
-
-    await CovenantFirebase.submitGroupVote(sessionId, ri, {
+  var handleGroupVote = function(optionIndex) {
+    var scenario = scenarios[ri];
+    var option = scenario.options[optionIndex];
+    var campDuration = campfireStart ? Date.now() - campfireStart : 0;
+    CovenantFirebase.submitGroupVote(sessionId, ri, {
       selected_option_index: optionIndex,
       selected_foundation: option.f,
       campfire_duration_ms: campDuration
-    });
-
-    // Advance to prediction phase
-    await CovenantFirebase.setPhase(sessionId, 'predicting', {
-      predictionsSubmitted: 0
+    }).then(function() {
+      return CovenantFirebase.setPhase(sessionId, 'predicting', { predictionsSubmitted: 0 });
     });
     setCampfireStart(null);
     setCampfireElapsed(0);
   };
 
-  // ── Handle next round ──
-  const handleNextRound = async () => {
-    const nextIndex = ri + 1;
+  var handleNextRound = function() {
+    var nextIndex = ri + 1;
     if (nextIndex >= scenarios.length) {
-      // Move to capstone
-      await CovenantFirebase.setPhase(sessionId, 'capstone_intro');
+      CovenantFirebase.setPhase(sessionId, 'capstone_intro');
     } else {
-      await CovenantFirebase.setRound(sessionId, nextIndex);
+      CovenantFirebase.setRound(sessionId, nextIndex);
     }
   };
 
-  // ── Handle analyze ──
-  const handleAnalyze = async () => {
-    await CovenantFirebase.setPhase(sessionId, 'analyzing');
-    const sessionData = await CovenantFirebase.getSessionData(sessionId);
-    const transformed = CovenantFirebase.transformForAnalyze(sessionData);
-
-    // Call the existing analyze() function with transformed data
-    // analyze() is already defined in group.html
-    const analysisResults = analyze(
-      transformed.pl,
-      transformed.sc,
-      transformed.gv,
-      transformed.sy
-    );
-
-    setResults(analysisResults);
-    await CovenantFirebase.writeResults(sessionId, analysisResults);
+  var handleAnalyze = function() {
+    CovenantFirebase.setPhase(sessionId, 'analyzing');
+    CovenantFirebase.getSessionData(sessionId).then(function(sessionData) {
+      var transformed = CovenantFirebase.transformForAnalyze(sessionData);
+      var analysisResults = analyze(transformed.pl, transformed.sc, transformed.gv, transformed.sy);
+      setResults(analysisResults);
+      CovenantFirebase.writeResults(sessionId, analysisResults);
+    });
   };
 
-  // ── LOBBY ──
+  // LOBBY
   if (phase === 'lobby') {
-    return ce(HostLobby, {
-      sessionId, joinCode, players,
-      onStart: handleStart
-    });
+    return ce(HostLobby, { sessionId: sessionId, joinCode: joinCode, players: players, onStart: handleStart });
   }
 
-  // ── READING PHASE — Show scenario, wait for host to start pulses ──
+  // READING
   if (phase === 'reading' && s) {
     return ce('div', { style: W },
       ce('div', { style: cd, className: 'fade-up' },
@@ -967,250 +942,188 @@ function HostView() {
             ce('span', { style: tg(C.gold) }, 'Stress ' + s.stress + '/10')
           )
         ),
-        ce('p', { style: {
-          fontSize: 17, lineHeight: 1.85, marginBottom: 20,
-          fontFamily: "'Playfair Display',Georgia,serif"
-        }}, s.text),
+        ce('p', { style: { fontSize: 17, lineHeight: 1.85, marginBottom: 20, fontFamily: "'Playfair Display',Georgia,serif" } }, s.text),
         ce('div', { style: { marginBottom: 20 } },
-          s.options.map((o, i) =>
-            ce('div', { key: i, style: { ...ob(false), cursor: 'default', opacity: 0.6 } },
-              ce('span', { style: { color: C.gold, fontWeight: 700, marginRight: 8 } },
-                String.fromCharCode(65 + i) + '.'),
-              o.t
-            )
-          )
+          s.options.map(function(o, i) {
+            return ce('div', { key: i, style: Object.assign({}, ob(false), { cursor: 'default', opacity: 0.6 }) },
+              ce('span', { style: { color: C.gold, fontWeight: 700, marginRight: 8 } }, String.fromCharCode(65 + i) + '.'), o.t);
+          })
         ),
-        ce('p', { style: { ...dm, textAlign: 'center', marginBottom: 16 } },
-          'Read aloud. Then players submit their 12-second gut pulse on their own phones.'),
-        ce('button', {
-          style: bt,
-          onClick: () => CovenantFirebase.setPhase(sessionId, 'pulsing', { pulsesSubmitted: 0 })
-        }, 'Open Pulse Windows \u2192')
+        ce('p', { style: Object.assign({}, dm, { textAlign: 'center', marginBottom: 16 }) },
+          'Read aloud. Then players submit their 12-second gut pulse on their phones.'),
+        ce('button', { style: bt, onClick: function() {
+          CovenantFirebase.setPhase(sessionId, 'pulsing', { pulsesSubmitted: 0 });
+        }}, 'Open Pulse Windows \u2192')
       )
     );
   }
 
-  // ── PULSING PHASE — Show pulse count, wait for all ──
+  // PULSING
   if (phase === 'pulsing') {
-    const submitted = round.pulsesSubmitted || 0;
-    const allIn = submitted >= playerCount;
-
+    var submitted = round.pulsesSubmitted || 0;
+    var allIn = submitted >= playerCount;
     return ce('div', { style: W },
-      ce('div', { style: { ...cd, textAlign: 'center' }, className: 'fade-up' },
-        ce('div', { style: { fontSize: 52, marginBottom: 8 } }, '\u{1F512}'),
+      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }), className: 'fade-up' },
+        ce('div', { style: { fontSize: 52, marginBottom: 8 } }, '\ud83d\udd12'),
         ce('div', { style: sb }, 'Private Pulses'),
-        ce('h1', { style: { ...h1, fontSize: 24 }, className: 'dsp' },
+        ce('h1', { style: Object.assign({}, h1, { fontSize: 24 }), className: 'dsp' },
           allIn ? 'All pulses received' : 'Waiting for gut instincts...'),
-        ce('div', { style: {
-          fontSize: 64, fontWeight: 300, color: allIn ? C.green : C.gold,
-          fontFamily: 'monospace', margin: '20px 0'
-        }}, submitted + ' / ' + playerCount),
-        ce('p', { style: dm },
-          allIn ? 'Ready for the campfire discussion.'
-                : 'Players are making their private choices on their phones.'),
-        allIn && ce('button', {
-          style: { ...bt, marginTop: 20 },
-          onClick: () => {
-            setCampfireStart(Date.now());
-            setCampfireElapsed(0);
-            CovenantFirebase.setPhase(sessionId, 'campfire');
-          }
-        }, '\u{1F525} Light the Campfire')
+        ce('div', { style: { fontSize: 64, fontWeight: 300, color: allIn ? C.green : C.gold, fontFamily: 'monospace', margin: '20px 0' } },
+          submitted + ' / ' + playerCount),
+        ce('p', { style: dm }, allIn ? 'Ready for the campfire discussion.' : 'Players are making their private choices on their phones.'),
+        allIn && ce('button', { style: Object.assign({}, bt, { marginTop: 20 }), onClick: function() {
+          setCampfireStart(Date.now()); setCampfireElapsed(0);
+          CovenantFirebase.setPhase(sessionId, 'campfire');
+        }}, '\ud83d\udd25 Light the Campfire')
       )
     );
   }
 
-  // ── CAMPFIRE — Discussion timer + group vote ──
+  // CAMPFIRE
   if (phase === 'campfire' && s) {
     return ce('div', { style: W },
-      ce('div', { style: { ...cd, textAlign: 'center' }, className: 'fade-up' },
-        ce('div', { style: { fontSize: 56, marginBottom: 4 } }, '\u{1F525}'),
+      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }), className: 'fade-up' },
+        ce('div', { style: { fontSize: 56, marginBottom: 4 } }, '\ud83d\udd25'),
         ce('div', { style: sb }, 'The Campfire'),
-        ce('h1', { style: { ...h1, fontSize: 24 }, className: 'dsp' },
-          'Discuss. Persuade. Listen.'),
-        ce('p', { style: {
-          color: C.cream + '55', fontSize: 14, lineHeight: 1.7,
-          marginBottom: 20, padding: '0 12px', fontStyle: 'italic',
-          fontFamily: "'Playfair Display'"
-        }}, '\u201C' + s.text + '\u201D'),
-        ce('div', { style: {
-          fontSize: 48, fontWeight: 300, color: C.gold,
-          fontFamily: 'monospace', marginBottom: 4
-        }}, fmt(campfireElapsed)),
-        ce('p', { style: { ...dm, marginBottom: 28 } },
-          playerCount <= 3 ? 'Suggested: ~3 min discussion' : 'Suggested: ~5 min discussion'),
-        ce('button', {
-          style: bt,
-          onClick: () => CovenantFirebase.setPhase(sessionId, 'groupVote')
-        }, "We\u2019re Ready \u2014 Group Vote")
+        ce('h1', { style: Object.assign({}, h1, { fontSize: 24 }), className: 'dsp' }, 'Discuss. Persuade. Listen.'),
+        ce('p', { style: { color: C.cream + '55', fontSize: 14, lineHeight: 1.7, marginBottom: 20, padding: '0 12px', fontStyle: 'italic', fontFamily: "'Playfair Display'" } },
+          '\u201C' + s.text + '\u201D'),
+        ce('div', { style: { fontSize: 48, fontWeight: 300, color: C.gold, fontFamily: 'monospace', marginBottom: 4 } }, fmt(campfireElapsed)),
+        ce('p', { style: Object.assign({}, dm, { marginBottom: 28 }) }, playerCount <= 3 ? 'Suggested: ~3 min discussion' : 'Suggested: ~5 min discussion'),
+        ce('button', { style: bt, onClick: function() {
+          CovenantFirebase.setPhase(sessionId, 'groupVote');
+        }}, "We\u2019re Ready \u2014 Group Vote")
       )
     );
   }
 
-  // ── GROUP VOTE — Host selects the consensus answer ──
+  // GROUP VOTE
   if (phase === 'groupVote' && s) {
     return ce('div', { style: W },
       ce('div', { style: cd, className: 'fade-up' },
         ce('div', { style: sb }, 'Group Consensus'),
-        ce('h1', { style: { ...h1, fontSize: 22 }, className: 'dsp' },
-          'What did the group decide?'),
-        ce('p', { style: { ...dm, marginBottom: 16 } },
-          "One tap for the group\u2019s final answer."),
-        s.options.map((o, i) =>
-          ce('button', {
-            key: i, style: ob(false),
-            onClick: () => handleGroupVote(i)
-          },
-            ce('span', { style: { color: C.gold, fontWeight: 700, marginRight: 8 } },
-              String.fromCharCode(65 + i) + '.'),
-            o.t
-          )
-        )
+        ce('h1', { style: Object.assign({}, h1, { fontSize: 22 }), className: 'dsp' }, 'What did the group decide?'),
+        ce('p', { style: Object.assign({}, dm, { marginBottom: 16 }) }, "One tap for the group\u2019s final answer."),
+        s.options.map(function(o, i) {
+          return ce('button', { key: i, style: ob(false), onClick: function() { handleGroupVote(i); } },
+            ce('span', { style: { color: C.gold, fontWeight: 700, marginRight: 8 } }, String.fromCharCode(65 + i) + '.'), o.t);
+        })
       )
     );
   }
 
-  // ── PREDICTING — Wait for all predictions ──
+  // PREDICTING
   if (phase === 'predicting') {
-    const submitted = round.predictionsSubmitted || 0;
-    const allIn = submitted >= playerCount;
-
+    var submitted2 = round.predictionsSubmitted || 0;
+    var allIn2 = submitted2 >= playerCount;
     return ce('div', { style: W },
-      ce('div', { style: { ...cd, textAlign: 'center' }, className: 'fade-up' },
-        ce('div', { style: { fontSize: 52, marginBottom: 8 } }, '\u{1F52E}'),
+      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }), className: 'fade-up' },
+        ce('div', { style: { fontSize: 52, marginBottom: 8 } }, '\ud83d\udd2e'),
         ce('div', { style: sb }, 'Predictions'),
-        ce('h1', { style: { ...h1, fontSize: 22 }, className: 'dsp' },
-          allIn ? 'All predictions received' : 'Players are predicting drift...'),
-        ce('div', { style: {
-          fontSize: 64, fontWeight: 300, color: allIn ? C.green : C.gold,
-          fontFamily: 'monospace', margin: '20px 0'
-        }}, submitted + ' / ' + playerCount),
-        allIn && ce('button', {
-          style: { ...bt, marginTop: 20 },
-          onClick: () => CovenantFirebase.setPhase(sessionId, 'reveal')
-        }, 'Reveal the Drift \u2192')
+        ce('h1', { style: Object.assign({}, h1, { fontSize: 22 }), className: 'dsp' },
+          allIn2 ? 'All predictions received' : 'Players are predicting drift...'),
+        ce('div', { style: { fontSize: 64, fontWeight: 300, color: allIn2 ? C.green : C.gold, fontFamily: 'monospace', margin: '20px 0' } },
+          submitted2 + ' / ' + playerCount),
+        allIn2 && ce('button', { style: Object.assign({}, bt, { marginTop: 20 }), onClick: function() {
+          CovenantFirebase.setPhase(sessionId, 'reveal');
+        }}, 'Reveal the Drift \u2192')
       )
     );
   }
 
-  // ── REVEAL — Show drift results, advance to next round ──
+  // REVEAL
   if (phase === 'reveal') {
     return ce('div', { style: W },
-      ce('div', { style: { ...cd, textAlign: 'center' }, className: 'fade-up' },
-        ce('div', { style: { fontSize: 52, marginBottom: 8 } }, '\u{1FA9E}'),
+      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }), className: 'fade-up' },
+        ce('div', { style: { fontSize: 52, marginBottom: 8 } }, '\ud83e\ude9e'),
         ce('div', { style: sb }, 'The Drift Revealed'),
-        ce('p', { style: { ...dm, marginBottom: 24 } },
-          'Players can see their own drift results on their phones.'),
-        ce('button', {
-          style: bt,
-          onClick: handleNextRound
-        }, ri < scenarios.length - 1
-          ? 'Next Scenario \u2192'
-          : '\u26A1 The Capstone Crisis')
+        ce('p', { style: Object.assign({}, dm, { marginBottom: 24 }) }, 'Players can see their own drift results on their phones.'),
+        ce('button', { style: bt, onClick: handleNextRound },
+          ri < scenarios.length - 1 ? 'Next Scenario \u2192' : '\u26A1 The Capstone Crisis')
       )
     );
   }
 
-  // ── CAPSTONE PHASES ──
+  // CAPSTONE INTRO
   if (phase === 'capstone_intro') {
     return ce('div', { style: W },
-      ce('div', { style: { ...cd, textAlign: 'center' }, className: 'fade-up' },
+      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }), className: 'fade-up' },
         ce('div', { style: { fontSize: 52 } }, '\u26A1'),
-        ce('div', { style: { ...sb, color: C.rust } }, 'THE CHAOTIC CAPSTONE'),
-        ce('h1', { style: { ...h1, fontSize: 24 }, className: 'dsp' },
-          'No single person has enough information to act.'),
+        ce('div', { style: Object.assign({}, sb, { color: C.rust }) }, 'THE CHAOTIC CAPSTONE'),
+        ce('h1', { style: Object.assign({}, h1, { fontSize: 24 }), className: 'dsp' }, 'No single person has enough information to act.'),
         ce('p', { style: { fontSize: 15, lineHeight: 1.8, color: C.cream + '88', marginBottom: 20 } },
           'Each player will receive a secret fragment on their phone. Share verbally, then decide together.'),
-        ce('button', { style: bt,
-          onClick: () => CovenantFirebase.setPhase(sessionId, 'capstone_fragments')
-        }, 'Distribute Fragments to Phones')
+        ce('button', { style: bt, onClick: function() {
+          CovenantFirebase.setPhase(sessionId, 'capstone_fragments');
+        }}, 'Distribute Fragments to Phones')
       )
     );
   }
 
+  // CAPSTONE FRAGMENTS
   if (phase === 'capstone_fragments') {
     return ce('div', { style: W },
-      ce('div', { style: { ...cd, textAlign: 'center' }, className: 'fade-up' },
-        ce('div', { style: { fontSize: 52 } }, '\u{1F512}'),
+      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }), className: 'fade-up' },
+        ce('div', { style: { fontSize: 52 } }, '\ud83d\udd12'),
         ce('div', { style: sb }, 'Fragment Distribution'),
-        ce('p', { style: { ...dm, marginBottom: 20 } },
+        ce('p', { style: Object.assign({}, dm, { marginBottom: 20 }) },
           'Each player has received their secret fragment on their phone. Give everyone a moment to read.'),
-        ce('button', { style: bt,
-          onClick: () => {
-            setCampfireStart(Date.now());
-            setCampfireElapsed(0);
-            CovenantFirebase.setPhase(sessionId, 'capstone_discuss');
-          }
-        }, 'Begin Synthesis Discussion \u{1F525}')
+        ce('button', { style: bt, onClick: function() {
+          setCampfireStart(Date.now()); setCampfireElapsed(0);
+          CovenantFirebase.setPhase(sessionId, 'capstone_discuss');
+        }}, 'Begin Synthesis Discussion \ud83d\udd25')
       )
     );
   }
 
+  // CAPSTONE DISCUSS
   if (phase === 'capstone_discuss') {
     return ce('div', { style: W },
-      ce('div', { style: { ...cd, textAlign: 'center' }, className: 'fade-up' },
-        ce('div', { style: { fontSize: 56 } }, '\u{1F525}'),
-        ce('div', { style: { ...sb, color: C.rust } }, 'SYNTHESIS'),
-        ce('h1', { style: { ...h1, fontSize: 22 }, className: 'dsp' },
-          'Share your fragments. Piece together the truth.'),
-        ce('div', { style: {
-          fontSize: 48, fontWeight: 300, color: C.gold,
-          fontFamily: 'monospace', marginBottom: 4
-        }}, fmt(campfireElapsed)),
-        ce('button', { style: bt,
-          onClick: () => {
-            setCampfireStart(null);
-            CovenantFirebase.setPhase(sessionId, 'capstone_vote');
-          }
-        }, "We\u2019ve Synthesized \u2014 Vote Now")
+      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }), className: 'fade-up' },
+        ce('div', { style: { fontSize: 56 } }, '\ud83d\udd25'),
+        ce('div', { style: Object.assign({}, sb, { color: C.rust }) }, 'SYNTHESIS'),
+        ce('h1', { style: Object.assign({}, h1, { fontSize: 22 }), className: 'dsp' }, 'Share your fragments. Piece together the truth.'),
+        ce('div', { style: { fontSize: 48, fontWeight: 300, color: C.gold, fontFamily: 'monospace', marginBottom: 4 } }, fmt(campfireElapsed)),
+        ce('button', { style: bt, onClick: function() {
+          setCampfireStart(null);
+          CovenantFirebase.setPhase(sessionId, 'capstone_vote');
+        }}, "We\u2019ve Synthesized \u2014 Vote Now")
       )
     );
   }
 
-  if (phase === 'capstone_vote' && s) {
-    // For capstone, use the CAP object from existing code
+  // CAPSTONE VOTE
+  if (phase === 'capstone_vote') {
     return ce('div', { style: W },
       ce('div', { style: cd, className: 'fade-up' },
-        ce('div', { style: { ...sb, color: C.rust } }, 'Capstone \u2014 Group Decision'),
-        ce('h1', { style: { ...h1, fontSize: 20 }, className: 'dsp' },
-          'Knowing everything, what do you do?'),
-        // Options from the capstone scenario
-        ce('p', { style: { ...dm, marginBottom: 16 } },
-          'This is rendered from the CAP object in existing code.'),
-        ce('button', { style: bt,
-          onClick: handleAnalyze
-        }, '\u{1FA9E} Generate the Mirror')
+        ce('div', { style: Object.assign({}, sb, { color: C.rust }) }, 'Capstone \u2014 Group Decision'),
+        ce('h1', { style: Object.assign({}, h1, { fontSize: 20 }), className: 'dsp' }, 'Knowing everything, what do you do?'),
+        ce('button', { style: bt, onClick: handleAnalyze }, '\ud83e\ude9e Generate the Mirror')
       )
     );
   }
 
-  // ── ANALYZING ──
+  // ANALYZING
   if (phase === 'analyzing') {
     return ce('div', { style: W },
-      ce('div', { style: { ...cd, textAlign: 'center' }, className: 'fade-up' },
-        ce('div', { style: { fontSize: 52 } }, '\u{1FA9E}'),
+      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }), className: 'fade-up' },
+        ce('div', { style: { fontSize: 52 } }, '\ud83e\ude9e'),
         ce('div', { style: sb }, 'The Mirror'),
         ce('h1', { style: h1, className: 'dsp' }, 'Computing your portrait...'),
-        ce('p', { style: dm },
-          'Analyzing moral patterns, drift trajectories, shadow scores, and breaking points.')
+        ce('p', { style: dm }, 'Analyzing moral patterns, drift trajectories, shadow scores, and breaking points.')
       )
     );
   }
 
-  // ── MIRROR — Render results using existing Mirror component ──
+  // MIRROR
   if (phase === 'mirror' || config.status === 'mirror') {
-    // The results are available — render using the existing Mirror rendering code
-    // from the original App component. The results object has the same shape.
     if (results) {
       return ce('div', { style: W },
         ce('div', { style: cd },
           ce('div', { style: sb }, 'The Mirror is Ready'),
           ce('p', { style: dm },
-            'Players can view their individual portraits on their phones. ' +
-            'Group results are displayed below.'),
-          // Insert existing Mirror rendering here — it expects the same
-          // data.res and data.grp structure from analyze()
-          ce('p', { style: { ...dm, marginTop: 20, color: C.green } },
+            'Players can view their individual portraits on their phones. Group results are displayed below.'),
+          ce('p', { style: Object.assign({}, dm, { marginTop: 20, color: C.green }) },
             '\u2713 Results computed and shared with all players.')
         )
       );
@@ -1219,167 +1132,116 @@ function HostView() {
 
   // Fallback
   return ce('div', { style: W },
-    ce('div', { style: { ...cd, textAlign: 'center' } },
+    ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
       ce('p', { style: dm }, 'Loading... (phase: ' + phase + ')')
     )
   );
 }
 
-
 // ══════════════════════════════════════════════════════════════
-// BLOCK 6: Player View — The Phone Screen
+// Player View — The Phone Screen
 // ══════════════════════════════════════════════════════════════
 
 function PlayerView() {
-  const [sessionId, setSessionId] = useState(sessionStorage.getItem('cov_session_id'));
-  const [playerId, setPlayerId] = useState(sessionStorage.getItem('cov_player_id'));
-  const [playerName, setPlayerName] = useState('');
-  const [joined, setJoined] = useState(!!playerId);
-  const [error, setError] = useState('');
-  const [round, setRound] = useState({ roundIndex: -1, phase: 'lobby' });
-  const [scenarios, setScenarios] = useState([]);
-  const [config, setConfig] = useState({});
-  const [myResults, setMyResults] = useState(null);
-  const [pulseTimer, setPulseTimer] = useState(12);
-  const [pulseSubmitted, setPulseSubmitted] = useState(false);
-  const [predSubmitted, setPredSubmitted] = useState(false);
-  const [pulseStart, setPulseStart] = useState(null);
-  const timerRef = useRef(null);
-  const unsubs = useRef([]);
+  var _s1=useState(sessionStorage.getItem('cov_session_id')),sessionId=_s1[0],setSessionId=_s1[1];
+  var _s2=useState(sessionStorage.getItem('cov_player_id')),playerId=_s2[0],setPlayerId=_s2[1];
+  var _s3=useState(''),playerName=_s3[0],setPlayerName=_s3[1];
+  var _s4=useState(!!sessionStorage.getItem('cov_player_id')),joined=_s4[0],setJoined=_s4[1];
+  var _s5=useState(''),error=_s5[0],setError=_s5[1];
+  var _s6=useState({roundIndex:-1,phase:'lobby'}),round=_s6[0],setRound=_s6[1];
+  var _s7=useState([]),scenarios=_s7[0],setScenarios=_s7[1];
+  var _s8=useState({}),config=_s8[0],setConfig=_s8[1];
+  var _s9=useState(null),myResults=_s9[0],setMyResults=_s9[1];
+  var _s10=useState(12),pulseTimer=_s10[0],setPulseTimer=_s10[1];
+  var _s11=useState(false),pulseSubmitted=_s11[0],setPulseSubmitted=_s11[1];
+  var _s12=useState(false),predSubmitted=_s12[0],setPredSubmitted=_s12[1];
+  var _s13=useState(null),pulseStart=_s13[0],setPulseStart=_s13[1];
+  var timerRef=useRef(null);
+  var unsubs=useRef([]);
 
-  // Load scenarios once when game starts
-  useEffect(() => {
+  useEffect(function() {
     if (!sessionId) return;
     CovenantFirebase.init();
-
-    // One-shot read of scenarios when they appear
-    const scenRef = firebase.database().ref('sessions/' + sessionId + '/scenarios');
-    scenRef.on('value', snap => {
-      const val = snap.val();
-      if (val) setScenarios(val);
-    });
-
-    unsubs.current.push(
-      CovenantFirebase.onRoundChanged(sessionId, r => {
-        setRound(r);
-        // Reset submission flags on new round/phase
-        if (r.phase === 'pulsing') {
-          setPulseSubmitted(false);
-          setPulseTimer(12);
-          setPulseStart(Date.now());
-        }
-        if (r.phase === 'predicting') {
-          setPredSubmitted(false);
-        }
-      })
-    );
-
-    unsubs.current.push(
-      CovenantFirebase.onConfigChanged(sessionId, setConfig)
-    );
-
-    // Listen for results
-    unsubs.current.push(
-      CovenantFirebase.onResults(sessionId, results => {
-        if (results && playerId) {
-          setMyResults(results);
-        }
-      })
-    );
-
-    return () => {
-      scenRef.off();
-      unsubs.current.forEach(fn => fn());
-    };
+    var scenRef = firebase.database().ref('sessions/' + sessionId + '/scenarios');
+    scenRef.on('value', function(snap) { var val = snap.val(); if (val) setScenarios(val); });
+    unsubs.current.push(CovenantFirebase.onRoundChanged(sessionId, function(r) {
+      setRound(r);
+      if (r.phase === 'pulsing') { setPulseSubmitted(false); setPulseTimer(12); setPulseStart(Date.now()); }
+      if (r.phase === 'predicting') { setPredSubmitted(false); }
+    }));
+    unsubs.current.push(CovenantFirebase.onConfigChanged(sessionId, setConfig));
+    unsubs.current.push(CovenantFirebase.onResults(sessionId, function(results) {
+      if (results && playerId) setMyResults(results);
+    }));
+    return function() { scenRef.off(); unsubs.current.forEach(function(fn) { fn(); }); };
   }, [sessionId, playerId]);
 
-  // Pulse countdown timer
-  useEffect(() => {
+  useEffect(function() {
     if (round.phase === 'pulsing' && !pulseSubmitted) {
       setPulseTimer(12);
-      timerRef.current = setInterval(() => {
-        setPulseTimer(v => {
-          if (v <= 1) {
-            clearInterval(timerRef.current);
-            // Auto-submit first option on timeout
-            handlePulse(0);
-            return 0;
-          }
+      timerRef.current = setInterval(function() {
+        setPulseTimer(function(v) {
+          if (v <= 1) { clearInterval(timerRef.current); handlePulse(0); return 0; }
           return v - 1;
         });
       }, 1000);
-      return () => clearInterval(timerRef.current);
+      return function() { clearInterval(timerRef.current); };
     }
   }, [round.phase, round.roundIndex, pulseSubmitted]);
 
-  // ── Join handler ──
-  const handleJoin = async () => {
+  var handleJoin = function() {
     if (!playerName.trim()) { setError('Enter your name'); return; }
-    try {
-      const result = await CovenantFirebase.joinSession(sessionId, playerName.trim());
+    CovenantFirebase.joinSession(sessionId, playerName.trim()).then(function(result) {
       setPlayerId(result.playerId);
       sessionStorage.setItem('cov_player_id', result.playerId);
       setJoined(true);
-    } catch (e) {
-      setError(e.message);
-    }
+    }).catch(function(e) { setError(e.message); });
   };
 
-  // ── Pulse handler ──
-  const handlePulse = async (optionIndex) => {
+  var handlePulse = function(optionIndex) {
     if (pulseSubmitted) return;
     clearInterval(timerRef.current);
     setPulseSubmitted(true);
-
-    const scenario = scenarios[round.roundIndex];
-    const option = scenario.options[optionIndex];
-    const latencyMs = pulseStart ? Date.now() - pulseStart : 0;
-    const timerPct = (pulseTimer / 12) * 100;
-
-    // Build pulse payload per spec Section 3.1.1
-    const pulseData = {
+    var scenario = scenarios[round.roundIndex];
+    var option = scenario.options[optionIndex];
+    var latencyMs = pulseStart ? Date.now() - pulseStart : 0;
+    var timerPct = (pulseTimer / 12) * 100;
+    var pulseData = {
       selected_option_index: optionIndex,
       selected_foundation_primary: option.f || null,
       selected_foundation_secondary: null,
       foundation_weights: option.fw || {},
-      rejected_foundations: scenario.options
-        .filter((_, i) => i !== optionIndex)
-        .map(o => o.f)
-        .filter(Boolean),
+      rejected_foundations: scenario.options.filter(function(_, i) { return i !== optionIndex; }).map(function(o) { return o.f; }).filter(Boolean),
       pulse_latency_ms: latencyMs,
       timer_remaining_pct: timerPct
     };
-
-    await CovenantFirebase.submitPulse(sessionId, round.roundIndex, playerId, pulseData);
+    CovenantFirebase.submitPulse(sessionId, round.roundIndex, playerId, pulseData);
   };
 
-  // ── Prediction handler ──
-  const handlePrediction = async (count) => {
+  var handlePrediction = function(count) {
     if (predSubmitted) return;
     setPredSubmitted(true);
-    await CovenantFirebase.submitPrediction(sessionId, round.roundIndex, playerId, count);
+    CovenantFirebase.submitPrediction(sessionId, round.roundIndex, playerId, count);
   };
 
-  const phase = round.phase;
-  const ri = round.roundIndex;
-  const s = scenarios[ri] || null;
-  const playerCount = config.playerCount || 0;
+  var phase = round.phase;
+  var ri = round.roundIndex;
+  var s = scenarios[ri] || null;
+  var playerCount = config.playerCount || 0;
 
-  // ── NAME ENTRY (not yet joined) ──
+  // NAME ENTRY
   if (!joined) {
     return ce('div', { style: W },
-      ce('div', { style: { ...cd, textAlign: 'center' } },
-        ce('div', { style: { fontSize: 48, marginBottom: 8 } }, '\u{1F981}'),
+      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
+        ce('div', { style: { fontSize: 48, marginBottom: 8 } }, '\ud83e\udd81'),
         ce('div', { style: sb }, 'Join the Expedition'),
         ce('input', {
-          value: playerName,
-          placeholder: 'Your name',
-          onChange: e => setPlayerName(e.target.value),
-          onKeyDown: e => { if (e.key === 'Enter') handleJoin(); },
+          value: playerName, placeholder: 'Your name',
+          onChange: function(e) { setPlayerName(e.target.value); },
+          onKeyDown: function(e) { if (e.key === 'Enter') handleJoin(); },
           style: {
-            width: '100%', background: C.cream + '08',
-            border: '1px solid ' + C.cream + '15', borderRadius: 10,
-            padding: '14px 16px', color: C.cream, fontSize: 18,
+            width: '100%', background: C.cream + '08', border: '1px solid ' + C.cream + '15',
+            borderRadius: 10, padding: '14px 16px', color: C.cream, fontSize: 18,
             fontFamily: 'inherit', outline: 'none', textAlign: 'center',
             marginBottom: 12, boxSizing: 'border-box'
           }
@@ -1390,230 +1252,171 @@ function PlayerView() {
     );
   }
 
-  // ── LOBBY — Waiting for host to start ──
+  // LOBBY
   if (phase === 'lobby') {
     return ce('div', { style: W },
-      ce('div', { style: { ...cd, textAlign: 'center' } },
-        ce('div', { style: { fontSize: 48, marginBottom: 8 } }, '\u{1F525}'),
+      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
+        ce('div', { style: { fontSize: 48, marginBottom: 8 } }, '\ud83d\udd25'),
         ce('div', { style: sb }, 'Waiting at the Campfire'),
-        ce('h1', { style: { ...h1, fontSize: 22 }, className: 'dsp' }, 'You\u2019re in.'),
+        ce('h1', { style: Object.assign({}, h1, { fontSize: 22 }), className: 'dsp' }, 'You\u2019re in.'),
         ce('p', { style: dm }, 'The host will start the expedition when everyone is ready.'),
-        ce('div', { style: {
-          background: C.cream + '06', borderRadius: 12, padding: 16, marginTop: 20
-        }},
-          ce('div', { style: { color: C.gold, fontSize: 14, fontWeight: 600 } },
-            playerCount + ' players connected')
-        )
+        ce('div', { style: { background: C.cream + '06', borderRadius: 12, padding: 16, marginTop: 20 } },
+          ce('div', { style: { color: C.gold, fontSize: 14, fontWeight: 600 } }, playerCount + ' players connected'))
       )
     );
   }
 
-  // ── READING — Scenario is on the shared screen ──
+  // READING
   if (phase === 'reading') {
     return ce('div', { style: W },
-      ce('div', { style: { ...cd, textAlign: 'center' } },
-        ce('div', { style: { fontSize: 48, marginBottom: 8 } }, '\u{1F4D6}'),
+      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
+        ce('div', { style: { fontSize: 48, marginBottom: 8 } }, '\ud83d\udcd6'),
         ce('div', { style: sb }, 'Scenario ' + (ri + 1)),
-        ce('h1', { style: { ...h1, fontSize: 22 }, className: 'dsp' },
-          'Read the scenario on the shared screen'),
-        ce('p', { style: dm },
-          'The host will open pulse windows when everyone has read.')
+        ce('h1', { style: Object.assign({}, h1, { fontSize: 22 }), className: 'dsp' }, 'Read the scenario on the shared screen'),
+        ce('p', { style: dm }, 'The host will open pulse windows when everyone has read.')
       )
     );
   }
 
-  // ── PULSING — The 12-second gut pulse ──
+  // PULSING
   if (phase === 'pulsing' && s) {
     if (pulseSubmitted) {
       return ce('div', { style: W },
-        ce('div', { style: { ...cd, textAlign: 'center' } },
+        ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
           ce('div', { style: { fontSize: 48 } }, '\u2713'),
-          ce('div', { style: { ...sb, color: C.green } }, 'Pulse Submitted'),
+          ce('div', { style: Object.assign({}, sb, { color: C.green }) }, 'Pulse Submitted'),
           ce('p', { style: dm }, 'Waiting for other players...')
         )
       );
     }
-
     return ce('div', { style: W },
       ce('div', { style: cd, className: 'fade-up' },
         ce('div', { style: { display: 'flex', justifyContent: 'space-between', marginBottom: 12 } },
-          ce('div', { style: { ...sb, color: C.rust } }, '\u{1F512} Your Gut Pulse'),
-          ce('div', { style: {
-            fontSize: 32, fontWeight: 300,
-            color: pulseTimer <= 3 ? C.rust : C.gold,
-            fontFamily: 'monospace'
-          }}, pulseTimer + 's')
+          ce('div', { style: Object.assign({}, sb, { color: C.rust }) }, '\ud83d\udd12 Your Gut Pulse'),
+          ce('div', { style: { fontSize: 32, fontWeight: 300, color: pulseTimer <= 3 ? C.rust : C.gold, fontFamily: 'monospace' } }, pulseTimer + 's')
         ),
-        ce('div', { style: {
-          height: 4, background: C.cream + '11', borderRadius: 2,
-          marginBottom: 16, overflow: 'hidden'
-        }},
-          ce('div', { style: {
-            height: '100%', background: pulseTimer <= 3 ? C.rust : C.gold,
-            width: (pulseTimer / 12) * 100 + '%', borderRadius: 2,
-            transition: 'width .9s linear'
-          }})
+        ce('div', { style: { height: 4, background: C.cream + '11', borderRadius: 2, marginBottom: 16, overflow: 'hidden' } },
+          ce('div', { style: { height: '100%', background: pulseTimer <= 3 ? C.rust : C.gold, width: (pulseTimer / 12) * 100 + '%', borderRadius: 2, transition: 'width .9s linear' } })
         ),
-        s.options.map((o, i) =>
-          ce('button', {
-            key: i, style: ob(false),
-            onClick: () => handlePulse(i)
-          },
-            ce('span', { style: { color: C.gold, fontWeight: 700, marginRight: 8 } },
-              String.fromCharCode(65 + i) + '.'),
-            o.t
-          )
-        )
+        s.options.map(function(o, i) {
+          return ce('button', { key: i, style: ob(false), onClick: function() { handlePulse(i); } },
+            ce('span', { style: { color: C.gold, fontWeight: 700, marginRight: 8 } }, String.fromCharCode(65 + i) + '.'), o.t);
+        })
       )
     );
   }
 
-  // ── CAMPFIRE — Player waits while group discusses ──
+  // CAMPFIRE / GROUP VOTE
   if (phase === 'campfire' || phase === 'groupVote') {
     return ce('div', { style: W },
-      ce('div', { style: { ...cd, textAlign: 'center' } },
-        ce('div', { style: { fontSize: 48 } }, '\u{1F525}'),
+      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
+        ce('div', { style: { fontSize: 48 } }, '\ud83d\udd25'),
         ce('div', { style: sb }, 'Campfire Discussion'),
-        ce('h1', { style: { ...h1, fontSize: 20 }, className: 'dsp' },
-          'Discuss with your group'),
-        ce('p', { style: dm },
-          'Look up from your phone. The campfire is on the shared screen.')
+        ce('h1', { style: Object.assign({}, h1, { fontSize: 20 }), className: 'dsp' }, 'Discuss with your group'),
+        ce('p', { style: dm }, 'Look up from your phone. The campfire is on the shared screen.')
       )
     );
   }
 
-  // ── PREDICTING — How many people drifted? ──
+  // PREDICTING
   if (phase === 'predicting') {
     if (predSubmitted) {
       return ce('div', { style: W },
-        ce('div', { style: { ...cd, textAlign: 'center' } },
+        ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
           ce('div', { style: { fontSize: 48 } }, '\u2713'),
-          ce('div', { style: { ...sb, color: C.green } }, 'Prediction Submitted'),
+          ce('div', { style: Object.assign({}, sb, { color: C.green }) }, 'Prediction Submitted'),
           ce('p', { style: dm }, 'Waiting for other players...')
         )
       );
     }
-
     return ce('div', { style: W },
       ce('div', { style: cd, className: 'fade-up' },
-        ce('div', { style: sb }, '\u{1F52E} Your Prediction'),
-        ce('h1', { style: { ...h1, fontSize: 20 }, className: 'dsp' },
+        ce('div', { style: sb }, '\ud83d\udd2e Your Prediction'),
+        ce('h1', { style: Object.assign({}, h1, { fontSize: 20 }), className: 'dsp' },
           'How many people chose differently in private vs. the group vote?'),
-        ce('p', { style: { ...dm, marginBottom: 16 } },
-          'Including yourself. (0 to ' + playerCount + ')'),
-        ce('div', { style: {
-          display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center'
-        }},
-          Array.from({ length: playerCount + 1 }, (_, i) =>
-            ce('button', {
-              key: i,
-              style: {
-                ...bt, width: 56, height: 56, padding: 0,
-                fontSize: 20, borderRadius: '50%'
-              },
-              onClick: () => handlePrediction(i)
-            }, String(i))
-          )
+        ce('p', { style: Object.assign({}, dm, { marginBottom: 16 }) }, 'Including yourself. (0 to ' + playerCount + ')'),
+        ce('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' } },
+          Array.from({ length: playerCount + 1 }, function(_, i) {
+            return ce('button', { key: i, style: Object.assign({}, bt, { width: 56, height: 56, padding: 0, fontSize: 20, borderRadius: '50%' }),
+              onClick: function() { handlePrediction(i); }
+            }, String(i));
+          })
         )
       )
     );
   }
 
-  // ── REVEAL — Player sees if they drifted ──
+  // REVEAL
   if (phase === 'reveal') {
     return ce('div', { style: W },
-      ce('div', { style: { ...cd, textAlign: 'center' } },
-        ce('div', { style: { fontSize: 48 } }, '\u{1FA9E}'),
+      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
+        ce('div', { style: { fontSize: 48 } }, '\ud83e\ude9e'),
         ce('div', { style: sb }, 'The Drift Revealed'),
-        ce('p', { style: dm },
-          'Look at the shared screen for group results. ' +
-          'The host will advance when ready.')
+        ce('p', { style: dm }, 'Look at the shared screen for group results. The host will advance when ready.')
       )
     );
   }
 
-  // ── CAPSTONE FRAGMENTS — Player sees their secret fragment ──
+  // CAPSTONE FRAGMENTS
   if (phase === 'capstone_fragments') {
-    // Fragment assignment: player index mod number of fragments
-    const playerIndex = parseInt(playerId.split('_')[1]) || 0;
-    // CAP.fragments is defined in the existing group.html code
-    const fragmentIndex = playerIndex % (typeof CAP !== 'undefined' ? CAP.fragments.length : 1);
-    const fragmentText = typeof CAP !== 'undefined' ? CAP.fragments[fragmentIndex] : 'Fragment loading...';
-
+    var playerIndex = parseInt((playerId || '').split('_')[1]) || 0;
+    var fragmentIndex = typeof CAP !== 'undefined' ? playerIndex % CAP.fragments.length : 0;
+    var fragmentText = typeof CAP !== 'undefined' ? CAP.fragments[fragmentIndex] : 'Fragment loading...';
     return ce('div', { style: W },
-      ce('div', { style: { ...cd, textAlign: 'center' }, className: 'fade-up' },
-        ce('div', { style: { fontSize: 36 } }, '\u{1F512}'),
-        ce('div', { style: { ...sb, color: C.rust } }, 'Your Secret Fragment'),
-        ce('div', { style: {
-          background: C.rust + '12', border: '1px solid ' + C.rust + '33',
-          borderRadius: 12, padding: 20, margin: '16px 0', textAlign: 'left'
-        }},
-          ce('p', { style: {
-            fontSize: 16, lineHeight: 1.8, margin: 0,
-            fontFamily: "'Playfair Display'"
-          }}, fragmentText)
+      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }), className: 'fade-up' },
+        ce('div', { style: { fontSize: 36 } }, '\ud83d\udd12'),
+        ce('div', { style: Object.assign({}, sb, { color: C.rust }) }, 'Your Secret Fragment'),
+        ce('div', { style: { background: C.rust + '12', border: '1px solid ' + C.rust + '33', borderRadius: 12, padding: 20, margin: '16px 0', textAlign: 'left' } },
+          ce('p', { style: { fontSize: 16, lineHeight: 1.8, margin: 0, fontFamily: "'Playfair Display'" } }, fragmentText)
         ),
-        ce('p', { style: dm },
-          'Memorize this. Share verbally with the group when the campfire starts.')
+        ce('p', { style: dm }, 'Memorize this. Share verbally with the group when the campfire starts.')
       )
     );
   }
 
-  // ── CAPSTONE DISCUSSION/VOTE — Look at shared screen ──
+  // CAPSTONE DISCUSS/VOTE
   if (phase === 'capstone_discuss' || phase === 'capstone_vote') {
     return ce('div', { style: W },
-      ce('div', { style: { ...cd, textAlign: 'center' } },
-        ce('div', { style: { fontSize: 48 } }, '\u{1F525}'),
+      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
+        ce('div', { style: { fontSize: 48 } }, '\ud83d\udd25'),
         ce('div', { style: sb }, 'Capstone Synthesis'),
-        ce('p', { style: dm },
-          'Share your fragment with the group. The vote is on the shared screen.')
+        ce('p', { style: dm }, 'Share your fragment with the group. The vote is on the shared screen.')
       )
     );
   }
 
-  // ── ANALYZING ──
+  // ANALYZING
   if (phase === 'analyzing') {
     return ce('div', { style: W },
-      ce('div', { style: { ...cd, textAlign: 'center' } },
-        ce('div', { style: { fontSize: 48 } }, '\u{1FA9E}'),
+      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
+        ce('div', { style: { fontSize: 48 } }, '\ud83e\ude9e'),
         ce('div', { style: sb }, 'The Mirror'),
         ce('p', { style: dm }, 'Computing your portrait...')
       )
     );
   }
 
-  // ── MIRROR — Show player's personal results ──
+  // MIRROR
   if (phase === 'mirror' || config.status === 'mirror') {
-    if (myResults) {
-      const playerIndex = parseInt(playerId.split('_')[1]) || 0;
-      const myProfile = myResults.players
-        ? myResults.players[playerId] || myResults.players[playerIndex]
-        : null;
-
+    if (myResults && playerId) {
+      var playerIndex2 = parseInt(playerId.split('_')[1]) || 0;
+      var myProfile = myResults.players ? (myResults.players[playerId] || myResults.players[playerIndex2]) : null;
       if (myProfile) {
         return ce('div', { style: W },
           ce('div', { style: cd },
             ce('div', { style: sb }, 'Your Mirror Portrait'),
-            ce('h1', { style: h1, className: 'dsp' }, myProfile.arch?.nm || 'Your Profile'),
-            ce('p', { style: { fontSize: 15, lineHeight: 1.8, color: C.cream + '88' } },
-              myProfile.arch?.de || 'Your results are ready.'),
-            // Full results rendering would use the existing Mirror component
-            // from the classic App. For now, show key metrics.
-            ce('div', { style: {
-              background: C.cream + '05', borderRadius: 12,
-              padding: 16, marginTop: 16
-            }},
-              ce('p', { style: { color: C.cream + '66', fontSize: 13 } },
-                'View the full group Mirror on the shared Campfire screen.')
+            ce('h1', { style: h1, className: 'dsp' }, myProfile.arch ? myProfile.arch.nm : 'Your Profile'),
+            ce('p', { style: { fontSize: 15, lineHeight: 1.8, color: C.cream + '88' } }, myProfile.arch ? myProfile.arch.de : 'Your results are ready.'),
+            ce('div', { style: { background: C.cream + '05', borderRadius: 12, padding: 16, marginTop: 16 } },
+              ce('p', { style: { color: C.cream + '66', fontSize: 13 } }, 'View the full group Mirror on the shared Campfire screen.')
             )
           )
         );
       }
     }
-
     return ce('div', { style: W },
-      ce('div', { style: { ...cd, textAlign: 'center' } },
-        ce('div', { style: { fontSize: 48 } }, '\u{1FA9E}'),
+      ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
+        ce('div', { style: { fontSize: 48 } }, '\ud83e\ude9e'),
         ce('div', { style: sb }, 'The Mirror'),
         ce('p', { style: dm }, 'Waiting for results...')
       )
@@ -1622,42 +1425,31 @@ function PlayerView() {
 
   // Fallback
   return ce('div', { style: W },
-    ce('div', { style: { ...cd, textAlign: 'center' } },
+    ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
       ce('p', { style: dm }, 'Syncing... (' + phase + ')')
     )
   );
 }
 
-
 // ══════════════════════════════════════════════════════════════
-// BLOCK 7: View Router — The Root Component
+// View Router — The Root Component
 // ══════════════════════════════════════════════════════════════
 
 function ViewRouter() {
-  const [mode, setMode] = useState(getViewMode());
-
-  // Listen for hash changes
-  useEffect(() => {
-    const handler = () => setMode(getViewMode());
+  var _s = useState(getViewMode()), mode = _s[0], setMode = _s[1];
+  useEffect(function() {
+    var handler = function() { setMode(getViewMode()); };
     window.addEventListener('hashchange', handler);
-    return () => window.removeEventListener('hashchange', handler);
+    return function() { window.removeEventListener('hashchange', handler); };
   }, []);
 
   switch (mode) {
     case 'host':    return ce(HostView);
     case 'play':    return ce(PlayerView);
-    case 'classic': return ce(App);        // The existing single-device App
+    case 'classic': return ce(App);
     case 'splash':  return ce(SplashScreen);
     default:        return ce(SplashScreen);
   }
 }
 
-// ── Mount ──
-// Replace:  ReactDOM.render(ce(App), document.getElementById("root"));
-// With:
 ReactDOM.render(ce(ViewRouter), document.getElementById("root"));
-
-
-</script>
-</body>
-</html>
