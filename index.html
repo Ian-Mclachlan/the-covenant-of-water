@@ -1080,7 +1080,9 @@ function startGame(){
     dm:{ag:0,af:0,st:0,th:0,mn:0,im:0},
     ls:{elephant:0,lion:0,hippo:0,monkey:0,owl:0,meerkat:0,bonobo:0,peacock:0,songbird:0},
     hs:{elephant:0,lion:0,hippo:0,monkey:0,owl:0,meerkat:0,bonobo:0,peacock:0,songbird:0},
-    cs:{},t:0
+    cs:{},t:0,
+     latency: [],            // NEW: decision timing data
+  instinctHistory: []     // NEW: per-question instinct choices with context 
   };
   
   go('S2');
