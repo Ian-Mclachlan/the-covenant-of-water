@@ -161,86 +161,474 @@ CP:{title:"The Chameleon Pack",prose:"Significant conformity pressure. Individua
 VF:{title:"The Vulnerable Fortress",prose:"Strength and cracks in equal measure. Moderate drift suggests real discussion is happening. But some members may be silencing themselves. The fortress holds, but at what cost to the voices inside?"}
 };
 
-function analyze(pl,gv,sc,campDur){
+// ═══════════════════════════════════════════════════════════════
+// ENHANCED PSYCHOMETRIC ENGINE v2.0
+// Implements ALL Tier 1 metrics from psychometric_engine_spec_v2
+// Drop-in replacement for the existing analyze() function
+// ═══════════════════════════════════════════════════════════════
+
+// ── Narrative Trigger Libraries ──
+const NARRATIVE_TRIGGERS = [
+  {id:"NT-001",conditions:[{m:"sdp",op:"<",v:20},{m:"latencyShift",op:">",v:1.3}],
+   narrative:"You held your ground on {sdp}% of high-stress decisions — and you weren\'t reflexive about it. Your crisis latency ratio was {latencyShift}×, suggesting each stand was deliberate, not stubborn. That is the Deliberator\'s gift: wise mind holding under fire."},
+  {id:"NT-002",conditions:[{m:"biasRatio",op:">",v:0.75},{m:"dp",op:"<",v:30}],
+   narrative:"You expected the group to abandon their convictions far more than they did — yet you yourself were among the most steadfast. Your cynicism about others didn\'t match your own loyalty. The question: is your distrust a perception or a projection?"},
+  {id:"NT-003",conditions:[{m:"slope",op:">",v:0.10},{m:"baselineDriftPct",op:"<",v:20}],
+   narrative:"You started this safari with ironclad convictions — drifting on only {baselineDriftPct}% of early rounds. But as pressure mounted, your independence eroded. By the final rounds, the group\'s gravity had pulled you in."},
+  {id:"NT-003b",conditions:[{m:"slope",op:"<",v:-0.10},{m:"baselineDriftPct",op:">",v:50}],
+   narrative:"You began this game inside the group\'s current — conforming on {baselineDriftPct}% of early decisions. But something shifted. As the stakes rose, you found your voice. That trajectory — from compliance to conviction — is the rarest arc in the data."},
+  {id:"NT-004",conditions:[{m:"shadowScore",op:">",v:0.80}],
+   narrative:"Across every scenario where {shadowFoundation} was available, you walked past it. This consistent avoidance of {shadowDesc} is your moral blind spot. Not wrong. But invisible to you. And what we cannot see in ourselves, we often cannot tolerate in others."},
+  {id:"NT-005",conditions:[{m:"latencyShift",op:">",v:1.4},{m:"dp",op:"<",v:25}],
+   narrative:"When the stakes rose, you slowed down — your decision latency increased by {latencyIncreasePct}% in crisis rounds. And that deliberation paid off: you were among the least susceptible to conformity pressure."},
+  {id:"NT-006",conditions:[{m:"latencyShift",op:"<",v:0.6},{m:"sdp",op:">",v:50}],
+   narrative:"Under pressure, your decisions got faster and your convictions got weaker — a {latencyDecreasePct}% drop in deliberation time paired with a {sdp}% drift rate. The amygdala seized the wheel."},
+  {id:"NT-007",conditions:[{m:"soloDissent",op:">=",v:2}],
+   narrative:"You were the only person to dissent from the consensus on {soloDissent} occasions. Roosevelt called this the \'Arena\' — choosing to stand in the dust while the crowd watches. Whether the group needed your dissent or not, you were willing to bear the cost."},
+  {id:"NT-009",conditions:[{m:"indivCMR",op:">",v:0.60},{m:"foundationVariety",op:">=",v:4}],
+   narrative:"You read the terrain. Across the game, you drew from {foundationVariety} different moral foundations, and your choices matched the contextual demands {indivCMRPct}% of the time. This is Moral Elasticity: not indecision, but the rare capacity to speak the language the moment requires."},
+  {id:"NT-010",conditions:[{m:"domFoundPct",op:">",v:0.65},{m:"indivCMR",op:"<",v:0.30}],
+   narrative:"You reached for {tf} in {domFoundPctDisplay}% of decisions — regardless of what the scenario demanded. Your moral compass is strong, but it points in one direction."},
+  {id:"NT-011",conditions:[{m:"bpDetected",op:"==",v:true},{m:"bpCrisisSlope",op:">",v:0.15}],
+   narrative:"Your breaking point arrived at stress level {breakpoint}. Below that threshold, your drift rate was stable. Above it, your convictions degraded rapidly. That inflection — the exact moment your baseline self gave way to your crisis self — is the most honest data point in this game."},
+  {id:"NT-012",conditions:[{m:"bpDetected",op:"==",v:false},{m:"dp",op:"<",v:20}],
+   narrative:"The engine could not find your breaking point — because you didn\'t break. Across the full stress gradient, from the wonder of the plains to the chaos of the abyss, your convictions held."}
+];
+
+const GROUP_TRIGGERS = [
+  {id:"GT-001",conditions:[{m:"relationalCalibration",op:">",v:0.65},{m:"capstoneSynthesis",op:">",v:0.80}],
+   narrative:"This group synthesized. {fragmentsSurfaced} of {totalFragments} information fragments surfaced in the capstone crisis, and the group\'s decisions drew from {foundationsUsed} of 6 moral languages. The Holding Environment was safe enough for quiet truths to be spoken aloud."},
+  {id:"GT-002",conditions:[{m:"distressTolerance",op:"<",v:0.7},{m:"cpi",op:">",v:0.50}],
+   narrative:"When stress peaked, this group rushed. Discussion time dropped in crisis rounds, and conformity spiked. Lencioni would name this \'fear of conflict\' — the silence that masquerades as agreement."},
+  {id:"GT-003",conditions:[{m:"mdt",op:"<",v:0.33},{m:"domGrpFoundPct",op:">",v:0.60}],
+   narrative:"This group spoke one moral language: {domGrpFound}. In {domGrpFoundPctDisplay}% of decisions, the consensus defaulted to the same foundation — leaving other moral languages consistently unvoiced."},
+  {id:"GT-004",conditions:[{m:"mar",op:">",v:0.40}],
+   narrative:"Remarkably, this group changed its mind. In {marCount} rounds, the final consensus reflected a perspective initially held by a minority. That capacity to let the quietest voice reshape the outcome is Adaptive Calibration at work."},
+  {id:"GT-005",conditions:[{m:"cmr",op:">",v:0.55},{m:"mdt",op:">",v:0.50}],
+   narrative:"This group read the terrain. The consensus shifted between {foundationsUsed} moral foundations — and in {contextMatchCount} cases, the foundation matched what the scenario\'s real-world context rewards. This is Moral Elasticity."},
+  {id:"GT-007",conditions:[{m:"distressTolerance",op:">",v:1.2},{m:"cpi",op:"<",v:0.35},{m:"mdt",op:">",v:0.50}],
+   narrative:"This group found the Productive Zone of Disequilibrium — enough tension to force honest reckoning, but not so much that bonds fractured. Campfire discussions grew longer under pressure. Private convictions survived the group\'s gravity. Multiple moral languages were spoken."},
+  {id:"GT-008",conditions:[{m:"relationalCalibration",op:"<",v:0.35}],
+   narrative:"This group\'s Relational Calibration score was {rcScore} — below the threshold where collective intelligence can emerge. The weakest dimension was {lowestComponent}, scoring {lowestScore}. {lowestDiagnosis}"}
+];
+
+const SHADOW_DESCS = {
+  Care:"the instinct to protect the vulnerable and prevent suffering",
+  Equality:"the drive toward fairness and equal treatment for all",
+  Proportionality:"the calculus of costs, tradeoffs, and pragmatic balance",
+  Loyalty:"the bond of solidarity with your in-group, your tribe",
+  Authority:"respect for hierarchy, tradition, and institutional structure",
+  Purity:"the sanctity of inviolable principles and sacred boundaries"
+};
+
+const RC_DIAGNOSES = {
+  Moral_Elasticity:"The group\'s moral palette was narrow — the same foundation drove most decisions, regardless of what the environment demanded.",
+  Adaptive_Calibration:"The group struggled to integrate minority perspectives and asymmetric information. The loudest voice, not the best signal, drove decisions.",
+  Holding_Environment:"Under pressure, this group chose speed over depth. Campfire discussions shortened, conformity spiked, and private convictions yielded to social gravity.",
+  Capstone_Synthesis:"When the crisis demanded that every fragment of information reach the decision, this group lost pieces."
+};
+
+// ── Trigger evaluation engine ──
+function evalTrigger(trigger, metrics) {
+  return trigger.conditions.every(function(c) {
+    var val = metrics[c.m];
+    if (val === undefined || val === null) return false;
+    switch(c.op) {
+      case '>': return val > c.v;
+      case '<': return val < c.v;
+      case '>=': return val >= c.v;
+      case '<=': return val <= c.v;
+      case '==': return val === c.v;
+      case '!=': return val !== c.v;
+      default: return false;
+    }
+  });
+}
+
+function fillTemplate(tmpl, data) {
+  return tmpl.replace(/\{(\w+)\}/g, function(match, key) {
+    return data[key] !== undefined ? data[key] : match;
+  });
+}
+
+function generateNarratives(triggers, metrics) {
+  var results = [];
+  triggers.forEach(function(t) {
+    if (evalTrigger(t, metrics)) {
+      results.push({id: t.id, text: fillTemplate(t.narrative, metrics)});
+    }
+  });
+  return results;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// THE ENHANCED ANALYZE FUNCTION
+// ═══════════════════════════════════════════════════════════════
+
+function analyze(pl,gv,sc,campDur,sy){
 const N=sc.length;
 const STRESS_MULT={2:1.0,3:1.0,4:1.0,5:1.15,6:1.15,7:1.30,8:1.30,9:1.60,10:1.60};
 const CENTROIDS={Chameleon:[70,60,50,40],LoneBull:[15,10,45,85],Vanguard:[25,20,80,70],Anchor:[35,35,55,65]};
 const CENTROID_KEYS={Chameleon:"Ch",LoneBull:"LB",Vanguard:"Va",Anchor:"An"};
+const FOUNDS=["Care","Equality","Proportionality","Loyalty","Authority","Purity"];
+
 function eucDist(a,b){return Math.sqrt(a.reduce((s,v,i)=>s+Math.pow(v-b[i],2),0));}
 function driftSlope(bools){const n=bools.length;if(n<2)return 0;const xM=(n-1)/2;const yM=bools.reduce((a,b)=>a+b,0)/n;let num=0,den=0;for(let i=0;i<n;i++){num+=(i-xM)*(bools[i]-yM);den+=(i-xM)**2;}return den===0?0:num/den;}
-const res=pl.map(p=>{
+
+// ── Piecewise breakpoint helpers ──
+function segmentError(pts){
+  if(pts.length<2)return 0;
+  var n=pts.length,xM=pts.reduce(function(s,p){return s+p.s},0)/n,yM=pts.reduce(function(s,p){return s+p.d},0)/n;
+  var num=0,den=0;
+  pts.forEach(function(p){num+=(p.s-xM)*(p.d-yM);den+=(p.s-xM)*(p.s-xM);});
+  var slope=den===0?0:num/den,intercept=yM-slope*xM;
+  return pts.reduce(function(s,p){var e=p.d-(slope*p.s+intercept);return s+e*e;},0);
+}
+function slopeOfPts(pts){
+  if(pts.length<2)return 0;
+  var n=pts.length,xM=pts.reduce(function(s,p){return s+p.s},0)/n,yM=pts.reduce(function(s,p){return s+p.d},0)/n;
+  var num=0,den=0;
+  pts.forEach(function(p){num+=(p.s-xM)*(p.d-yM);den+=(p.s-xM)*(p.s-xM);});
+  return den===0?0:num/den;
+}
+function findBreakpoint(dataPoints){
+  var bestBP=5,bestError=Infinity;
+  for(var bp=3;bp<=8;bp++){
+    var low=dataPoints.filter(function(p){return p.s<=bp;});
+    var high=dataPoints.filter(function(p){return p.s>bp;});
+    if(low.length<2||high.length<2)continue;
+    var err=segmentError(low)+segmentError(high);
+    if(err<bestError){bestError=err;bestBP=bp;}
+  }
+  var lowPts=dataPoints.filter(function(p){return p.s<=bestBP;});
+  var highPts=dataPoints.filter(function(p){return p.s>bestBP;});
+  var bSlope=slopeOfPts(lowPts),cSlope=slopeOfPts(highPts);
+  var detected=highPts.length>=2&&lowPts.length>=2&&Math.abs(cSlope-bSlope)>0.05;
+  return{breakpoint:bestBP,baseline_slope:bSlope,crisis_slope:cSlope,detected:detected};
+}
+
+// ══════════════════════════════
+// INDIVIDUAL PLAYER SCORING
+// ══════════════════════════════
+const res=pl.map(function(p,pIdx){
 let dr=0,sd=0,st=0,pe=0;
 const fc={};const fcw={};const dbs=[];const driftBools=[];
 let predErrors=[];let overCount=0;let underCount=0;let predTotal=0;
 const shadowAvail={};const shadowReject={};
+let soloDissent=0;
+let indivContextMatches=0, indivContextTotal=0;
+let baselineDrifts=0, baselineTotal=0;
+
 for(let i=0;i<N;i++){
-if(p.pulses[i]===undefined||gv[i]===undefined)continue;
-const d=p.pulses[i]!==gv[i];if(d)dr++;
-const s=sc[i];const sm=STRESS_MULT[s.stress]||1.0;
-dbs.push({stress:s.stress,d:d?1:0});
-driftBools.push(d?1:0);
-if(s.stress>=7){st++;if(d)sd++;}
-const chosenOpt=s.options[p.pulses[i]];
-const f=chosenOpt?.f;if(f)fc[f]=(fc[f]||0)+1;
-if(chosenOpt?.fw){for(const[fnd,wt]of Object.entries(chosenOpt.fw)){fcw[fnd]=(fcw[fnd]||0)+wt*sm;}}else if(f){fcw[f]=(fcw[f]||0)+1.0*sm;}
-const availFs=new Set(s.options.map(o=>o.f).filter(Boolean));
-availFs.forEach(af=>{shadowAvail[af]=(shadowAvail[af]||0)+1;});
-const chosenPrimary=f;const chosenFw=chosenOpt?.fw||{};
-const chosenFs=new Set(Object.keys(chosenFw).length>0?Object.keys(chosenFw):(chosenPrimary?[chosenPrimary]:[]));
-availFs.forEach(af=>{if(!chosenFs.has(af)){shadowReject[af]=(shadowReject[af]||0)+1;}});
-const as=pl.filter(pp=>pp.pulses[i]!==undefined&&pp.pulses[i]!==gv[i]).length;
-if(p.predictions[i]!==undefined){const err=p.predictions[i]-as;pe+=Math.abs(err);predErrors.push({err:Math.abs(err),dir:err>0?"over":err<0?"under":"exact"});
-if(err>0)overCount++;else if(err<0)underCount++;predTotal++;}
+  if(p.pulses[i]===undefined||gv[i]===undefined)continue;
+  const d=p.pulses[i]!==gv[i];if(d)dr++;
+  const s=sc[i];const sm=STRESS_MULT[s.stress]||1.0;
+  dbs.push({stress:s.stress,d:d?1:0,round:i});
+  driftBools.push(d?1:0);
+
+  // Baseline drift (stress <= 4)
+  if(s.stress<=4){baselineTotal++;if(d)baselineDrifts++;}
+  // High-stress tracking
+  if(s.stress>=7){st++;if(d)sd++;}
+
+  // Solo dissent: was this player the ONLY one who disagreed?
+  const othersAgreed=pl.filter(function(pp,j){return j!==pIdx&&pp.pulses[i]!==undefined&&pp.pulses[i]===gv[i];}).length;
+  const totalVoters=pl.filter(function(pp){return pp.pulses[i]!==undefined;}).length;
+  if(d && othersAgreed===totalVoters-1) soloDissent++;
+
+  // Foundation counting
+  const chosenOpt=s.options[p.pulses[i]];
+  const f=chosenOpt?.f;if(f)fc[f]=(fc[f]||0)+1;
+  if(chosenOpt?.fw){for(const[fnd,wt]of Object.entries(chosenOpt.fw)){fcw[fnd]=(fcw[fnd]||0)+wt*sm;}}
+  else if(f){fcw[f]=(fcw[f]||0)+1.0*sm;}
+
+  // Individual context match rate
+  if(s.caf){
+    indivContextTotal++;
+    if(f===s.caf) indivContextMatches++;
+  }
+
+  // Shadow tracking
+  const availFs=new Set(s.options.map(function(o){return o.f;}).filter(Boolean));
+  availFs.forEach(function(af){shadowAvail[af]=(shadowAvail[af]||0)+1;});
+  const chosenFw=chosenOpt?.fw||{};
+  const chosenFs=new Set(Object.keys(chosenFw).length>0?Object.keys(chosenFw):(f?[f]:[]));
+  availFs.forEach(function(af){if(!chosenFs.has(af)){shadowReject[af]=(shadowReject[af]||0)+1;}});
+
+  // Predictions
+  const as=pl.filter(function(pp){return pp.pulses[i]!==undefined&&pp.pulses[i]!==gv[i];}).length;
+  if(p.predictions[i]!==undefined){
+    const err=p.predictions[i]-as;pe+=Math.abs(err);
+    predErrors.push({err:Math.abs(err),dir:err>0?"over":err<0?"under":"exact"});
+    if(err>0)overCount++;else if(err<0)underCount++;predTotal++;
+  }
 }
-const dp=N>0?(dr/N)*100:0;const sdp=st>0?(sd/st)*100:0;
+
+const dp=N>0?(dr/N)*100:0;
+const sdp=st>0?(sd/st)*100:0;
 const pa=N>0?Math.max(0,100-(pe/N)*25):50;
-const sr=Object.entries(fc).sort((a,b)=>b[1]-a[1]);
-const tf=sr[0]?.[0]||"Care";const sf=sr[1]?.[0]||"Equality";
+const baselineDriftPct=baselineTotal>0?(baselineDrifts/baselineTotal)*100:0;
+
+// Regulation score
 let rg=75;
-if(dbs.length>=4){const lo=dbs.filter(x=>x.stress<7);const hi=dbs.filter(x=>x.stress>=7);
-const lr=lo.length>0?lo.reduce((s,x)=>s+x.d,0)/lo.length:0;
-const hr=hi.length>0?hi.reduce((s,x)=>s+x.d,0)/hi.length:0;
-rg=Math.round(Math.max(0,Math.min(100,80-(hr-lr)*80)));}
+if(dbs.length>=4){
+  const lo=dbs.filter(function(x){return x.stress<7;});
+  const hi=dbs.filter(function(x){return x.stress>=7;});
+  const lr=lo.length>0?lo.reduce(function(s,x){return s+x.d;},0)/lo.length:0;
+  const hr=hi.length>0?hi.reduce(function(s,x){return s+x.d;},0)/hi.length:0;
+  rg=Math.round(Math.max(0,Math.min(100,80-(hr-lr)*80)));
+}
+
+// Foundation sorting
+const sr=Object.entries(fc).sort(function(a,b){return b[1]-a[1];});
+const tf=sr[0]?.[0]||"Care";const sf=sr[1]?.[0]||"Equality";
 const bel=BEL[tf]||BEL.Care;
+
+// Foundation variety & dominant pct
+const foundationVariety=Object.keys(fc).length;
+const domFoundPct=sr[0]?sr[0][1]/Math.max(N,1):0;
+
+// Individual context match rate
+const indivCMR=indivContextTotal>0?indivContextMatches/indivContextTotal:0;
+
+// Archetype assignment (Euclidean distance)
 const pv=[dp,sdp,pa,rg];
 const dists={};for(const[name,cent]of Object.entries(CENTROIDS)){dists[name]=eucDist(pv,cent);}
 const maxD=Math.max(...Object.values(dists));
-const prox={};let total=0;for(const[name,dist]of Object.entries(dists)){prox[name]=maxD-dist;total+=prox[name];}
+const prox={};let total=0;
+for(const[name,dist]of Object.entries(dists)){prox[name]=maxD-dist;total+=prox[name];}
 for(const name of Object.keys(prox)){prox[name]=Math.round((prox[name]/Math.max(total,0.01))*100);}
-const topArch=Object.entries(prox).sort((a,b)=>b[1]-a[1]);
+const topArch=Object.entries(prox).sort(function(a,b){return b[1]-a[1];});
 const ak=CENTROID_KEYS[topArch[0][0]]||"An";
-const archBlend=topArch.map(([n,p])=>({name:n,pct:p,key:CENTROID_KEYS[n]}));
-const shadow={};const FOUNDS=["Care","Equality","Proportionality","Loyalty","Authority","Purity"];
-FOUNDS.forEach(f=>{if(shadowAvail[f]&&shadowAvail[f]>0){shadow[f]=Math.round(((shadowReject[f]||0)/shadowAvail[f])*100)/100;}else{shadow[f]=0;}});
-const shadowTop=Object.entries(shadow).sort((a,b)=>b[1]-a[1]);
+const archBlend=topArch.map(function(e){return{name:e[0],pct:e[1],key:CENTROID_KEYS[e[0]]};});
+
+// Shadow scores
+const shadow={};
+FOUNDS.forEach(function(f){
+  if(shadowAvail[f]&&shadowAvail[f]>0){shadow[f]=Math.round(((shadowReject[f]||0)/shadowAvail[f])*100)/100;}
+  else{shadow[f]=0;}
+});
+const shadowTop=Object.entries(shadow).sort(function(a,b){return b[1]-a[1];});
 const shadowFoundation=shadowTop[0]?.[0]||null;
 const shadowScore=shadowTop[0]?.[1]||0;
+
+// Prediction type
 const biasRatio=predTotal>0?overCount/predTotal:0.5;
-const meanError=predTotal>0?predErrors.reduce((s,e)=>s+e.err,0)/predTotal:0;
-let predType;if(biasRatio>0.70)predType="Cynic";else if(biasRatio<0.30)predType="Idealist";else if(meanError<1.0)predType="Reader";else predType="Guesser";
+const meanError=predTotal>0?predErrors.reduce(function(s,e){return s+e.err;},0)/predTotal:0;
+let predType;
+if(biasRatio>0.70)predType="Cynic";
+else if(biasRatio<0.30)predType="Idealist";
+else if(meanError<1.0)predType="Reader";
+else predType="Guesser";
+
+// Drift arc
 const slope=driftSlope(driftBools);
-let driftArc;if(slope>0.08)driftArc="Eroded Anchor";else if(slope<-0.08)driftArc="Late Bloomer";else driftArc="Steady State";
+let driftArc;
+if(slope>0.08)driftArc="Eroded Anchor";
+else if(slope<-0.08)driftArc="Late Bloomer";
+else driftArc="Steady State";
+
+// Latency shift
 let latencyShift=1.0;
-if(p.latencies){const baselineRounds=dbs.filter(x=>x.stress<=3);const crisisRounds=dbs.filter(x=>x.stress>=7);
-const bIdx=[];const cIdx=[];for(let i=0;i<N;i++){if(p.pulses[i]===undefined)continue;if(sc[i].stress<=3)bIdx.push(i);if(sc[i].stress>=7)cIdx.push(i);}
-const bLats=bIdx.map(i=>p.latencies[i]).filter(l=>l>0);
-const cLats=cIdx.map(i=>p.latencies[i]).filter(l=>l>0);
-const bMean=bLats.length>0?bLats.reduce((a,b)=>a+b,0)/bLats.length:0;
-const cMean=cLats.length>0?cLats.reduce((a,b)=>a+b,0)/cLats.length:0;
-latencyShift=bMean>0?cMean/bMean:1.0;}
-let latencyType;if(latencyShift>1.3)latencyType="Deliberator";else if(latencyShift<0.8)latencyType="Snap Reactor";else latencyType="Steady Hand";
-return{dp,sdp,pa,rg,tf,sf,fc,fcw,bel,ak,arch:ARCH[ak],dbs,archBlend,shadow,shadowFoundation,shadowScore,predType,biasRatio,meanError,driftArc,slope,latencyShift,latencyType};
+if(p.latencies){
+  const bIdx=[],cIdx=[];
+  for(let i=0;i<N;i++){if(p.pulses[i]===undefined)continue;if(sc[i].stress<=3)bIdx.push(i);if(sc[i].stress>=7)cIdx.push(i);}
+  const bLats=bIdx.map(function(i){return p.latencies[i];}).filter(function(l){return l>0;});
+  const cLats=cIdx.map(function(i){return p.latencies[i];}).filter(function(l){return l>0;});
+  const bMean=bLats.length>0?bLats.reduce(function(a,b){return a+b;},0)/bLats.length:0;
+  const cMean=cLats.length>0?cLats.reduce(function(a,b){return a+b;},0)/cLats.length:0;
+  latencyShift=bMean>0?cMean/bMean:1.0;
+}
+let latencyType;
+if(latencyShift>1.3)latencyType="Deliberator";
+else if(latencyShift<0.8)latencyType="Snap Reactor";
+else latencyType="Steady Hand";
+
+// ── NEW: Piecewise Breaking Point ──
+const bpData=findBreakpoint(dbs);
+
+// ── NEW: Narrative triggers ──
+const narrativeMetrics={
+  dp:Math.round(dp),sdp:Math.round(sdp),pa:Math.round(pa),rg:rg,
+  biasRatio:biasRatio,meanError:meanError,slope:slope,
+  latencyShift:latencyShift,shadowScore:shadowScore,
+  shadowFoundation:shadowFoundation,
+  shadowDesc:SHADOW_DESCS[shadowFoundation]||"",
+  soloDissent:soloDissent,
+  indivCMR:indivCMR,indivCMRPct:Math.round(indivCMR*100),
+  foundationVariety:foundationVariety,
+  domFoundPct:domFoundPct,domFoundPctDisplay:Math.round(domFoundPct*100),
+  tf:tf,sf:sf,
+  baselineDriftPct:Math.round(baselineDriftPct),
+  latencyIncreasePct:Math.round((latencyShift-1)*100),
+  latencyDecreasePct:Math.round((1-latencyShift)*100),
+  bpDetected:bpData.detected,
+  bpCrisisSlope:bpData.crisis_slope,
+  breakpoint:bpData.breakpoint
+};
+const narratives=generateNarratives(NARRATIVE_TRIGGERS, narrativeMetrics);
+
+return{dp:dp,sdp:sdp,pa:pa,rg:rg,tf:tf,sf:sf,fc:fc,fcw:fcw,bel:bel,ak:ak,arch:ARCH[ak],dbs:dbs,
+  archBlend:archBlend,shadow:shadow,shadowFoundation:shadowFoundation,shadowScore:shadowScore,
+  predType:predType,biasRatio:biasRatio,meanError:meanError,
+  driftArc:driftArc,slope:slope,latencyShift:latencyShift,latencyType:latencyType,
+  // NEW metrics
+  breakpoint:bpData,soloDissent:soloDissent,
+  indivCMR:indivCMR,foundationVariety:foundationVariety,domFoundPct:domFoundPct,
+  baselineDriftPct:baselineDriftPct,
+  narratives:narratives
+};
 });
-let td=0;for(let i=0;i<N;i++){td+=pl.filter(p=>p.pulses[i]!==undefined&&p.pulses[i]!==gv[i]).length/pl.length;}
+
+// ══════════════════════════════
+// GROUP-LEVEL SCORING
+// ══════════════════════════════
+
+// Basic aggregates
+let td=0;
+for(let i=0;i<N;i++){td+=pl.filter(function(p){return p.pulses[i]!==undefined&&p.pulses[i]!==gv[i];}).length/pl.length;}
 const ad=(td/N)*100;
-const gf={};for(let i=0;i<N;i++){if(gv[i]!==undefined){const f=sc[i].options[gv[i]]?.f;if(f)gf[f]=(gf[f]||0)+1;}}
-const ap=res.reduce((s,r)=>s+r.pa,0)/res.length;
-let gak;if(ad<20&&ap>65)gak="Ad";else if(ad<20)gak="Iv";else if(ad>50)gak="CP";else gak="VF";
+const gf={};
+for(let i=0;i<N;i++){if(gv[i]!==undefined){const f=sc[i].options[gv[i]]?.f;if(f)gf[f]=(gf[f]||0)+1;}}
+const ap=res.reduce(function(s,r){return s+r.pa;},0)/res.length;
+
+// ── Component A: Moral Elasticity ──
+// A1: Moral Diversity Tolerance (MDT)
+const foundationsUsed=Object.keys(gf).length;
+const mdt=foundationsUsed/6;
+// A2: Context Match Rate (CMR)
+let contextMatches=0,contextTotal=0;
+for(let i=0;i<N;i++){
+  if(sc[i].caf&&gv[i]!==undefined){
+    contextTotal++;
+    if(sc[i].options[gv[i]]?.f===sc[i].caf) contextMatches++;
+  }
+}
+const cmr=contextTotal>0?contextMatches/contextTotal:0;
+const moralElasticity=(mdt*0.50)+(cmr*0.50);
+
+// ── Component B: Adaptive Calibration ──
+// B1: Minority Accommodation Rate (MAR)
+let marCount=0,marTotal=0;
+for(let i=0;i<N;i++){
+  if(gv[i]===undefined)continue;
+  // Count foundations per pulse
+  const pulseFounds={};
+  pl.forEach(function(p){
+    if(p.pulses[i]===undefined)return;
+    const f=sc[i].options[p.pulses[i]]?.f;
+    if(f)pulseFounds[f]=(pulseFounds[f]||0)+1;
+  });
+  const totalPulses=pl.filter(function(p){return p.pulses[i]!==undefined;}).length;
+  // Find minority foundations (chosen by <=25% of players)
+  const minorities=Object.entries(pulseFounds).filter(function(e){return e[1]/totalPulses<=0.25;});
+  if(minorities.length>0){
+    marTotal++;
+    const groupF=sc[i].options[gv[i]]?.f;
+    if(minorities.some(function(e){return e[0]===groupF;})) marCount++;
+  }
+}
+const mar=marTotal>0?marCount/marTotal:0;
+// B2: Capstone Integration Rate (from synthesis votes)
+// sy (synthesis votes) passed as 5th parameter
+if(!sy)sy=[];
+const capstoneSR=sy&&sy.length>0?sy.filter(Boolean).length/sy.length:1;
+const adaptiveCalibration=(mar*0.50)+(capstoneSR*0.50);
+
+// ── Component C: The Holding Environment ──
+// C1: Distress Tolerance Ratio
+let baselineCampDurs=[],crisisCampDurs=[];
+if(campDur){
+  for(let i=0;i<N;i++){
+    if(!campDur[i])continue;
+    if(sc[i].stress<=5)baselineCampDurs.push(campDur[i]);
+    else if(sc[i].stress>=7)crisisCampDurs.push(campDur[i]);
+  }
+}
+const baselineCampAvg=baselineCampDurs.length>0?baselineCampDurs.reduce(function(a,b){return a+b;},0)/baselineCampDurs.length:1;
+const crisisCampAvg=crisisCampDurs.length>0?crisisCampDurs.reduce(function(a,b){return a+b;},0)/crisisCampDurs.length:1;
+const distressTolerance=baselineCampAvg>0?crisisCampAvg/baselineCampAvg:1.0;
+// Normalize: 0.5 ratio → 0.0, 1.5 ratio → 1.0, clamped
+const distressNorm=Math.max(0,Math.min(1,(distressTolerance-0.5)/1.0));
+
+// C2: Conformity Pressure Index (CPI)
+let cpiSum=0;
+for(let i=0;i<N;i++){
+  const driftCount=pl.filter(function(p){return p.pulses[i]!==undefined&&p.pulses[i]!==gv[i];}).length;
+  const sm=STRESS_MULT[sc[i].stress]||1.0;
+  cpiSum+=(driftCount/pl.length)*sm;
+}
+const cpi=cpiSum/N;
+const safetyFromConformity=1.0-cpi;
+const holdingEnvironment=(distressNorm*0.50)+(safetyFromConformity*0.50);
+
+// ── Component D: Capstone Synthesis ──
+let synthesisMod=1.0;
+if(sy&&sy.length>0){
+  const suppressionCount=sy.filter(function(v){return !v;}).length;
+  if(suppressionCount>0&&suppressionCount<sy.length*0.5) synthesisMod=0.75;
+  else if(suppressionCount>=sy.length*0.5) synthesisMod=0.50;
+}
+const capstoneSynthesis=capstoneSR*synthesisMod;
+
+// ═══ THE NORTH STAR: RELATIONAL CALIBRATION ═══
+const relationalCalibration=(moralElasticity*0.25)+(adaptiveCalibration*0.30)+(holdingEnvironment*0.25)+(capstoneSynthesis*0.20);
+
+// Group archetype (backward compatible)
+let gak;
+if(ad<20&&ap>65)gak="Ad";else if(ad<20)gak="Iv";else if(ad>50)gak="CP";else gak="VF";
+
+// Safety assessment (backward compatible)
 let saf;
 if(ad<25)saf={lv:"High",co:C.green,de:"People felt free to hold their ground. Private instincts survived social pressure. This is the foundation Edmondson identifies as essential for high-performing teams."};
-else if(ad<45)saf={lv:"Moderate",co:C.gold,de:"Some members shifted under pressure. Whether through persuasion or conformity is the critical question. Edmondson would probe: did the quietest person feel as safe as the loudest?"};
-else saf={lv:"Fragile",co:C.rust,de:"High conformity pressure. Many private instincts were abandoned. Edmondson\u2019s research is clear: this pattern is the strongest predictor of team failure under stress."};
-return{ind:res,grp:{ad,gf,gak,ga:GA[gak],saf,ap}};
+else if(ad<45)saf={lv:"Moderate",co:C.gold,de:"Some members shifted under pressure. Whether through persuasion or conformity is the critical question."};
+else saf={lv:"Fragile",co:C.rust,de:"High conformity pressure. Many private instincts were abandoned. Edmondson\'s research is clear: this pattern is the strongest predictor of team failure under stress."};
+
+// Dominant group foundation
+const gfSorted=Object.entries(gf).sort(function(a,b){return b[1]-a[1];});
+const domGrpFound=gfSorted[0]?gfSorted[0][0]:"Care";
+const domGrpFoundPct=gfSorted[0]?gfSorted[0][1]/N:0;
+
+// ── Group narrative triggers ──
+const rcComponents={
+  Moral_Elasticity:moralElasticity,
+  Adaptive_Calibration:adaptiveCalibration,
+  Holding_Environment:holdingEnvironment,
+  Capstone_Synthesis:capstoneSynthesis
+};
+const lowestRC=Object.entries(rcComponents).sort(function(a,b){return a[1]-b[1];})[0];
+
+const grpNarrativeMetrics={
+  relationalCalibration:relationalCalibration,
+  capstoneSynthesis:capstoneSynthesis,
+  distressTolerance:distressTolerance,
+  cpi:cpi,mdt:mdt,cmr:cmr,mar:mar,
+  domGrpFound:domGrpFound,
+  domGrpFoundPct:domGrpFoundPct,
+  domGrpFoundPctDisplay:Math.round(domGrpFoundPct*100),
+  foundationsUsed:foundationsUsed,
+  contextMatchCount:contextMatches,
+  marCount:marCount,
+  fragmentsSurfaced:sy?sy.filter(Boolean).length:0,
+  totalFragments:sy?sy.length:0,
+  rcScore:Math.round(relationalCalibration*100)/100,
+  lowestComponent:lowestRC[0].replace("_"," "),
+  lowestScore:Math.round(lowestRC[1]*100)/100,
+  lowestDiagnosis:RC_DIAGNOSES[lowestRC[0]]||""
+};
+const grpNarratives=generateNarratives(GROUP_TRIGGERS, grpNarrativeMetrics);
+
+return{ind:res,grp:{ad:ad,gf:gf,gak:gak,ga:GA[gak],saf:saf,ap:ap,
+  // NEW group metrics
+  mdt:mdt,cmr:cmr,moralElasticity:moralElasticity,
+  mar:mar,marCount:marCount,capstoneSR:capstoneSR,adaptiveCalibration:adaptiveCalibration,
+  distressTolerance:distressTolerance,distressNorm:distressNorm,cpi:cpi,holdingEnvironment:holdingEnvironment,
+  capstoneSynthesis:capstoneSynthesis,relationalCalibration:relationalCalibration,
+  foundationsUsed:foundationsUsed,contextMatches:contextMatches,contextTotal:contextTotal,
+  rcComponents:rcComponents,lowestRC:lowestRC,
+  domGrpFound:domGrpFound,domGrpFoundPct:domGrpFoundPct,
+  narratives:grpNarratives
+}};
 }
 
 function Radar({fc,tot,col,sz=300}){
@@ -273,6 +661,94 @@ pts.map((p,i)=>React.createElement("circle",{key:i,cx:xS(p.s),cy:yS(p.a),r:5,fil
 ),
 React.createElement("p",{style:{fontSize:12,color:C.cream+"66",marginTop:6,fontStyle:"italic"}},"This curve shows what happens to your convictions as pressure increases \u2014 the point where the line rises is the moment your gut instinct starts losing to the group.")
 )}
+// ═══════════════════════════════════════════════════════════════
+// ENHANCED MIRROR SECTIONS
+// These replace/extend specific sections in the Mirror rendering
+// ═══════════════════════════════════════════════════════════════
+
+// ── NEW: Relational Calibration Gauge Component ──
+function RCGauge({value, label, color, size}) {
+  const sz = size || 80;
+  const pct = Math.max(0, Math.min(1, value));
+  const angle = pct * 270; // 270 degree arc
+  const r = sz/2 - 6;
+  const cx = sz/2, cy = sz/2;
+  const startAngle = 135; // start from bottom-left
+  const endAngle = startAngle + angle;
+  const startRad = (startAngle * Math.PI) / 180;
+  const endRad = (endAngle * Math.PI) / 180;
+  const x1 = cx + r * Math.cos(startRad);
+  const y1 = cy + r * Math.sin(startRad);
+  const x2 = cx + r * Math.cos(endRad);
+  const y2 = cy + r * Math.sin(endRad);
+  const largeArc = angle > 180 ? 1 : 0;
+  const bgStartRad = (135 * Math.PI) / 180;
+  const bgEndRad = (405 * Math.PI) / 180;
+  const bx1 = cx + r * Math.cos(bgStartRad);
+  const by1 = cy + r * Math.sin(bgStartRad);
+  const bx2 = cx + r * Math.cos(bgEndRad);
+  const by2 = cy + r * Math.sin(bgEndRad);
+
+  return ce("div", {style: {textAlign: "center", display: "inline-block"}},
+    ce("svg", {viewBox: `0 0 ${sz} ${sz}`, width: sz, height: sz},
+      ce("path", {
+        d: `M ${bx1} ${by1} A ${r} ${r} 0 1 1 ${bx2} ${by2}`,
+        fill: "none", stroke: C.cream + "11", strokeWidth: 5, strokeLinecap: "round"
+      }),
+      angle > 0.5 && ce("path", {
+        d: `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`,
+        fill: "none", stroke: color || C.gold, strokeWidth: 5, strokeLinecap: "round"
+      }),
+      ce("text", {x: cx, y: cy - 2, textAnchor: "middle", dominantBaseline: "middle",
+        fill: color || C.gold, fontSize: sz * 0.22, fontWeight: 700, fontFamily: "monospace"},
+        Math.round(pct * 100) + "%"
+      )
+    ),
+    ce("div", {style: {fontSize: 10, color: C.cream + "55", marginTop: -4, letterSpacing: 0.5}}, label)
+  );
+}
+
+// ── NEW: Breaking Point Curve Component ──
+function BreakpointCurve({dbs, bp}) {
+  if (!dbs || dbs.length < 3) return null;
+  const w = 340, h = 160, pad = 35;
+  const bk = {};
+  dbs.forEach(function(d) { if (!bk[d.stress]) bk[d.stress] = []; bk[d.stress].push(d.d); });
+  const pts = Object.entries(bk).map(function(e) { return {s: +e[0], a: e[1].reduce(function(a,b){return a+b;}, 0) / e[1].length}; }).sort(function(a,b) { return a.s - b.s; });
+  if (pts.length < 2) return null;
+  const xS = function(v) { return pad + ((v - 1) / 9) * (w - pad * 2); };
+  const yS = function(v) { return h - pad - v * (h - pad * 2); };
+  const bpX = bp ? xS(bp.breakpoint) : null;
+
+  return ce("div", null,
+    ce("svg", {viewBox: `0 0 ${w} ${h}`, style: {width: "100%"}},
+      // Background grid
+      ce("line", {x1: pad, y1: h - pad, x2: w - pad, y2: h - pad, stroke: C.cream + "22", strokeWidth: 1}),
+      ce("line", {x1: pad, y1: pad, x2: pad, y2: h - pad, stroke: C.cream + "22", strokeWidth: 1}),
+      // Breakpoint line
+      bp && bp.detected && ce("line", {x1: bpX, y1: pad, x2: bpX, y2: h - pad, stroke: C.rust + "44", strokeWidth: 1.5, strokeDasharray: "4,4"}),
+      bp && bp.detected && ce("text", {x: bpX, y: pad - 6, textAnchor: "middle", fill: C.rust, fontSize: 9, fontWeight: 700}, "S" + bp.breakpoint),
+      // Data curve - split at breakpoint
+      bp && bp.detected ? [
+        // Low segment
+        ce("path", {key: "low", d: pts.filter(function(p){return p.s <= bp.breakpoint;}).map(function(p, i) {return (i === 0 ? "M" : "L") + xS(p.s) + "," + yS(p.a);}).join(" "), fill: "none", stroke: C.gold, strokeWidth: 3, strokeLinecap: "round"}),
+        // High segment
+        ce("path", {key: "high", d: pts.filter(function(p){return p.s >= bp.breakpoint;}).map(function(p, i) {return (i === 0 ? "M" : "L") + xS(p.s) + "," + yS(p.a);}).join(" "), fill: "none", stroke: C.rust, strokeWidth: 3, strokeLinecap: "round"})
+      ] : ce("path", {d: pts.map(function(p, i) {return (i === 0 ? "M" : "L") + xS(p.s) + "," + yS(p.a);}).join(" "), fill: "none", stroke: C.rust, strokeWidth: 3, strokeLinecap: "round"}),
+      // Data points
+      pts.map(function(p, i) { return ce("circle", {key: i, cx: xS(p.s), cy: yS(p.a), r: 5, fill: (bp && bp.detected && p.s > bp.breakpoint) ? C.rust : C.gold}); }),
+      // Axis labels
+      ce("text", {x: w / 2, y: h - 6, textAnchor: "middle", fill: C.cream + "44", fontSize: 9}, "Stress Level \u2192"),
+      ce("text", {x: 8, y: h / 2, textAnchor: "middle", fill: C.cream + "44", fontSize: 9, transform: `rotate(-90, 8, ${h/2})`}, "Drift \u2192")
+    ),
+    bp && bp.detected && ce("p", {style: {fontSize: 12, color: C.rust + "AA", marginTop: 6, fontStyle: "italic"}},
+      "Breaking Point detected at Stress Level " + bp.breakpoint + ". Below this threshold, your baseline strategy holds. Above it, a different self emerges."
+    ),
+    bp && !bp.detected && ce("p", {style: {fontSize: 12, color: C.green + "88", marginTop: 6, fontStyle: "italic"}},
+      "No clear breaking point detected — your response pattern was consistent across the full stress gradient."
+    )
+  );
+}
 
 function App(){
 const[ph,setPh]=useState("welcome");
@@ -461,7 +937,7 @@ if(pi<pl.length-1)setPi(pi+1);else{setMt("fable");setMp(-1);setPh("mirror")}
 
 /* ======= THE MIRROR ======= */
 if(ph==="mirror"){
-const data=analyze(pl,gv,sc,campDur);
+const data=analyze(pl,gv,sc,campDur,sy);
 const sr=sy.length>0?sy.filter(Boolean).length/sy.length:1;
 return ce("div",{style:{...W,justifyContent:"flex-start",paddingTop:24,background:"linear-gradient(170deg,#060E08,#0A1A0C 50%,#101A10)"}},
 ce("div",{style:{...cd,maxWidth:700}},
@@ -523,7 +999,54 @@ ce("p",{style:{fontSize:14,lineHeight:1.7,color:C.cream+"88"}},
 ". Your secondary is ",ce("strong",{style:{color:FC[r.sf]}},r.sf),". Together they form your moral signature.",
 r.dp>40?" But your Social Drift shows this lens clouds under pressure.":" And your data shows this lens holds under pressure.")),
 
-ce("div",{style:sx},ce("div",{style:sxT(C.rust)},"STRESS-STRAIN CURVE"),ce(SCurve,{dbs:r.dbs})),
+// ═══════════════════════════════════════════════════════════════
+// ENHANCED FOOTPRINTS TAB — Additional sections to ADD
+// These go AFTER the existing DECISION LATENCY section and
+// BEFORE the existing LINEHAN — EMOTIONAL REGULATION section
+// ═══════════════════════════════════════════════════════════════
+
+// ── THE BREAKING POINT (replaces old STRESS-STRAIN CURVE) ──
+// Replace the existing:
+//   ce("div",{style:sx},ce("div",{style:sxT(C.rust)},"STRESS-STRAIN CURVE"),ce(SCurve,{dbs:r.dbs})),
+// With:
+ce("div",{style:sx},ce("div",{style:sxT(C.rust)},"THE BREAKING POINT"),
+ce(BreakpointCurve,{dbs:r.dbs,bp:r.breakpoint}),
+r.breakpoint&&r.breakpoint.detected?ce("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginTop:12}},
+ce("div",{style:mx},ce("div",{style:{fontSize:20,fontWeight:600,color:C.rust}},r.breakpoint.breakpoint),ce("div",{style:{...dm,fontSize:10}},"Breaking Point")),
+ce("div",{style:mx},ce("div",{style:{fontSize:20,fontWeight:600,color:C.gold}},(r.breakpoint.baseline_slope*100).toFixed(0)+"%"),ce("div",{style:{...dm,fontSize:10}},"Baseline Slope")),
+ce("div",{style:mx},ce("div",{style:{fontSize:20,fontWeight:600,color:C.rust}},(r.breakpoint.crisis_slope*100).toFixed(0)+"%"),ce("div",{style:{...dm,fontSize:10}},"Crisis Slope"))
+):null),
+
+// ── THE ARENA SCORE (Solo Dissent) ──
+ce("div",{style:sx},ce("div",{style:sxT(r.soloDissent>=2?C.gold:C.cream+"44")},"THE ARENA SCORE"),
+ce("div",{style:{display:"flex",alignItems:"center",gap:12,marginBottom:8}},
+ce("div",{style:{fontSize:36,fontWeight:300,color:r.soloDissent>=2?C.gold:C.cream+"33"}},r.soloDissent),
+ce("div",null,
+ce("div",{style:{fontSize:16,fontWeight:600,color:C.cream}},r.soloDissent>=2?"Daring Greatly":"In the Stands"),
+ce("div",{style:{fontSize:12,color:C.cream+"55"}},"times as sole dissenter"))),
+ce("p",{style:{fontSize:14,lineHeight:1.8,color:C.cream+"88"}},
+r.soloDissent>=3?"You stood alone against the consensus "+r.soloDissent+" times \u2014 more than anyone should have to. Roosevelt called this the Arena: choosing to stand in the dust while the crowd watches from the cheap seats. That willingness to bear the social cost of conviction is the rarest form of courage.":
+r.soloDissent>=1?"You were the sole dissenter "+r.soloDissent+" time"+(r.soloDissent>1?"s":"")+". Standing alone when every other voice has aligned is not about being right \u2014 it\u2019s about being willing to be wrong in public. That\u2019s the Arena.":
+"You never stood alone against the full group. This doesn\u2019t mean you lacked conviction \u2014 it may mean you found allies, or that your instincts aligned with the consensus. The Arena waits for everyone eventually.")),
+
+// ── MORAL ELASTICITY (Individual) ──
+ce("div",{style:sx},ce("div",{style:sxT(C.gold)},"MORAL ELASTICITY \u2014 PERSONAL"),
+ce("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}},
+ce("div",{style:mx},ce("div",{style:{fontSize:22,fontWeight:300,color:r.foundationVariety>=4?C.green:C.gold}},r.foundationVariety+" / 6"),ce("div",{style:{...dm,fontSize:10}},"Foundations Used")),
+ce("div",{style:mx},ce("div",{style:{fontSize:22,fontWeight:300,color:r.indivCMR>0.5?C.green:C.gold}},Math.round(r.indivCMR*100)+"%"),ce("div",{style:{...dm,fontSize:10}},"Context Match Rate"))),
+ce("p",{style:{fontSize:14,lineHeight:1.8,color:C.cream+"88"}},
+r.indivCMR>0.5&&r.foundationVariety>=4?"You read the terrain and adapted your moral lens. Drawing from "+r.foundationVariety+" foundations with a "+Math.round(r.indivCMR*100)+"% context match rate is genuine Moral Elasticity.":
+r.domFoundPct>0.6?"You reached for "+r.tf+" in "+Math.round(r.domFoundPct*100)+"% of decisions. Your moral compass is strong, but it points in one direction regardless of context.":
+"Moderate moral flexibility. You accessed multiple foundations but didn\u2019t consistently match what each scenario\u2019s context demanded.")),
+
+// ── COMPUTED NARRATIVE INSIGHTS ──
+r.narratives&&r.narratives.length>0&&ce("div",{style:{...sx,background:C.gold+"06",border:`1px solid ${C.gold}18`}},
+ce("div",{style:sxT(C.gold)},"THE MIRROR \u2014 COMPUTED INSIGHTS"),
+ce("p",{style:{fontSize:12,color:C.cream+"44",marginBottom:12}},"These statements are generated from the intersection of your specific data patterns. No two players receive the same insights."),
+r.narratives.map((n,i)=>ce("p",{key:i,style:{fontSize:14,lineHeight:1.85,color:C.cream+"AA",marginBottom:12,fontFamily:"'Playfair Display',Georgia,serif",fontStyle:"italic",paddingLeft:16,borderLeft:`2px solid ${C.gold}33`}},n.text))),
+
+// (The existing LINEHAN section continues below this point)
+
 
 ce("div",{style:sx},ce("div",{style:sxT(C.purity)},"THE MORAL SHADOW"),
 r.shadowFoundation&&r.shadowScore>0.3?ce("p",{style:{fontSize:14,lineHeight:1.8,color:C.cream+"88",margin:0}},
@@ -575,26 +1098,94 @@ r.rg>40?"Under escalating stress, your decision patterns shifted moderately. Awa
 mt==="foot"&&mp<0&&ce("div",{style:{textAlign:"center",padding:"40px 0",color:C.cream+"55"}},ce("p",null,"\u2191 Select a player above to see their footprint")),
 
 /* PRIDE */
+// ═══════════════════════════════════════════════════════════════
+// ENHANCED PRIDE TAB — Replace the entire mt==="pride" section
+// Search for: mt==="pride"&&ce("div",{className:"fade-up"},
+// Replace everything until the next mt=== check
+// ═══════════════════════════════════════════════════════════════
+
 mt==="pride"&&ce("div",{className:"fade-up"},
+
+// ── RELATIONAL CALIBRATION — THE NORTH STAR ──
+ce("div",{style:{...sx,background:C.gold+"08",border:`1px solid ${C.gold}33`,textAlign:"center",padding:"28px 20px"}},
+ce("div",{style:{...sxT(C.gold),fontSize:13,letterSpacing:3}},"RELATIONAL CALIBRATION"),
+ce("div",{style:{fontSize:13,color:C.cream+"55",marginBottom:16,fontFamily:"'Playfair Display'",fontStyle:"italic"}},"The group\u2019s capacity to sustain the Productive Zone of Disequilibrium"),
+ce("div",{style:{fontSize:56,fontWeight:300,color:data.grp.relationalCalibration>0.6?C.green:data.grp.relationalCalibration>0.35?C.gold:C.rust,fontFamily:"monospace",marginBottom:8}},Math.round(data.grp.relationalCalibration*100)+"%"),
+ce("div",{style:{display:"flex",justifyContent:"center",gap:12,flexWrap:"wrap",marginTop:12}},
+ce(RCGauge,{value:data.grp.moralElasticity,label:"Moral Elasticity",color:C.gold,size:72}),
+ce(RCGauge,{value:data.grp.adaptiveCalibration,label:"Adaptive Calibration",color:C.equality,size:72}),
+ce(RCGauge,{value:data.grp.holdingEnvironment,label:"Holding Environment",color:C.green,size:72}),
+ce(RCGauge,{value:data.grp.capstoneSynthesis,label:"Capstone Synthesis",color:C.purity,size:72}))),
+
+// ── GROUP ARCHETYPE ──
 ce("div",{style:sx},ce("div",{style:sxT(C.gold)},"GROUP ARCHETYPE"),
 ce("h2",{style:{fontSize:24,color:C.gold,marginBottom:12,fontFamily:"'Playfair Display'",fontWeight:400}},data.grp.ga.title),
 ce("p",{style:{fontSize:15,lineHeight:1.85,color:C.cream+"AA"}},data.grp.ga.prose)),
 
+// ── KEY METRICS ──
 ce("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:20}},
 ce("div",{style:mx},ce("div",{style:{fontSize:28,fontWeight:300,color:data.grp.saf.co}},Math.round(data.grp.ad)+"%"),ce("div",{style:dm},"Social Drift")),
 ce("div",{style:mx},ce("div",{style:{fontSize:15,fontWeight:600,color:data.grp.saf.co,lineHeight:1.3}},data.grp.saf.lv),ce("div",{style:{...dm,marginTop:4}},"Psych Safety")),
 ce("div",{style:mx},ce("div",{style:{fontSize:28,fontWeight:300,color:sr>=0.8?C.green:C.rust}},Math.round(sr*100)+"%"),ce("div",{style:dm},"Synthesis"))),
 
+// ── MORAL ELASTICITY BREAKDOWN ──
+ce("div",{style:sx},ce("div",{style:sxT(C.gold)},"MORAL ELASTICITY"),
+ce("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}},
+ce("div",{style:{...mx,textAlign:"left",padding:"12px 16px"}},
+ce("div",{style:{fontSize:11,color:C.cream+"44",fontWeight:700,marginBottom:4}},"MORAL DIVERSITY (MDT)"),
+ce("div",{style:{fontSize:22,fontWeight:300,color:data.grp.mdt>0.5?C.green:data.grp.mdt>0.33?C.gold:C.rust}},data.grp.foundationsUsed+" / 6"),
+ce("div",{style:{fontSize:11,color:C.cream+"44"}},"foundations used")),
+ce("div",{style:{...mx,textAlign:"left",padding:"12px 16px"}},
+ce("div",{style:{fontSize:11,color:C.cream+"44",fontWeight:700,marginBottom:4}},"CONTEXT MATCH RATE (CMR)"),
+ce("div",{style:{fontSize:22,fontWeight:300,color:data.grp.cmr>0.5?C.green:data.grp.cmr>0.3?C.gold:C.rust}},Math.round(data.grp.cmr*100)+"%"),
+ce("div",{style:{fontSize:11,color:C.cream+"44"}},data.grp.contextMatches+" of "+data.grp.contextTotal+" matched"))),
+ce("p",{style:{fontSize:13,lineHeight:1.7,color:C.cream+"77",marginTop:8}},
+data.grp.moralElasticity>0.5?"This group shifted its moral lens across contexts \u2014 reading the terrain rather than defaulting to a single foundation. This is the foundation of adaptive decision-making.":
+data.grp.moralElasticity>0.3?"Moderate moral flexibility. The group accessed multiple foundations but didn\u2019t consistently match the contextual demands of each scenario.":
+"Narrow moral palette. The group defaulted to the same foundation regardless of context \u2014 a hammer seeing every crisis as a nail.")),
+
+// ── ADAPTIVE CALIBRATION ──
+ce("div",{style:sx},ce("div",{style:sxT(C.equality)},"ADAPTIVE CALIBRATION"),
+ce("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}},
+ce("div",{style:{...mx,textAlign:"left",padding:"12px 16px"}},
+ce("div",{style:{fontSize:11,color:C.cream+"44",fontWeight:700,marginBottom:4}},"MINORITY ACCOMMODATION"),
+ce("div",{style:{fontSize:22,fontWeight:300,color:data.grp.mar>0.3?C.green:C.gold}},Math.round(data.grp.mar*100)+"%"),
+ce("div",{style:{fontSize:11,color:C.cream+"44"}},data.grp.marCount+" minority views reached consensus")),
+ce("div",{style:{...mx,textAlign:"left",padding:"12px 16px"}},
+ce("div",{style:{fontSize:11,color:C.cream+"44",fontWeight:700,marginBottom:4}},"CAPSTONE INTEGRATION"),
+ce("div",{style:{fontSize:22,fontWeight:300,color:data.grp.capstoneSR>=0.8?C.green:C.rust}},Math.round(data.grp.capstoneSR*100)+"%"),
+ce("div",{style:{fontSize:11,color:C.cream+"44"}},"fragments surfaced"))),
+ce("p",{style:{fontSize:13,lineHeight:1.7,color:C.cream+"77",marginTop:8}},
+data.grp.adaptiveCalibration>0.5?"This group found the best signal, not just the loudest voice. Minority perspectives reached the final decision, and asymmetric information was synthesized under chaos.":
+"The group\u2019s decisions tracked the majority pulse rather than integrating minority insight. Woolley\u2019s research is clear: groups that suppress quiet truths underperform those that amplify them.")),
+
+// ── HOLDING ENVIRONMENT ──
+ce("div",{style:{...sx,background:data.grp.holdingEnvironment>0.5?C.green+"08":C.rust+"08",border:`1px solid ${data.grp.holdingEnvironment>0.5?C.green:C.rust}22`}},
+ce("div",{style:sxT(data.grp.holdingEnvironment>0.5?C.green:C.rust)},"THE HOLDING ENVIRONMENT"),
+ce("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}},
+ce("div",{style:{...mx,textAlign:"left",padding:"12px 16px"}},
+ce("div",{style:{fontSize:11,color:C.cream+"44",fontWeight:700,marginBottom:4}},"DISTRESS TOLERANCE"),
+ce("div",{style:{fontSize:22,fontWeight:300,color:data.grp.distressTolerance>1.0?C.green:C.rust}},data.grp.distressTolerance.toFixed(2)+"\u00d7"),
+ce("div",{style:{fontSize:11,color:C.cream+"44"}},data.grp.distressTolerance>1.0?"Discussions grew under pressure":"Discussions shortened under pressure")),
+ce("div",{style:{...mx,textAlign:"left",padding:"12px 16px"}},
+ce("div",{style:{fontSize:11,color:C.cream+"44",fontWeight:700,marginBottom:4}},"CONFORMITY PRESSURE (CPI)"),
+ce("div",{style:{fontSize:22,fontWeight:300,color:data.grp.cpi<0.35?C.green:C.rust}},Math.round(data.grp.cpi*100)+"%"),
+ce("div",{style:{fontSize:11,color:C.cream+"44"}},data.grp.cpi<0.35?"Low conformity pressure":"High conformity pressure"))),
+ce("p",{style:{fontSize:14,lineHeight:1.8,color:C.cream+"88",margin:0}},data.grp.saf.de)),
+
+// ── EDMONDSON SAFETY (kept) ──
 ce("div",{style:{...sx,background:data.grp.saf.co+"08",border:`1px solid ${data.grp.saf.co}22`}},
 ce("div",{style:sxT(data.grp.saf.co)},"EDMONDSON \u2014 PSYCHOLOGICAL SAFETY"),
 ce("p",{style:{fontSize:14,lineHeight:1.8,color:C.cream+"88",margin:0}},data.grp.saf.de)),
 
+// ── MORAL CENTER OF GRAVITY ──
 ce("div",{style:sx},ce("div",{style:sxT()},"HAIDT \u2014 MORAL CENTER OF GRAVITY"),
 ce("div",{style:{display:"flex",justifyContent:"center"}},ce(Radar,{fc:data.grp.gf,tot:sc.length,col:C.gold}))),
 
+// ── LENCIONI (kept) ──
 ce("div",{style:sx},ce("div",{style:sxT()},"LENCIONI \u2014 TRUST INDICATORS"),
-[{l:"Vulnerability-Based Trust",v:data.grp.ad<30?"Strong":"Developing",d:data.grp.ad<30?"Low drift = people trusted their own voice. Lencioni calls this the foundation of team health.":"Moderate drift suggests some members may be suppressing convictions. Lencioni\u2019s first dysfunction: absence of vulnerability-based trust."},
-{l:"Productive Conflict",v:data.grp.ad>15?"Present":"Absent",d:data.grp.ad>15?"Discussion changed minds \u2014 real debate occurred. Lencioni calls this \u2018mining for conflict\u2019 and identifies it as essential.":"Few minds changed. Lencioni would call this artificial harmony."},
+[{l:"Vulnerability-Based Trust",v:data.grp.ad<30?"Strong":"Developing",d:data.grp.ad<30?"Low drift = people trusted their own voice. Lencioni calls this the foundation of team health.":"Moderate drift suggests some members may be suppressing convictions."},
+{l:"Productive Conflict",v:data.grp.ad>15?"Present":"Absent",d:data.grp.ad>15?"Discussion changed minds \u2014 real debate occurred. Lencioni calls this \u2018mining for conflict.\u2019":"Few minds changed. Lencioni would call this artificial harmony."},
 {l:"Commitment & Synthesis",v:sr>=0.75?"Strong":"Fragile",d:sr>=0.75?"Capstone showed full information synthesis. Lencioni\u2019s third level: clarity and buy-in.":"Fragments were lost. Without full synthesis, commitment becomes shallow."}
 ].map((item,i)=>ce("div",{key:i,style:{marginBottom:i<2?16:0}},
 ce("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:2}},
@@ -602,11 +1193,18 @@ ce("span",{style:{fontSize:14,fontWeight:600,color:C.cream+"AA"}},item.l),
 ce("span",{style:{fontSize:12,fontWeight:700,color:item.v==="Strong"||item.v==="Present"?C.green:C.rust}},item.v)),
 ce("p",{style:{fontSize:13,color:C.cream+"66",margin:0,lineHeight:1.6}},item.d)))),
 
+// ── CYNEFIN SYNTHESIS (kept) ──
 ce("div",{style:{...sx,background:(sr>=0.8?C.green:C.rust)+"08",border:`1px solid ${sr>=0.8?C.green:C.rust}22`}},
 ce("div",{style:sxT(sr>=0.8?C.green:C.rust)},"CYNEFIN \u2014 CHAOTIC SYNTHESIS"),
 ce("p",{style:{fontSize:14,lineHeight:1.8,color:C.cream+"88",margin:0}},
 sr>=0.8?"Your pride synthesized asymmetric information under chaos. Every fragment surfaced. This is the hallmark of an adaptive organism.":
-`Only ${Math.round(sr*100)}% of fragments were integrated. In the Chaotic domain, teams fail not from bad decisions, but from incomplete pictures.`))),
+`Only ${Math.round(sr*100)}% of fragments were integrated. In the Chaotic domain, teams fail not from bad decisions, but from incomplete pictures.`)),
+
+// ── GROUP COMPUTED NARRATIVES ──
+data.grp.narratives&&data.grp.narratives.length>0&&ce("div",{style:{...sx,background:C.gold+"06",border:`1px solid ${C.gold}18`}},
+ce("div",{style:sxT(C.gold)},"THE COLLECTIVE MIRROR \u2014 COMPUTED INSIGHTS"),
+data.grp.narratives.map((n,i)=>ce("p",{key:i,style:{fontSize:14,lineHeight:1.85,color:C.cream+"AA",marginBottom:i<data.grp.narratives.length-1?12:0,fontFamily:"'Playfair Display',Georgia,serif",fontStyle:"italic"}},n.text)))
+),
 
 /* HOOD */
 mt==="hood"&&ce("div",{className:"fade-up"},
