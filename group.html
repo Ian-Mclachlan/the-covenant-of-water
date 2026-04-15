@@ -14,7 +14,9 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Source Sans 3',Georgia,serif;background:#0A1A0C;color:#F2ECDF;min-height:100vh;-webkit-font-smoothing:antialiased}
-#root{min-height:100vh}
+#bgLayer{position:fixed;inset:0;z-index:0;background-size:cover;background-position:center;filter:brightness(.3) saturate(.7);opacity:0;transition:opacity 1.5s ease}
+#bgLayer::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,26,12,.85) 0%,rgba(10,26,12,.25) 35%,rgba(10,26,12,.25) 65%,rgba(10,26,12,.85) 100%),radial-gradient(ellipse at center,transparent 30%,rgba(10,26,12,.5) 100%)}
+#root{position:relative;z-index:1;min-height:100vh}
 button{cursor:pointer;font-family:inherit}
 input{font-family:inherit}
 .back-link{position:fixed;top:16px;left:16px;color:#D4A844;text-decoration:none;font-size:14px;opacity:.6;z-index:100}
@@ -29,6 +31,7 @@ h1.dsp{font-family:'Playfair Display',Georgia,serif;font-weight:400;letter-spaci
 </head>
 <body>
 <a href="index.html" class="back-link">&larr; Solo Safari</a>
+<div id="bgLayer"></div>
 <div id="root"></div>
 <script type="text/babel">
 
@@ -37,6 +40,34 @@ const C={bg1:"#0A1A0C",bg2:"#152415",bg3:"#1E3322",gold:"#D4A844",rust:"#B85C3A"
 const FC={Care:C.care,Equality:C.equality,Proportionality:C.prop,Loyalty:C.loyalty,Authority:C.authority,Purity:C.purity};
 const ce=React.createElement;
 const E={lion:"\ud83e\udd81",lock:"\ud83d\udd12",fire:"\ud83d\udd25",crystal:"\ud83d\udd2e",book:"\ud83d\udcda",lizard:"\ud83e\udd8e",ox:"\ud83d\udc03",eagle:"\ud83e\udd85",compass:"\ud83e\udded",thread:"\ud83e\uddf5",mag:"\ud83d\udd0d",target:"\ud83c\udfaf",ballot:"\ud83d\uddf3\ufe0f",mirror:"\ud83e\ude9e",globe:"\ud83c\udf0d",foot:"\ud83d\udc63",gear:"\u2699\ufe0f",zap:"\u26a1",anchor:"\u2693",scale:"\u2696\ufe0f"};
+
+// ═══ BACKGROUND IMAGE LAYER ═══
+const BG_MAP={
+  WONDER:"img/Sunrise_Over_the_African_Savanna.png",
+  TENSION:"img/Sunset_Over_African_Savannah.png",
+  FRACTURE:"img/Savanna_Silhouettes_Across_Day_and_Night.png",
+  ABYSS:"img/Savanna_Silhouettes_Across_Day_and_Night.png",
+  MIRROR:"img/Chiron_s_Celestial_Archery_in_the_Savannah.png",
+  CAPSTONE:"img/ChatGPT_Image_Apr_9__2026__09_28_24_PM.png",
+  welcome:"img/ChatGPT_Image_Apr_9__2026__09_28_14_PM.png",
+  setup:"img/ChatGPT_Image_Apr_9__2026__09_28_14_PM.png"
+};
+function updateBgLayer(key){
+  var el=document.getElementById('bgLayer');
+  if(!el)return;
+  var src=BG_MAP[key]||BG_MAP.welcome;
+  var pos=(key==='FRACTURE')?'left center':(key==='ABYSS')?'60% center':'center center';
+  if(el.getAttribute('data-bg')===src){el.style.backgroundPosition=pos;return;}
+  el.style.opacity='0';
+  setTimeout(function(){
+    el.style.backgroundImage='url('+src+')';
+    el.style.backgroundPosition=pos;
+    el.setAttribute('data-bg',src);
+    el.style.opacity='1';
+  },400);
+}
+// Preload background images
+Object.values(BG_MAP).forEach(function(src){var img=new Image();img.src=src;});
 const ALL=[{id:"GS-001",tier:"WONDER",stress:2,cynefin:"Clear",theme:"Sacred",text:"A dung beetle navigates the Serengeti using the faint light of the Milky Way to roll its ball in a straight line. A fellow traveler reaches down to pick it up for a photo, disorienting its celestial alignment.",caf:"Care",options:[{t:"Speak up immediately to protect the beetle from unnecessary stress.",f:"Care",fw:{Care:0.85,Authority:0.15}},{t:"Remind the traveler that park rules strictly forbid touching wildlife.",f:"Authority",fw:{Authority:0.90}},{t:"Explain that every creature, no matter how small, deserves undisturbed passage.",f:"Equality",fw:{Equality:0.80,Care:0.25}},{t:"Silently step between the traveler and the beetle to block them.",f:"Purity",fw:{Purity:0.70,Care:0.30}}],teach:"Dung beetles are the first known non-human animals to use the Milky Way for navigation, confirmed by researchers at Wits University."},
 {id:"GS-002",tier:"WONDER",stress:3,cynefin:"Clear",theme:"Architecture",text:"A weaver bird has built the most architecturally complex nest on earth in an acacia tree right outside the lodge dining room. The lodge manager wants to remove it because guests are complaining about the noise.",caf:"Proportionality",options:[{t:"Offer to pay for earplugs for guests to save the bird's home.",f:"Proportionality",fw:{Proportionality:0.85,Care:0.20}},{t:"Tell the manager that destroying a nest violates the sanctity of the wilderness.",f:"Purity",fw:{Purity:0.90}},{t:"Organize your tour group to petition the manager to leave it.",f:"Loyalty",fw:{Loyalty:0.75,Equality:0.25}},{t:"Point out the biological marvel of the nest to guests so they appreciate it.",f:"Care",fw:{Care:0.80,Proportionality:0.15}}],teach:"Sociable weaver nests can host over 100 mating pairs and last for up to 100 years, functioning like avian apartment complexes."},
 {id:"GS-003",tier:"WONDER",stress:2,cynefin:"Clear",theme:"Symbiosis",text:"You watch bioluminescent plankton glowing in Lake Victoria at midnight. A guide mentions that agricultural runoff is slowly killing the algae that creates this phenomenon, and local farmers don't know.",caf:null,options:[{t:"Fund a local agricultural extension officer to teach sustainable farming.",f:"Care",fw:{Care:1.0}},{t:"Accept that human survival must balance with natural wonders.",f:"Proportionality",fw:{Proportionality:1.0}},{t:"Demand stricter government regulations on fertilizer use near the lake.",f:"Authority",fw:{Authority:1.0}},{t:"Mourn the loss of the pristine water as a tragic violation of nature.",f:"Purity",fw:{Purity:1.0}}],teach:"Lake Victoria supports the livelihoods of 40 million people, but agricultural runoff has created massive hypoxic 'dead zones'."},
@@ -770,6 +801,14 @@ const tr=useRef(null);const pr=useRef(null);const pulseStartRef=useRef(0);const 
 useEffect(()=>{if(ph==="camp"){tr.current=setInterval(()=>setEl(Date.now()-cs),250);return()=>clearInterval(tr.current)}},[ph,cs]);
 useEffect(()=>{if(ph==="pulse"){pulseStartRef.current=Date.now();setPt(12);pr.current=setInterval(()=>{setPt(v=>{if(v<=1){clearInterval(pr.current);hPulse(0);return 0}return v-1})},1000);return()=>clearInterval(pr.current)}},[ph,pi,si]);
 
+// ═══ Background layer sync ═══
+useEffect(()=>{
+  if(ph==="welcome"||ph==="setup"||ph==="names")updateBgLayer("welcome");
+  else if(ph==="capI"||ph==="capC"||ph==="capFP"||ph==="capD"||ph==="capV"||ph==="capS")updateBgLayer("CAPSTONE");
+  else if(s)updateBgLayer(s.tier||s.cat||"WONDER");
+  else updateBgLayer("welcome");
+},[ph,si]);
+
 const hPulse=i=>{clearInterval(pr.current);const lat=Date.now()-pulseStartRef.current;setPl(p=>{const n=[...p];n[pi]={...n[pi],pulses:[...n[pi].pulses],latencies:[...(n[pi].latencies||[])]};n[pi].pulses[si]=i;n[pi].latencies[si]=lat;return n});
 if(pi<pl.length-1){setPi(pi+1);setPh("pass")}else{setPi(0);setCs(Date.now());campStartRef.current=Date.now();setEl(0);setPh("camp")}};
 const hGV=i=>{setGv(p=>{const n=[...p];n[si]=i;return n});setPi(0);setPh("predP")};
@@ -1271,6 +1310,8 @@ function SplashScreen() {
   var _s2 = useState(''), error = _s2[0], setError = _s2[1];
   var _s3 = useState(false), joining = _s3[0], setJoining = _s3[1];
 
+  useEffect(function(){updateBgLayer("welcome");},[]);
+
   var handleHost = function() { window.location.hash = '#host'; window.location.reload(); };
   var handleClassic = function() { window.location.hash = '#classic'; window.location.reload(); };
 
@@ -1322,6 +1363,7 @@ function SplashScreen() {
 
 function HostLobby(props) {
   var sessionId=props.sessionId, joinCode=props.joinCode, players=props.players, onStart=props.onStart;
+  useEffect(function(){updateBgLayer("setup");},[]);
   var playerList = Object.entries(players).sort(function(a,b){return a[0].localeCompare(b[0]);});
   var canStart = playerList.length >= 2;
   return ce('div', { style: W },
@@ -1408,6 +1450,16 @@ function HostView() {
     }
     return function() { if (pulseUnsub.current) pulseUnsub.current(); };
   }, [sessionId, round.roundIndex, round.phase]);
+
+  // ═══ Background layer sync ═══
+  useEffect(function() {
+    var ri2=round.roundIndex;var s2=scenarios[ri2]||null;var ph2=round.phase;
+    if(ph2==='lobby')updateBgLayer('welcome');
+    else if(ph2==='analyzing'||ph2==='mirror'||ph2==='final')updateBgLayer('MIRROR');
+    else if(ph2&&ph2.indexOf('capstone')===0)updateBgLayer('CAPSTONE');
+    else if(s2)updateBgLayer(s2.tier||'WONDER');
+    else updateBgLayer('welcome');
+  }, [round, scenarios]);
 
   var playerCount = Object.keys(players).length;
   var phase = round.phase;
@@ -1782,6 +1834,16 @@ function PlayerView() {
       return function(){clearInterval(timerRef.current);};
     }
   }, [round.phase, round.roundIndex, pulseSubmitted]);
+
+  // ═══ Background layer sync ═══
+  useEffect(function() {
+    var ri2=round.roundIndex;var s2=scenarios[ri2]||null;var ph2=round.phase;
+    if(ph2==='lobby')updateBgLayer('setup');
+    else if(ph2==='analyzing'||ph2==='mirror'||ph2==='final')updateBgLayer('MIRROR');
+    else if(ph2&&ph2.indexOf('capstone')===0)updateBgLayer('CAPSTONE');
+    else if(s2)updateBgLayer(s2.tier||'WONDER');
+    else updateBgLayer('setup');
+  }, [round, scenarios]);
 
   var handleJoin = function() {
     if (!playerName.trim()) { setError('Enter your name'); return; }
