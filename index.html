@@ -1105,6 +1105,7 @@ function stressOf(tier){return{A:1,B:2,C:3,D:5}[tier]||1;}
 
 // ═══ RENDER QUESTION ═══
 function renderQ(){
+  G._questionRenderTime = Date.now(); 
   if(G.qi>=G.qs.length){showDash();return;}
   const q=G.qs[G.qi];
   const curTier=q.t;
@@ -1206,6 +1207,10 @@ function doRender(){
 // Pure factual — right or wrong, score-based, NO instinct prompt
 function selAnsTierA(idx){
   if(G.ans)return;G.ans=true;
+  // Capture decision latency
+  const latency_ms = Date.now() - (G._questionRenderTime || Date.now());
+  const currentQ = G.qs[G.qi];
+  G.pf.latency.push({ tier: currentQ.t, latency_ms: latency_ms, timer_remaining_pct: G.timerVal }); 
   if(G.timerRef){clearInterval(G.timerRef);G.timerRef=null;}
   
   const q=G.qs[G.qi];
@@ -1257,6 +1262,10 @@ function diff_pts(q){return{A:10,B:20,C:30,D:50}[q.t]||10;}
 // Narrative choice → psychological scoring → Fate dice roll
 function selAnsTierBCD(idx){
   if(G.ans)return;G.ans=true;
+   // Capture decision latency
+  const latency_ms = Date.now() - (G._questionRenderTime || Date.now());
+  const currentQ = G.qs[G.qi];
+  G.pf.latency.push({ tier: currentQ.t, latency_ms: latency_ms, timer_remaining_pct: G.timerVal });
   
   const q=G.qs[G.qi];
   const tier=q.t;
@@ -1311,6 +1320,14 @@ function chInstBCD(instId,chosenOptionIdx){
   // ═══ PSYCHOMETRIC SCORING ═══
   // 1. Add weighted instinct total
   G.pf.it[instId]+=gain;
+   // Capture instinct history for psychometric engine
+  G.pf.instinctHistory.push({
+    chosen: instId,
+    available: IN.map(i => i.id),
+    tier: tier,
+    roundIndex: G.qi,
+    stress: {A: 2.5, B: 5.5, C: 7.5, D: 9.5}[tier] || 5
+  });
   
   // 2. Apply instinct's hidden dimension vector (weighted by stress)
   Object.entries(inst.dm).forEach(([k,v])=>{G.pf.dm[k]+=v*gain;});
@@ -1421,33 +1438,8 @@ const dbtMap={
 
 // ═══ FINAL PORTRAIT — "THE MIRROR" ═══
 function showDash(){
-  go('S3');
-  const av=AV[G.av],p=G.pf;
-  
-  // ═══ PSYCHOMETRIC MATRIX CALCULATIONS ═══
-  // 1. Determine dominant instinct (highest total)
-  const so=Object.entries(p.it).sort((a,b)=>b[1]-a[1]);
-  const domId=so[0][0],dom=IN.find(i=>i.id===domId);
-  const secId=so[1]&&so[1][1]>0?so[1][0]:null,sec=secId?IN.find(i=>i.id===secId):null;
-  
-  // 2. Determine stress shift (low-stress vs high-stress dominant)
-  const lt=Object.entries(p.ls).sort((a,b)=>b[1]-a[1])[0];
-  const ht=Object.entries(p.hs).sort((a,b)=>b[1]-a[1])[0];
-  const lI=lt&&lt[1]>0?IN.find(i=>i.id===lt[0]):null;
-  const hI=ht&&ht[1]>0?IN.find(i=>i.id===ht[0]):null;
-  const shift=lI&&hI&&lI.id!==hI.id;
-  
-  // 3. Sort hidden dimensions by magnitude
-  const ds=Object.entries(p.dm).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
-  const pct=G.tot>0?Math.round((G.cc/G.tot)*100):0;
-  
-  // 4. Build dimension bar chart
-  const mxD=Math.max(...Object.values(p.dm).map(Math.abs))||1;
-  let dh='';
-  ds.forEach(([k,v])=>{
-    const w=Math.min(100,Math.abs(v)/mxD*100);
-    dh+=`<div class="db"><span class="dl">${DL[k]}</span><div class="dtr"><div class="dfl" style="width:${w}%;background:${v>0?'#4a8b9e':'#C0392B'}"></div></div><span class="dv" style="color:${v>0?'#4a8b9e':'#C0392B'}">${v>0?'+':''}${v.toFixed(1)}</span></div>`;
-  });
+  showDash_v2();
+}
   
   // 5. Build stress shift callout
   let sh='';
