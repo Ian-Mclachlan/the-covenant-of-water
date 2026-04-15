@@ -43,14 +43,14 @@ const E={lion:"\ud83e\udd81",lock:"\ud83d\udd12",fire:"\ud83d\udd25",crystal:"\u
 
 // ═══ BACKGROUND IMAGE LAYER ═══
 const BG_MAP={
-  WONDER:"img/Sunrise_Over_the_African_Savanna.png",
-  TENSION:"img/Sunset_Over_African_Savannah.png",
-  FRACTURE:"img/Savanna_Silhouettes_Across_Day_and_Night.png",
-  ABYSS:"img/Savanna_Silhouettes_Across_Day_and_Night.png",
-  MIRROR:"img/Chiron_s_Celestial_Archery_in_the_Savannah.png",
-  CAPSTONE:"img/ChatGPT_Image_Apr_9__2026__09_28_24_PM.png",
-  welcome:"img/ChatGPT_Image_Apr_9__2026__09_28_14_PM.png",
-  setup:"img/ChatGPT_Image_Apr_9__2026__09_28_14_PM.png"
+  WONDER:"img/bg-wonder.jpg",
+  TENSION:"img/bg-tension.jpg",
+  FRACTURE:"img/bg-biome.jpg",
+  ABYSS:"img/bg-abyss.jpg",
+  MIRROR:"img/bg-milkyway.jpg",
+  CAPSTONE:"img/bg-campfire.jpg",
+  welcome:"img/bg-splash.jpg",
+  setup:"img/bg-splash.jpg"
 };
 function updateBgLayer(key){
   var el=document.getElementById('bgLayer');
@@ -838,7 +838,7 @@ const ce=React.createElement;
 
 if(ph==="welcome")return ce("div",{style:{...W,background:"linear-gradient(170deg,#0A1A0C,#0F2812 30%,#183620 70%,#1E3322)"}},
 ce("div",{style:{...cd,textAlign:"center",maxWidth:540},className:"fade-up"},
-ce("div",{style:{fontSize:64,marginBottom:4}},E.lion),
+ce("div",{style:{fontSize:64,marginBottom:4}},ce("img",{src:"img/lion.jpg",alt:"Lion",style:{width:80,height:80,objectFit:"cover",borderRadius:"50%",border:"2px solid "+C.gold+"44",boxShadow:"0 4px 20px rgba(0,0,0,.4)"}})),
 ce("div",{style:sb},"The Social MRI"),
 ce("h1",{style:{...h1,fontSize:38},className:"dsp"},"Group Safari"),
 ce("p",{style:{color:C.cream+"88",lineHeight:1.85,fontSize:15,marginBottom:24,padding:"0 8px"},className:"fade-up d1"},
@@ -1329,7 +1329,7 @@ function SplashScreen() {
 
   return ce('div', { style: W },
     ce('div', { style: Object.assign({}, cd, { textAlign: 'center' }) },
-      ce('div', { style: { fontSize: 64, marginBottom: 8 } }, '\ud83e\udd81'),
+      ce('div', { style: { fontSize: 64, marginBottom: 8 } }, ce('img', { src: 'img/lion.jpg', alt: 'Lion', style: { width: 80, height: 80, objectFit: 'cover', borderRadius: '50%', border: '2px solid ' + C.gold + '44', boxShadow: '0 4px 20px rgba(0,0,0,.4)' } })),
       ce('h1', { style: Object.assign({}, h1, { fontSize: 28 }), className: 'dsp' }, 'The Covenant of Water'),
       ce('div', { style: sb }, 'Group Safari'),
       ce('p', { style: Object.assign({}, dm, { marginBottom: 28 }) }, 'A psychometric expedition. 9 moral crises. No right answers.'),
