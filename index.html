@@ -72,7 +72,7 @@ body{font-family:var(--sans);background:var(--dusk);color:var(--cream);min-heigh
 
 /* ═══ AVATAR SCREEN ═══ */
 .av-scr{align-items:center;justify-content:center;text-align:center;background:var(--dusk);padding:2rem;position:relative}
-.av-scr::before{content:'';position:absolute;inset:0;background:url('img/Sunrise_Over_the_African_Savanna.png') center/cover no-repeat;filter:brightness(.2) saturate(.7);z-index:0}
+.av-scr::before{content:'';position:absolute;inset:0;background:url('img/bg-splash.jpg') center/cover no-repeat;filter:brightness(.2) saturate(.7);z-index:0}
 .av-scr::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(26,14,10,.8) 0%,rgba(26,14,10,.4) 40%,rgba(26,14,10,.4) 60%,rgba(26,14,10,.8) 100%);z-index:0}
 .av-scr>*{position:relative;z-index:1}
 .av-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.8rem;max-width:620px;margin:1.2rem auto}
@@ -80,7 +80,8 @@ body{font-family:var(--sans);background:var(--dusk);color:var(--cream);min-heigh
 .av-c::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 30%,rgba(200,164,90,.08) 0%,transparent 70%);pointer-events:none;transition:opacity .3s}
 .av-c:hover{border-color:rgba(200,164,90,.5);background:linear-gradient(165deg,rgba(200,164,90,.12) 0%,rgba(60,40,20,.2) 100%);transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.3),0 0 20px rgba(200,164,90,.08)}
 .av-c.sel{border-color:var(--gold);background:linear-gradient(165deg,rgba(200,164,90,.18) 0%,rgba(60,40,20,.25) 100%);transform:scale(1.05);box-shadow:0 0 30px rgba(200,164,90,.15),inset 0 0 20px rgba(200,164,90,.05)}
-.av-c .ico{font-size:3rem;display:flex;align-items:center;justify-content:center;width:72px;height:72px;margin:0 auto .4rem;border-radius:50%;background:radial-gradient(circle at 40% 35%,rgba(200,164,90,.12) 0%,rgba(26,14,10,.4) 100%);border:1.5px solid rgba(200,164,90,.18);box-shadow:0 4px 12px rgba(0,0,0,.25),inset 0 1px 0 rgba(200,164,90,.1);position:relative;animation:animalBob 3.5s ease-in-out infinite}
+.av-c .ico{font-size:3rem;display:flex;align-items:center;justify-content:center;width:72px;height:72px;margin:0 auto .4rem;border-radius:50%;background:radial-gradient(circle at 40% 35%,rgba(200,164,90,.12) 0%,rgba(26,14,10,.4) 100%);border:1.5px solid rgba(200,164,90,.18);box-shadow:0 4px 12px rgba(0,0,0,.25),inset 0 1px 0 rgba(200,164,90,.1);position:relative;animation:animalBob 3.5s ease-in-out infinite;overflow:hidden}
+.av-c .ico img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 @keyframes animalBob{0%,100%{transform:rotate(0deg) translateY(0)}15%{transform:rotate(5deg) translateY(-2px)}30%{transform:rotate(-4deg) translateY(0)}45%{transform:rotate(2deg) translateY(-1px)}60%,100%{transform:rotate(0deg) translateY(0)}}
 .av-c:nth-child(1) .ico{animation-delay:0s}
 .av-c:nth-child(2) .ico{animation-delay:.4s}
@@ -160,7 +161,7 @@ body{font-family:var(--sans);background:var(--dusk);color:var(--cream);min-heigh
 .inst-g{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
 .ib{font-family:var(--sans);font-size:.62rem;color:var(--cream);background:linear-gradient(165deg,rgba(200,164,90,.05) 0%,rgba(60,40,20,.12) 100%);border:1.5px solid rgba(200,164,90,.12);padding:.55rem .3rem;cursor:pointer;text-align:center;border-radius:12px;transition:all .3s cubic-bezier(.4,0,.2,1);line-height:1.25}
 .ib:hover{background:linear-gradient(165deg,rgba(200,164,90,.12) 0%,rgba(60,40,20,.18) 100%);border-color:var(--gold);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.2)}
-.ib .ii{font-size:2rem;display:flex;align-items:center;justify-content:center;width:48px;height:48px;margin:0 auto .2rem;border-radius:50%;background:radial-gradient(circle at 40% 35%,rgba(200,164,90,.08) 0%,rgba(26,14,10,.3) 100%);border:1px solid rgba(200,164,90,.12)}.ib .in{font-weight:600;color:var(--gold);font-size:.65rem}.ib .id{font-size:.48rem;color:var(--sand);margin-top:1px}
+.ib .ii{font-size:2rem;display:flex;align-items:center;justify-content:center;width:48px;height:48px;margin:0 auto .2rem;border-radius:50%;background:radial-gradient(circle at 40% 35%,rgba(200,164,90,.08) 0%,rgba(26,14,10,.3) 100%);border:1px solid rgba(200,164,90,.12);overflow:hidden}.ib .ii img{width:100%;height:100%;object-fit:cover;border-radius:50%}.ib .in{font-weight:600;color:var(--gold);font-size:.65rem}.ib .id{font-size:.48rem;color:var(--sand);margin-top:1px}
 
 /* ═══ FATE DICE ═══ */
 .fate-sec{max-width:580px;margin:1.2rem auto 0;text-align:center;animation:fu .5s forwards}
@@ -200,7 +201,7 @@ body{font-family:var(--sans);background:var(--dusk);color:var(--cream);min-heigh
 
 /* ═══ DASHBOARD / PORTRAIT ═══ */
 .dash{align-items:center;padding:2.5rem 1.5rem 4rem;background:linear-gradient(180deg,var(--dusk) 0%,#2d1810 50%,var(--earth-l) 100%);position:relative}
-.dash::before{content:'';position:absolute;inset:0;background:url('img/Chiron_s_Celestial_Archery_in_the_Savannah.png') center/cover no-repeat;filter:brightness(.25) saturate(.7);z-index:0}
+.dash::before{content:'';position:absolute;inset:0;background:url('img/bg-results.jpg') center/cover no-repeat;filter:brightness(.25) saturate(.7);z-index:0}
 .dash::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(26,14,10,.85) 0%,rgba(26,14,10,.3) 40%,rgba(26,14,10,.3) 60%,rgba(26,14,10,.85) 100%);z-index:0}
 .dash>*{position:relative;z-index:1}
 .dc{max-width:650px;width:100%;text-align:center}
@@ -260,7 +261,7 @@ body{font-family:var(--sans);background:var(--dusk);color:var(--cream);min-heigh
 
 <!-- ═══ SPLASH ═══ -->
 <div class="scr splash on" id="S0">
-<img class="splash-fallback" src="img/Sunrise_Over_the_African_Savanna.png" alt="">
+<img class="splash-fallback" src="img/bg-splash.jpg" alt="">
 <video class="splash-video" id="splashVid" autoplay muted loop playsinline>
 <source src="splash%20(2).mp4" type="video/mp4">
 </video>
@@ -727,6 +728,16 @@ const BIOMES={
 };
 
 // ═══ AVATARS (animal archetypes with Enneagram mapping) ═══
+// ═══ ANIMAL IMAGE MAP ═══
+const ANIMAL_IMG={
+  hippo:'img/hippo.jpg',elephant:'img/elephant.jpg',eagle:'img/eagle.jpg',
+  cheetah:'img/cheetah.jpg',giraffe:'img/giraffe.jpg',lion:'img/lion.jpg',
+  monkey:'img/monkey.png',owl:'img/owl.jpg',meerkat:'img/meerkat.jpg',
+  bonobo:'img/bonobo.jpg',peacock:'img/peacock.jpg',songbird:'img/songbird.jpg',
+  buffalo:'img/buffalo.jpg',chameleon:'img/chameleon.jpg'
+};
+function animalTag(id,size){return `<img src="${ANIMAL_IMG[id]||''}" alt="${id}" style="width:${size||'100%'};height:${size||'100%'};object-fit:cover;border-radius:50%">`;}
+
 const AV=[
   {id:'hippo',nm:'Hippo',ic:'🦛',rl:'The Anchor',ds:'Preserves cohesion, holds the center',en:9,fr:'rupture / fragmentation',cy:'Complicated'},
   {id:'elephant',nm:'Elephant',ic:'🐘',rl:'The Memory Keeper',ds:'Follows structure, honors protocol',en:1,fr:'disorder / wrongness',cy:'Complicated'},
@@ -842,18 +853,18 @@ const FATE_NARRATIVES={
 
 // Background images mapped per biome tier
 const TIER_BG={
-  A:"img/Sunset_Over_African_Savannah.png",
-  B:"img/Sunset_Over_African_Savannah.png",
-  C:"img/Savanna_Silhouettes_Across_Day_and_Night.png",
-  D:"img/Savanna_Silhouettes_Across_Day_and_Night.png"
+  A:"img/bg-wonder.jpg",
+  B:"img/bg-wonder.jpg",
+  C:"img/bg-tension.jpg",
+  D:"img/bg-abyss.jpg"
 };
 const PH=[
-  "img/Sunrise_Over_the_African_Savanna.png",
-  "img/Sunset_Over_African_Savannah.png",
-  "img/Sunset_Over_African_Savannah.png",
-  "img/Savanna_Silhouettes_Across_Day_and_Night.png",
-  "img/Savanna_Silhouettes_Across_Day_and_Night.png",
-  "img/Chiron_s_Celestial_Archery_in_the_Savannah.png"
+  "img/bg-splash.jpg",
+  "img/bg-wonder.jpg",
+  "img/bg-wonder.jpg",
+  "img/bg-tension.jpg",
+  "img/bg-abyss.jpg",
+  "img/bg-results.jpg"
 ];
 
 // ═══ GAME STATE ═══
@@ -1036,7 +1047,7 @@ function getDBTHTML(){
   const g=document.getElementById('avG');
   AV.forEach((a,i)=>{
     const d=document.createElement('div');d.className='av-c';d.dataset.i=i;
-    d.innerHTML=`<div class="ico">${a.ic}</div><div class="nm">${a.nm}</div><div class="rl">${a.rl}</div><div class="ds">${a.ds}</div>`;
+    d.innerHTML=`<div class="ico">${animalTag(a.id)}</div><div class="nm">${a.nm}</div><div class="rl">${a.rl}</div><div class="ds">${a.ds}</div>`;
     d.onclick=()=>{
       G.av=i;
       document.querySelectorAll('.av-c').forEach((c,j)=>c.classList.toggle('sel',j===i));
@@ -1322,7 +1333,7 @@ function showInstBCD(chosenOptionIdx){
   let bs='';
   IN.forEach(i=>{
     bs+=`<button class="ib" onclick="chInstBCD('${i.id}',${chosenOptionIdx})">
-      <div class="ii">${i.lb}</div><div class="in">${i.nm}</div><div class="id">${i.ds}</div>
+      <div class="ii">${animalTag(i.id)}</div><div class="in">${i.nm}</div><div class="id">${i.ds}</div>
     </button>`;
   });
   fateArea.innerHTML=`<div class="inst-sec">
@@ -1426,7 +1437,7 @@ function applyFate(instId,roll,q){
   
   fateSec.innerHTML=`
     <div class="fate-label">Instinct Chosen</div>
-    <div style="font-size:2rem;margin:.2rem 0">${inst.lb}</div>
+    <div style="font-size:2rem;margin:.2rem 0"><img src="${ANIMAL_IMG[instId]}" alt="${inst.nm}" style="width:48px;height:48px;object-fit:cover;border-radius:50%"></div>
     <div style="font-family:var(--serif);font-size:1rem;color:var(--gold)">${G.name} leads with ${inst.nm}</div>
     <div style="font-size:2.5rem;margin:.3rem 0">${['⚀','⚁','⚂','⚃','⚄','⚅'][roll-1]}</div>
     <div class="fate-result" style="color:${lucky?'var(--water)':'var(--red)'}">${lucky?'Fate amplifies — rolled '+roll:'Friction — rolled '+roll}</div>
@@ -1514,7 +1525,7 @@ window.addEventListener('load',()=>{
   }
   // Set initial background image for game screens
   const bg=document.getElementById('bgI');
-  if(bg) bg.src='img/Sunrise_Over_the_African_Savanna.png';
+  if(bg) bg.src='img/bg-splash.jpg';
 })();
 </script>
 <script src="solo-psychometric-engine.js"></script>   
