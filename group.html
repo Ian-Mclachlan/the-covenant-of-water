@@ -326,7 +326,15 @@ const CAPSTONES=[
 {id:"CAP-009",text:"Your group finds a wounded 'poacher' caught in a wire snare. He is 14 years old. The heavily armed 'Lion' rangers arrive and state their intent to 'finish the job,' as their official policy is zero tolerance.",fragments:["The boy has a digital tablet in his bag with time-stamped photos of the rangers taking bribes from international smuggling syndicates.","The 'Lion' rangers are actually unaccountable private military contractors, not official government employees.","The boy is the runaway son of the local district governor, a man known for ruthless political retribution.","The boy\u2019s wound is infected with a highly contagious zoonotic disease that requires immediate isolation."],options:[{t:"Defend the boy and treat his wound, as a child's life must be protected at all costs.",f:"Care"},{t:"Hand the boy over to the rangers; they are the ultimate authority in the bush.",f:"Authority"},{t:"Ensure both the boy and the corrupt rangers are reported simultaneously to the central government.",f:"Equality"},{t:"Trade the tablet and its evidence to the rangers in exchange for the boy\u2019s safe passage.",f:"Proportionality"}],teach:"Shoot-to-kill policies in places like Botswana and Kenya have successfully reduced poaching but created a human rights abyss in rural, impoverished communities. WHAT ACTUALLY HAPPENED: Extrajudicial killings by rangers have sparked massive local backlash, leading some parks to abandon paramilitary tactics in favor of community-ownership models where locals financially benefit from living animals. WHY: State authorities historically viewed extreme violence as the only proportional deterrent to heavily armed syndicates, viewing the death of impoverished local 'foot soldiers' (like the boy) as an acceptable tactical loss."},
 {id:"CAP-010",text:"A sacred rock-art cave (the 'Cradle of Memory') is found to sit directly on top of the world\u2019s largest lithium deposit. A 'Green Tech' company wants to dynamite the site to mine the battery materials needed for electric cars.",fragments:["The rock art contains an untranslated, 4,000-year-old record of how a previous civilization survived a multi-century drought.","The local community is violently split: the starving youth want the mining jobs, while the elders want to protect the cave.","The lithium extraction process will permanently poison 90% of the region\u2019s groundwater.","The 'Green Tech' company is actually 40% owned by the local tribe\u2019s corrupt sovereign wealth fund."],options:[{t:"Halt the mining to protect the community from the inevitable loss of their drinking water.",f:"Care"},{t:"Respect the tribe\u2019s internal democratic vote, even if they choose to destroy their own history.",f:"Authority"},{t:"Protect the cave; human origins and sacred history are inviolable and cannot be bought.",f:"Purity"},{t:"Sacrifice the cave; the global reduction in carbon emissions justifies the local cultural loss.",f:"Proportionality"}],teach:"The 'Green Transition' is driving a new 'Scramble for Africa,' where the critical minerals needed for EVs are often found under indigenous lands and fragile ecosystems. WHAT ACTUALLY HAPPENED: Mining leases are almost universally granted over cultural heritage (mirroring the destruction of Juukan Gorge in Australia). The economic leverage of mining conglomerates easily shatters local resistance. WHY: The global imperative to stop climate change (Proportionality on a planetary scale) and the promise of national debt relief are weaponized by governments to justify the permanent erasure of sacred history and localized ecology."}
 ];
-const CAP=CAPSTONES[Math.floor(Math.random()*CAPSTONES.length)];
+// CAP is now selected at session-start by the host and broadcast via Firebase.
+// Default to first capstone for classic (single-device) mode.
+var CAP_INDEX = 0;
+var CAP = CAPSTONES[CAP_INDEX];
+function setCapstoneByIndex(idx) {
+  if (typeof idx !== 'number' || idx < 0 || idx >= CAPSTONES.length) return;
+  CAP_INDEX = idx;
+  CAP = CAPSTONES[idx];
+}
 
 function selSess(){
 const bt={WONDER:[],TENSION:[],FRACTURE:[],ABYSS:[],MIRROR:[]};
@@ -1639,12 +1647,16 @@ function HostView() {
   var s = scenarios[ri] || null;
   var fmt = function(ms) { var sec=Math.floor(ms/1000); return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0'); };
 
-  var handleStart = function() {
+var handleStart = function() {
     var selected = selSess();
     setScenarios(selected);
     setAllGroupVotes([]);
+    // Pick capstone once on host and broadcast to all players
+    var capIdx = Math.floor(Math.random() * CAPSTONES.length);
+    setCapstoneByIndex(capIdx);
+    firebase.database().ref('sessions/' + sessionId + '/capstoneIndex').set(capIdx);
     CovenantFirebase.startGame(sessionId, selected);
-  };
+};
 
   // FIX #3: Store group vote locally + in allGroupVotes array
   var handleGroupVote = function(optionIndex) {
@@ -1689,7 +1701,13 @@ function HostView() {
     CovenantFirebase.getSessionData(sessionId).then(function(sessionData) {
       var transformed = CovenantFirebase.transformForAnalyze(sessionData);
       try {
-        var analysisResults = analyze(transformed.pl, transformed.sc, transformed.gv, transformed.sy);
+        // Build campfire duration array from groupVotes
+var campDurArr = [];
+for (var i = 0; i < transformed.sc.length; i++) {
+  var rv = sessionData.groupVotes && sessionData.groupVotes[i];
+  campDurArr.push(rv ? (rv.campfire_duration_ms || 0) : 0);
+}
+var analysisResults = analyze(transformed.pl, transformed.gv, transformed.sc, campDurArr, transformed.sy);
         setResults(analysisResults);
         CovenantFirebase.writeResults(sessionId, analysisResults);
       } catch(e) {
@@ -1976,6 +1994,9 @@ function PlayerView() {
     CovenantFirebase.init();
     var scenRef = firebase.database().ref('sessions/'+sessionId+'/scenarios');
     scenRef.on('value', function(snap) { var val=snap.val(); if (val) setScenarios(val); });
+   // Sync capstone selection from host
+    var capRef = firebase.database().ref('sessions/'+sessionId+'/capstoneIndex');
+    capRef.on('value', function(snap) { var idx=snap.val(); if (typeof idx === 'number') setCapstoneByIndex(idx); });
     unsubs.current.push(CovenantFirebase.onRoundChanged(sessionId, function(r) {
       setRound(r);
       if (r.phase==='pulsing') { setPulseSubmitted(false); setPulseTimer(12); setPulseStart(Date.now()); pulseLocked.current=false; setMyPulseChoice(-1); setGroupVoteForRound(null); }
@@ -1994,7 +2015,7 @@ function PlayerView() {
         if (val[lastKey]) setGroupVoteForRound(val[lastKey].selected_option_index);
       }
     });
-    return function() { scenRef.off(); gvRef.off(); unsubs.current.forEach(function(fn){fn();}); };
+    return function() { scenRef.off(); gvRef.off(); capRef.off(); unsubs.current.forEach(function(fn){fn();}); };
   }, [sessionId, playerId]);
 
   useEffect(function() {
