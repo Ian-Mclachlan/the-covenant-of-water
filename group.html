@@ -27,11 +27,164 @@ input{font-family:inherit}
 h1.dsp{font-family:'Playfair Display',Georgia,serif;font-weight:400;letter-spacing:-0.02em}
 .tb{padding:10px 16px;border-radius:10px;border:1px solid rgba(242,236,223,0.1);background:transparent;color:rgba(242,236,223,0.45);font-size:13px;font-weight:600;transition:all .2s}
 .tb.a{background:rgba(212,168,68,0.15);border-color:rgba(212,168,68,0.4);color:#D4A844}
+ /* ═══════════════════════════════════════════════════════════════
+   CAMPFIRE ATMOSPHERE + STRESS ESCALATION
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Ember particle layer — drifts upward through the scene */
+#emberLayer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+}
+.ember {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  bottom: -10px;
+  background: radial-gradient(circle, #FFB347 0%, #D4603A 55%, transparent 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(255, 179, 71, 0.6);
+  filter: blur(0.4px);
+  opacity: 0;
+}
+@keyframes emberRise {
+  0%   { opacity: 0; transform: translateY(0) translateX(0) scale(1); }
+  8%   { opacity: 1; }
+  55%  { opacity: 0.85; transform: translateY(-55vh) translateX(14px) scale(0.9); }
+  100% { opacity: 0; transform: translateY(-115vh) translateX(-8px) scale(0.3); }
+}
+.ember:nth-child(1)  { left: 8%;  animation: emberRise 9s  linear infinite; animation-delay: 0s; }
+.ember:nth-child(2)  { left: 14%; animation: emberRise 11s linear infinite; animation-delay: 1.8s; }
+.ember:nth-child(3)  { left: 22%; animation: emberRise 8.5s linear infinite; animation-delay: 3s; }
+.ember:nth-child(4)  { left: 28%; animation: emberRise 12s linear infinite; animation-delay: 0.5s; }
+.ember:nth-child(5)  { left: 35%; animation: emberRise 10s linear infinite; animation-delay: 4s; }
+.ember:nth-child(6)  { left: 42%; animation: emberRise 7.8s linear infinite; animation-delay: 2s; }
+.ember:nth-child(7)  { left: 48%; animation: emberRise 11.5s linear infinite; animation-delay: 5s; }
+.ember:nth-child(8)  { left: 55%; animation: emberRise 9.5s linear infinite; animation-delay: 1.2s; }
+.ember:nth-child(9)  { left: 62%; animation: emberRise 13s linear infinite; animation-delay: 3.8s; }
+.ember:nth-child(10) { left: 69%; animation: emberRise 10.5s linear infinite; animation-delay: 0.8s; }
+.ember:nth-child(11) { left: 76%; animation: emberRise 8.8s linear infinite; animation-delay: 4.5s; }
+.ember:nth-child(12) { left: 82%; animation: emberRise 12.5s linear infinite; animation-delay: 2.5s; }
+.ember:nth-child(13) { left: 89%; animation: emberRise 9.8s linear infinite; animation-delay: 5.5s; }
+.ember:nth-child(14) { left: 94%; animation: emberRise 11.8s linear infinite; animation-delay: 1.5s; width: 3px; height: 3px; }
+.ember:nth-child(15) { left: 18%; animation: emberRise 14s linear infinite; animation-delay: 6s;   width: 5px; height: 5px; }
+.ember:nth-child(16) { left: 45%; animation: emberRise 13.5s linear infinite; animation-delay: 7s;  width: 5px; height: 5px; }
+.ember:nth-child(17) { left: 72%; animation: emberRise 15s linear infinite; animation-delay: 8s;   width: 3px; height: 3px; }
+.ember:nth-child(18) { left: 32%; animation: emberRise 12.8s linear infinite; animation-delay: 6.5s; width: 3px; height: 3px; }
+.ember:nth-child(19) { left: 58%; animation: emberRise 10.8s linear infinite; animation-delay: 7.5s; width: 4px; height: 4px; }
+.ember:nth-child(20) { left: 86%; animation: emberRise 14.5s linear infinite; animation-delay: 4.8s; width: 4px; height: 4px; }
+
+/* Campfire glow — warm radial light emanating from bottom-center */
+#campfireGlow {
+  position: fixed;
+  bottom: -20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 140%;
+  height: 85%;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(ellipse at center bottom,
+    rgba(255, 147, 41, 0.22) 0%,
+    rgba(212, 96, 58, 0.14) 22%,
+    rgba(180, 70, 40, 0.06) 45%,
+    transparent 72%);
+  opacity: 0;
+  transition: opacity 1.8s ease;
+  animation: campfireBreathe 5s ease-in-out infinite;
+}
+@keyframes campfireBreathe {
+  0%, 100% { filter: brightness(1) saturate(1); }
+  50%      { filter: brightness(1.15) saturate(1.1); }
+}
+
+/* Tier vignette — progressive corner darkening scales with stress */
+#tierVignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 1.5s ease, box-shadow 1.5s ease;
+}
+
+/* ── Tier-based body classes ── */
+body.tier-WONDER   #tierVignette { opacity: 0.35; box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.30); }
+body.tier-TENSION  #tierVignette { opacity: 0.55; box-shadow: inset 0 0 220px rgba(40, 15, 5, 0.50); }
+body.tier-FRACTURE #tierVignette { opacity: 0.75; box-shadow: inset 0 0 300px rgba(80, 20, 10, 0.65); }
+body.tier-ABYSS    #tierVignette { opacity: 0.92; box-shadow: inset 0 0 380px rgba(20, 5, 15, 0.85),
+                                                              inset 0 0 140px rgba(100, 30, 20, 0.30); }
+body.tier-MIRROR   #tierVignette { opacity: 0.60; box-shadow: inset 0 0 260px rgba(10, 20, 40, 0.55); }
+body.tier-CAPSTONE #tierVignette { opacity: 0.82; box-shadow: inset 0 0 320px rgba(60, 20, 10, 0.70); }
+
+/* Ember intensity scales with tier */
+body.tier-WONDER   #emberLayer { opacity: 0.25; }
+body.tier-TENSION  #emberLayer { opacity: 0.50; }
+body.tier-FRACTURE #emberLayer { opacity: 0.80; }
+body.tier-ABYSS    #emberLayer { opacity: 1.00; }
+body.tier-MIRROR   #emberLayer { opacity: 0.35; }
+body.tier-CAPSTONE #emberLayer { opacity: 1.00; }
+body.tier-welcome  #emberLayer,
+body.tier-setup    #emberLayer { opacity: 0; }
+
+/* Campfire-specific atmosphere — kicks in during 'campfire' and 'capstone_discuss' phases */
+body.atmo-campfire #campfireGlow { opacity: 1; }
+body.atmo-campfire #emberLayer   { opacity: 1; }
+
+/* Card warmth — inherits tier color, intensifies during campfire */
+#root > div > div {
+  transition: box-shadow 1.5s ease, border-color 1.5s ease;
+}
+body.tier-WONDER   #root > div > div { box-shadow: 0 0 30px rgba(212, 168, 68, 0.08), 0 6px 24px rgba(0, 0, 0, 0.35); }
+body.tier-TENSION  #root > div > div { box-shadow: 0 0 45px rgba(212, 168, 68, 0.12), 0 8px 32px rgba(0, 0, 0, 0.45); }
+body.tier-FRACTURE #root > div > div { box-shadow: 0 0 60px rgba(212, 96, 58, 0.16),  0 10px 40px rgba(0, 0, 0, 0.55); }
+body.tier-ABYSS    #root > div > div { box-shadow: 0 0 80px rgba(184, 92, 58, 0.22),  0 12px 48px rgba(0, 0, 0, 0.65); }
+body.tier-MIRROR   #root > div > div { box-shadow: 0 0 60px rgba(120, 150, 210, 0.12), 0 10px 40px rgba(0, 0, 0, 0.5); }
+body.tier-CAPSTONE #root > div > div { box-shadow: 0 0 70px rgba(212, 96, 58, 0.18),  0 10px 40px rgba(0, 0, 0, 0.55); }
+
+/* During the campfire phase, cards get extra warmth regardless of tier */
+body.atmo-campfire #root > div > div {
+  box-shadow: 0 0 90px rgba(255, 147, 41, 0.20), 0 12px 44px rgba(0, 0, 0, 0.55) !important;
+}
+
+/* Gentle card breathing during high-stress tiers */
+body.tier-FRACTURE #root > div > div,
+body.tier-ABYSS #root > div > div {
+  animation: stressBreathe 5s ease-in-out infinite;
+}
+@keyframes stressBreathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.004); }
+}
+
+/* Accessibility — respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  #emberLayer, .ember,
+  #campfireGlow,
+  body.tier-FRACTURE #root > div > div,
+  body.tier-ABYSS #root > div > div {
+    animation: none !important;
+  }
+  #emberLayer { display: none; }
+} 
 </style>
 </head>
 <body>
 <a href="index.html" class="back-link">&larr; Solo Safari</a>
 <div id="bgLayer"></div>
+  <div id="tierVignette"></div>
+<div id="campfireGlow"></div>
+<div id="emberLayer">
+  <div class="ember"></div><div class="ember"></div><div class="ember"></div><div class="ember"></div>
+  <div class="ember"></div><div class="ember"></div><div class="ember"></div><div class="ember"></div>
+  <div class="ember"></div><div class="ember"></div><div class="ember"></div><div class="ember"></div>
+  <div class="ember"></div><div class="ember"></div><div class="ember"></div><div class="ember"></div>
+  <div class="ember"></div><div class="ember"></div><div class="ember"></div><div class="ember"></div>
+</div>
 <div id="root"></div>
 <script type="text/babel">
 
@@ -57,14 +210,32 @@ function updateBgLayer(key){
   if(!el)return;
   var src=BG_MAP[key]||BG_MAP.welcome;
   var pos=(key==='FRACTURE')?'left center':(key==='ABYSS')?'60% center':'center center';
-  if(el.getAttribute('data-bg')===src){el.style.backgroundPosition=pos;return;}
-  el.style.opacity='0';
-  setTimeout(function(){
-    el.style.backgroundImage='url('+src+')';
+  if(el.getAttribute('data-bg')!==src){
+    el.style.opacity='0';
+    setTimeout(function(){
+      el.style.backgroundImage='url('+src+')';
+      el.style.backgroundPosition=pos;
+      el.setAttribute('data-bg',src);
+      el.style.opacity='1';
+    },400);
+  } else {
     el.style.backgroundPosition=pos;
-    el.setAttribute('data-bg',src);
-    el.style.opacity='1';
-  },400);
+  }
+  // Sync tier class on <body> for atmospheric effects
+  var body=document.body;
+  ['WONDER','TENSION','FRACTURE','ABYSS','MIRROR','CAPSTONE','welcome','setup'].forEach(function(t){
+    body.classList.remove('tier-'+t);
+  });
+  if(key) body.classList.add('tier-'+key);
+}
+
+// Toggle campfire/capstone atmosphere based on current phase
+function updateAtmosphere(phase){
+  var body=document.body;
+  body.classList.remove('atmo-campfire');
+  if(phase==='campfire' || phase==='capstone_discuss'){
+    body.classList.add('atmo-campfire');
+  }
 }
 // Preload background images
 Object.values(BG_MAP).forEach(function(src){var img=new Image();img.src=src;});
@@ -1454,6 +1625,7 @@ function HostView() {
   // ═══ Background layer sync ═══
   useEffect(function() {
     var ri2=round.roundIndex;var s2=scenarios[ri2]||null;var ph2=round.phase;
+    updateAtmosphere(ph2);
     if(ph2==='lobby')updateBgLayer('welcome');
     else if(ph2==='analyzing'||ph2==='mirror'||ph2==='final')updateBgLayer('MIRROR');
     else if(ph2&&ph2.indexOf('capstone')===0)updateBgLayer('CAPSTONE');
@@ -1838,6 +2010,7 @@ function PlayerView() {
   // ═══ Background layer sync ═══
   useEffect(function() {
     var ri2=round.roundIndex;var s2=scenarios[ri2]||null;var ph2=round.phase;
+    updateAtmosphere(ph2);
     if(ph2==='lobby')updateBgLayer('setup');
     else if(ph2==='analyzing'||ph2==='mirror'||ph2==='final')updateBgLayer('MIRROR');
     else if(ph2&&ph2.indexOf('capstone')===0)updateBgLayer('CAPSTONE');
