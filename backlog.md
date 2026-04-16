@@ -50,3 +50,13 @@ Organized by priority. Move items into GitHub Issues when actively working on th
 - Multiplayer integration: `INTEGRATION_CHECKLIST.md`
 - Architecture decisions: `DECISIONS.md`
 - Ship log: `CHANGELOG.md`
+- 
+## Known Remaining Issues (Not Fixed By This Patch)
+-These were in your playtest notes but are separate fixes:
+
+- Multi-vote during pulse phase — there is a pulseLocked.current ref-based lock, but it may not fire fast enough on re-render. Needs investigation, possibly a debounce.
+- Multi-vote during prediction phase — same as above.
+- Pulse timer doesn't stop when player votes — should clear immediately on submission and show "TIME'S UP" or freeze.
+- Drift reveal not visible to players — host shows it in driftData, player doesn't render it cleanly. Listener race condition possible.
+- Vote confirmation flash too brief — needs a 2-second hold.
+Reveal narrative should show real-world historical outcome, not just drift count.
