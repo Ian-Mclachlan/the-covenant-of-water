@@ -2241,7 +2241,7 @@ function PlayerView() {
   if (phase==='mirror'||config.status==='mirror') {
     if (myResults && playerId) {
       var pIdx2 = parseInt(playerId.split('_')[1])||0;
-      var myP = myResults.players ? (myResults.players[playerId]||myResults.players[pIdx2]) : null;
+       var myP = myResults.ind ? myResults.ind[pIdx2] : null;
       if (myP) {
         return ce('div', { style: W },
           ce('div', { style: cd },
