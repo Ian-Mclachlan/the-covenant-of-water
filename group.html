@@ -1709,14 +1709,10 @@ for (var i = 0; i < transformed.sc.length; i++) {
 }
 var analysisResults = analyze(transformed.pl, transformed.gv, transformed.sc, campDurArr, transformed.sy);
 setResults(analysisResults);
-CovenantFirebase.writeResults(sessionId, analysisResults).then(function() {
-  console.log('[DEBUG] writeResults succeeded, advancing to mirror');
-  return CovenantFirebase.setPhase(sessionId, 'mirror');
-}).then(function() {
-  console.log('[DEBUG] setPhase succeeded');
-}).catch(function(err) {
-  console.error('[DEBUG] writeResults or setPhase FAILED:', err);
-});
+CovenantFirebase.writeResults(sessionId, analysisResults);
+setTimeout(function() {
+  CovenantFirebase.setPhase(sessionId, 'mirror');
+}, 1500);
        
       } catch(e) {
         console.error('[CovenantFirebase] analyze() failed:', e);
