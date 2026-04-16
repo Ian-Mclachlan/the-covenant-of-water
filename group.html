@@ -2246,8 +2246,8 @@ function PlayerView() {
         return ce('div', { style: W },
           ce('div', { style: cd },
             ce('div', { style: sb }, 'Your Mirror Portrait'),
-            ce('h1', { style: h1, className:'dsp' }, myP.arch?myP.arch.nm:'Your Profile'),
-            ce('p', { style: { fontSize:15, lineHeight:1.8, color:C.cream+'88' } }, myP.arch?myP.arch.de:'Your results are ready.'),
+            ce('h1', { style: Object.assign({}, h1, { fontSize:22 }), className:'dsp' }, myP.arch?myP.arch.title:'Your Profile'),
+            ce('p', { style: { fontSize:15, lineHeight:1.8, color:C.cream+'88' } }, myP.arch?myP.arch.prose:'Your results are ready.'),
             ce('div', { style: { background:C.cream+'05', borderRadius:12, padding:16, marginTop:16 } },
               ce('p', { style: { color:C.cream+'66', fontSize:13 } }, 'View the full group Mirror on the shared Campfire screen.'))
           )
