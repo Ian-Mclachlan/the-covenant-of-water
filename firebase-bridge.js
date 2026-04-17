@@ -495,77 +495,121 @@
    * @param {object} sessionData - Raw Firebase session data
    * @returns {object} - { pl, sc, gv, sy, enrichedPulses }
    */
-  function transformForAnalyze(sessionData) {
-    const players = sessionData.players || {};
-    const scenarios = sessionData.scenarios || [];
-    const pulses = sessionData.pulses || {};
-    const groupVotes = sessionData.groupVotes || {};
-    const predictions = sessionData.predictions || {};
-    const capstone = sessionData.capstone || {};
 
-    const playerIds = Object.keys(players).sort();
-    const roundCount = scenarios.length;
-
-    // Build pl array in the format analyze() expects
-    const pl = playerIds.map(pid => {
-      const pulsesArr = [];
-      const predsArr = [];
-
-      for (let r = 0; r < roundCount; r++) {
-        const roundPulses = pulses[r] || {};
-        const playerPulse = roundPulses[pid];
-        pulsesArr.push(playerPulse ? playerPulse.selected_option_index : 0);
-
-        const roundPreds = predictions[r] || {};
-        const playerPred = roundPreds[pid];
-        predsArr.push(playerPred ? playerPred.predicted_drift_count : 0);
-      }
-
-      return {
-        name: players[pid].name,
-        pulses: pulsesArr,
-        predictions: predsArr
-      };
-    });
-
-    // Build gv array (group vote option indices per round)
-    const gv = [];
+  // ════════════════════════════════════════════════════════════════════════════
+// EDIT A — firebase-bridge.js
+// ════════════════════════════════════════════════════════════════════════════
+// In firebase-bridge.js, find `function transformForAnalyze(sessionData) {`
+// and REPLACE THE ENTIRE FUNCTION with this version.
+// Also add `reshapeResultsForFirebase` as a new sibling function and
+// export it from the module (add `reshapeResultsForFirebase,` to the
+// returned object alongside `transformForAnalyze`).
+ 
+function transformForAnalyze(sessionData) {
+  const players    = sessionData.players    || {};
+  const scenarios  = sessionData.scenarios  || [];
+  const pulses     = sessionData.pulses     || {};
+  const groupVotes = sessionData.groupVotes || {};
+  const predictions= sessionData.predictions|| {};
+  const capstone   = sessionData.capstone   || {};
+ 
+  const playerIds   = Object.keys(players).sort();
+  const playerNames = playerIds.map(function(pid){ return players[pid].name || pid; });
+  const roundCount  = scenarios.length;
+ 
+  // ── pl: array of { name, pulses, predictions, latencies } ─────────────────
+  const pl = playerIds.map(function(pid) {
+    const pulsesArr    = [];
+    const predsArr     = [];
+    const latenciesArr = [];
+ 
     for (let r = 0; r < roundCount; r++) {
-      const rv = groupVotes[r];
-      gv.push(rv ? rv.selected_option_index : 0);
-    }
-
-    // Build sy array (capstone assessment per player)
-    const sy = playerIds.map(pid => {
-      const frag = (capstone.fragments || {})[pid];
-      return frag ? frag.player_assessment : null;
-    });
-
-    // Also provide the enriched pulse data (with latency, foundation weights, etc.)
-    // for the Phase 1 psychometric engine to use
-    const enrichedPulses = {};
-    for (let r = 0; r < roundCount; r++) {
-      enrichedPulses[r] = {};
       const roundPulses = pulses[r] || {};
-      for (const pid of playerIds) {
-        if (roundPulses[pid]) {
-          enrichedPulses[r][pid] = roundPulses[pid];
-        }
-      }
+      const playerPulse = roundPulses[pid];
+      pulsesArr.push(playerPulse ? playerPulse.selected_option_index : 0);
+      latenciesArr.push(playerPulse ? (playerPulse.pulse_latency_ms || 0) : 0);
+ 
+      const roundPreds = predictions[r] || {};
+      const playerPred = roundPreds[pid];
+      predsArr.push(playerPred ? playerPred.predicted_drift_count : 0);
     }
-
+ 
     return {
-      pl,
-      sc: scenarios,
-      gv,
-      sy,
-      enrichedPulses,
-      capstone,
-      groupVotes,
-      playerIds,
-      playerCount: playerIds.length
+      name: players[pid].name,
+      pulses: pulsesArr,
+      predictions: predsArr,
+      latencies: latenciesArr
     };
+  });
+ 
+  // ── gv + campDur: per-round group vote + campfire discussion duration ─────
+  const gv = [];
+  const campDur = [];
+  for (let r = 0; r < roundCount; r++) {
+    const rv = groupVotes[r];
+    gv.push(rv ? rv.selected_option_index : 0);
+    campDur.push(rv ? (rv.campfire_duration_ms || 0) : 0);
   }
+ 
+  // ── sy: per-player capstone synthesis assessment ──────────────────────────
+  const sy = playerIds.map(function(pid) {
+    const frag = (capstone.fragments || {})[pid];
+    return frag ? frag.player_assessment : null;
+  });
+ 
+  return {
+    pl: pl,
+    gv: gv,
+    sc: scenarios,
+    campDur: campDur,
+    sy: sy,
+    playerIds: playerIds,
+    playerNames: playerNames
+  };
+}
+ 
+// ── NEW — reshape analyze() output into the Firebase-friendly shape ─────────
+// analyze() returns { ind: [...], grp: {...} }
+// Firebase/PlayerView expects { players: {pid: profile}, group: {...} }
+// This bridges the two without changing the engine.
+function reshapeResultsForFirebase(analyzeOut, playerIds, playerNames) {
+  if (!analyzeOut || !analyzeOut.ind || !analyzeOut.grp) {
+    return { players: {}, group: {}, playerOrder: playerIds || [], error: 'analyze() returned empty' };
+  }
+ 
+  const players = {};
+  playerIds.forEach(function(pid, idx) {
+    const profile = analyzeOut.ind[idx];
+    if (!profile) return;
+    // Clone so we can append name + index without mutating the engine output.
+    const out = {};
+    Object.keys(profile).forEach(function(k) {
+      const v = profile[k];
+      // Firebase chokes on undefined. Convert to null.
+      if (v === undefined) { out[k] = null; }
+      else { out[k] = v; }
+    });
+    out.name = playerNames[idx] || null;
+    out.playerIndex = idx;
+    players[pid] = out;
+  });
+ 
+  // Sanitize group object the same way.
+  const group = {};
+  Object.keys(analyzeOut.grp).forEach(function(k) {
+    const v = analyzeOut.grp[k];
+    group[k] = (v === undefined) ? null : v;
+  });
+ 
+  return {
+    players: players,
+    group: group,
+    playerOrder: playerIds,
+    computedAt: Date.now()
+  };
+}
+ 
+ 
 
   // ═══════════════════════════════════════════════════════════
   // SESSION CLEANUP
@@ -622,6 +666,7 @@
     // Data retrieval
     getSessionData,
     transformForAnalyze,
+      reshapeResultsForFirebase,
 
     // Utilities
     generateJoinCode,
