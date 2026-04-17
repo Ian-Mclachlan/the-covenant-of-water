@@ -1576,6 +1576,654 @@ function HostLobby(props) {
 // Host View — The Campfire Shared Screen
 // ══════════════════════════════════════════════════════════════
 
+ 
+// ════════════════════════════════════════════════════════════════════════════
+// EDIT C — multiplayer-views-v2.js, Mirror render paths
+// ════════════════════════════════════════════════════════════════════════════
+// Everything below this line is ONE block of code that should be pasted
+// into multiplayer-views-v2.js *above* `function HostView()` so both
+// HostView and PlayerView can use the new components. Then replace the
+// existing `mirror` branches in each view per the instructions at the
+// bottom of this file (search for "PASTE INTO HostView" / "PASTE INTO PlayerView").
+// ════════════════════════════════════════════════════════════════════════════
+ 
+// ────────────────────────────────────────────────────────────────────────────
+// Glass styles — designed to sit cleanly over moving video (campfire, embers)
+// ────────────────────────────────────────────────────────────────────────────
+var gp = {
+  background: 'rgba(14, 32, 18, 0.55)',
+  border: '1px solid ' + C.gold + '33',
+  borderRadius: 18,
+  padding: '24px 22px',
+  backdropFilter: 'blur(16px) saturate(140%)',
+  WebkitBackdropFilter: 'blur(16px) saturate(140%)',
+  boxShadow: '0 10px 36px rgba(0,0,0,0.35)',
+  marginBottom: 16
+};
+var gpInset = {
+  background: 'rgba(14, 32, 18, 0.40)',
+  border: '1px solid ' + C.cream + '14',
+  borderRadius: 12,
+  padding: '14px 16px',
+  backdropFilter: 'blur(10px)',
+  WebkitBackdropFilter: 'blur(10px)'
+};
+var ts = { textShadow: '0 2px 10px rgba(0,0,0,0.6)' };
+var sxT2 = function(col){ return { color: col || C.gold, fontSize: 11, letterSpacing: 2.5, textTransform: 'uppercase', fontWeight: 700, marginBottom: 10 }; };
+ 
+// ────────────────────────────────────────────────────────────────────────────
+// One-shot CSS injection for slider thumbs + fade-up animation.
+// Idempotent: safe to call repeatedly from multiple components.
+// ────────────────────────────────────────────────────────────────────────────
+function injectMirrorStyles() {
+  if (typeof document === 'undefined') return;
+  if (document.getElementById('cov-mirror-enrichment-styles')) return;
+  var style = document.createElement('style');
+  style.id = 'cov-mirror-enrichment-styles';
+  style.textContent = [
+    '.cov-slider{-webkit-appearance:none;appearance:none;width:100%;height:6px;background:rgba(255,255,255,0.10);border-radius:3px;outline:none;margin:10px 0;}',
+    '.cov-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;background:#D4A844;border-radius:50%;cursor:pointer;box-shadow:0 0 12px rgba(212,168,68,0.6);transition:transform .15s ease;}',
+    '.cov-slider::-webkit-slider-thumb:hover{transform:scale(1.15);}',
+    '.cov-slider::-moz-range-thumb{width:20px;height:20px;background:#D4A844;border-radius:50%;cursor:pointer;border:none;box-shadow:0 0 12px rgba(212,168,68,0.6);}',
+    '.cov-mirror-fade{animation:covFadeUp .6s ease-out both;}',
+    '@keyframes covFadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}',
+    '.cov-blend-bar{height:6px;border-radius:3px;background:rgba(255,255,255,0.08);overflow:hidden;}',
+    '.cov-blend-fill{height:100%;border-radius:3px;transition:width .8s cubic-bezier(.2,.8,.2,1);}',
+    '.cov-chip-pulse{animation:covPulse 2.4s ease-in-out infinite;}',
+    '@keyframes covPulse{0%,100%{opacity:.7;}50%{opacity:1;}}',
+    '.cov-deepdive-btn{background:linear-gradient(135deg,rgba(212,168,68,0.12),rgba(184,92,58,0.12));border:1px solid rgba(212,168,68,0.35);color:#F2ECDF;border-radius:12px;padding:12px 20px;font-family:inherit;font-size:14px;font-weight:600;letter-spacing:1px;cursor:pointer;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:all .25s ease;}',
+    '.cov-deepdive-btn:hover{background:linear-gradient(135deg,rgba(212,168,68,0.22),rgba(184,92,58,0.22));transform:translateY(-1px);}'
+  ].join('\n');
+  document.head.appendChild(style);
+}
+ 
+// ────────────────────────────────────────────────────────────────────────────
+// Small utilities
+// ────────────────────────────────────────────────────────────────────────────
+function clamp01(v){ return Math.max(0, Math.min(1, v)); }
+function pct(v){ return Math.round(clamp01(v) * 100); }
+function signedPct(v){ var p = Math.round(v*100); return (p>=0?'+':'') + p; }
+ 
+// RC tier color — matches the classic Pride tab threshold palette.
+function rcTierColor(rc) {
+  if (rc >= 0.6) return C.green;
+  if (rc >= 0.35) return C.gold;
+  return C.rust;
+}
+ 
+// Derive synthesisMod from the analyze output (not exposed directly).
+function deriveSynthesisMod(grp) {
+  if (!grp || !grp.capstoneSR || grp.capstoneSR <= 0) return 1.0;
+  return grp.capstoneSynthesis / grp.capstoneSR;
+}
+ 
+// ────────────────────────────────────────────────────────────────────────────
+// MirrorPlayerCard — compact per-player tile for the campfire view
+// ────────────────────────────────────────────────────────────────────────────
+function MirrorPlayerCard(props) {
+  var p = props.player;
+  var isMe = props.isMe;
+  if (!p) return null;
+  var archName = p.arch ? p.arch.title || p.arch.nm : (p.archBlend && p.archBlend[0] ? p.archBlend[0].name : 'Profile');
+  var archIcon = (p.arch && p.arch.icon) || '\ud83e\ude9e';
+  var topPct = p.archBlend && p.archBlend[0] ? p.archBlend[0].pct : null;
+  var tfCol = FC[p.tf] || C.gold;
+  var bpLabel = (p.breakpoint && p.breakpoint.detected) ? ('S' + p.breakpoint.breakpoint) : '\u2014';
+  return ce('div', {
+    style: Object.assign({}, gpInset, {
+      padding: '14px 14px', minWidth: 150, flex: '1 1 160px',
+      borderLeft: '3px solid ' + tfCol,
+      position: 'relative'
+    })
+  },
+    isMe && ce('div', { style: { position:'absolute', top:8, right:10, fontSize:9, color:C.gold, letterSpacing:1.5, fontWeight:700 } }, 'YOU'),
+    ce('div', { style: { display:'flex', alignItems:'center', gap:8, marginBottom:6 } },
+      ce('span', { style: { fontSize:22 } }, archIcon),
+      ce('div', { style: { overflow:'hidden' } },
+        ce('div', { style: Object.assign({}, ts, { fontSize:13, fontWeight:700, color:C.cream, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }) }, p.name || 'Player'),
+        ce('div', { style: { fontSize:10, color:C.cream+'66', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' } }, archName + (topPct!=null ? ' \u00b7 ' + topPct + '%' : ''))
+      )
+    ),
+    ce('div', { style: { display:'flex', gap:4, flexWrap:'wrap', marginTop:6 } },
+      ce('span', { style: tg(tfCol) }, p.tf || '\u2014'),
+      p.shadowFoundation && p.shadowScore > 0.4 ? ce('span', { style: { display:'inline-block', background:C.rust+'15', color:C.rust, border:'1px solid '+C.rust+'33', borderRadius:20, padding:'2px 10px', fontSize:11, fontWeight:700 } }, 'Shadow: ' + p.shadowFoundation) : null,
+      p.breakpoint && p.breakpoint.detected ? ce('span', { style: { display:'inline-block', background:C.cream+'10', color:C.cream+'AA', border:'1px solid '+C.cream+'22', borderRadius:20, padding:'2px 10px', fontSize:11, fontWeight:700 } }, '\u26a1 ' + bpLabel) : null
+    )
+  );
+}
+ 
+// ────────────────────────────────────────────────────────────────────────────
+// ArchetypeBlendBars — full blend visualization for the phone Mirror
+// ────────────────────────────────────────────────────────────────────────────
+function ArchetypeBlendBars(props) {
+  var blend = props.blend || [];
+  var archMap = { Chameleon: C.equality, LoneBull: C.rust, Vanguard: C.gold, Anchor: C.green };
+  return ce('div', { style: { marginTop: 10 } },
+    blend.map(function(ab, i) {
+      var col = archMap[ab.name] || C.gold;
+      return ce('div', { key: i, style: { marginBottom: 8 } },
+        ce('div', { style: { display:'flex', justifyContent:'space-between', marginBottom:4, fontSize:12 } },
+          ce('span', { style: { color: i===0 ? col : C.cream+'99', fontWeight: i===0 ? 700 : 500 } }, ab.name),
+          ce('span', { style: { color: i===0 ? col : C.cream+'77', fontFamily:'monospace', fontWeight:700 } }, ab.pct + '%')
+        ),
+        ce('div', { className:'cov-blend-bar' },
+          ce('div', { className:'cov-blend-fill', style: { width: ab.pct + '%', background: col, boxShadow: i===0 ? '0 0 12px ' + col + '77' : 'none' } })
+        )
+      );
+    })
+  );
+}
+ 
+// ────────────────────────────────────────────────────────────────────────────
+// WhatIfSliders — the interactive coaching panel
+// Lets the group manipulate the four tunable drivers of Relational
+// Calibration and see, in real time, where the biggest lever is.
+// Formula preserved from analyze():
+//   ME  = MDT*0.5  + CMR*0.5
+//   AC  = MAR*0.5  + capstoneSR*0.5
+//   HE  = DTnorm*0.5 + (1-CPI)*0.5
+//   CS  = capstoneSR * synthesisMod
+//   RC  = ME*0.25 + AC*0.30 + HE*0.25 + CS*0.20
+// ────────────────────────────────────────────────────────────────────────────
+function WhatIfSliders(props) {
+  var g = props.group || {};
+  var actualRC = g.relationalCalibration || 0;
+  var synthesisMod = deriveSynthesisMod(g);
+  var capstoneSR = g.capstoneSR || 0;
+  var cpi = g.cpi || 0;
+ 
+  // Sliders initialize at actual values — move to see how RC responds.
+  var _sA = useState(g.mdt != null ? g.mdt : 0), mdt = _sA[0], setMdt = _sA[1];
+  var _sB = useState(g.cmr != null ? g.cmr : 0), cmr = _sB[0], setCmr = _sB[1];
+  var _sC = useState(g.mar != null ? g.mar : 0), mar = _sC[0], setMar = _sC[1];
+  var _sD = useState(g.distressNorm != null ? g.distressNorm : 0.5), dtn = _sD[0], setDtn = _sD[1];
+ 
+  var simME = clamp01(mdt * 0.5 + cmr * 0.5);
+  var simAC = clamp01(mar * 0.5 + capstoneSR * 0.5);
+  var simHE = clamp01(dtn * 0.5 + (1 - cpi) * 0.5);
+  var simCS = clamp01(capstoneSR * synthesisMod);
+  var simRC = clamp01(simME * 0.25 + simAC * 0.30 + simHE * 0.25 + simCS * 0.20);
+  var delta = simRC - actualRC;
+ 
+  // Biggest-lever coaching insight: which slider, maxed out alone, gains the
+  // most RC points compared to actual? Answer this with the group present.
+  function rcWith(mdt_, cmr_, mar_, dtn_) {
+    var me = clamp01(mdt_*0.5 + cmr_*0.5);
+    var ac = clamp01(mar_*0.5 + capstoneSR*0.5);
+    var he = clamp01(dtn_*0.5 + (1-cpi)*0.5);
+    var cs = simCS; // CS is structurally fixed in a finished game
+    return clamp01(me*0.25 + ac*0.30 + he*0.25 + cs*0.20);
+  }
+  var levers = [
+    { key:'mdt', name:'Moral Diversity',        gain: rcWith(1.0, g.cmr, g.mar, g.distressNorm) - actualRC },
+    { key:'cmr', name:'Context Match Rate',     gain: rcWith(g.mdt, 1.0, g.mar, g.distressNorm) - actualRC },
+    { key:'mar', name:'Minority Accommodation', gain: rcWith(g.mdt, g.cmr, 1.0, g.distressNorm) - actualRC },
+    { key:'dtn', name:'Distress Tolerance',     gain: rcWith(g.mdt, g.cmr, g.mar, 1.0) - actualRC }
+  ].sort(function(a,b){ return b.gain - a.gain; });
+  var biggest = levers[0];
+ 
+  function Row(props) {
+    var col = props.col || C.gold;
+    return ce('div', { style: { marginBottom: 14 } },
+      ce('div', { style: { display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom: 2 } },
+        ce('div', null,
+          ce('span', { style: { fontSize:12, fontWeight:700, color:col, letterSpacing:1, textTransform:'uppercase' } }, props.label),
+          props.sublabel ? ce('span', { style: { fontSize:11, color:C.cream+'55', marginLeft:8 } }, props.sublabel) : null
+        ),
+        ce('span', { style: { fontSize:14, fontFamily:'monospace', fontWeight:700, color:col } }, props.displayValue)
+      ),
+      ce('input', {
+        type:'range', min:0, max:1000, step:1,
+        value: Math.round(props.value * 1000),
+        className:'cov-slider',
+        onChange: function(e){ props.onChange(parseInt(e.target.value, 10) / 1000); }
+      })
+    );
+  }
+ 
+  return ce('div', { style: Object.assign({}, gp, { background: 'rgba(14,32,18,0.65)' }), className: 'cov-mirror-fade' },
+    ce('div', { style: sxT2(C.gold) }, 'What If \u2014 Live Group Simulation'),
+    ce('p', { style: { fontSize:13, lineHeight:1.65, color:C.cream+'88', marginBottom: 14, fontStyle:'italic' } },
+      'Drag the sliders. Watch Relational Calibration respond. The point is not to rewrite history \u2014 it\u2019s to see, concretely, which muscle this group most needs to strengthen.'
+    ),
+ 
+    Row({
+      label: 'Moral Diversity (MDT)', col: C.gold,
+      sublabel: 'foundations in play',
+      value: mdt, onChange: setMdt,
+      displayValue: Math.round(mdt * 6) + ' / 6'
+    }),
+    Row({
+      label: 'Context Match Rate (CMR)', col: C.gold,
+      sublabel: 'right tool for the moment',
+      value: cmr, onChange: setCmr,
+      displayValue: pct(cmr) + '%'
+    }),
+    Row({
+      label: 'Minority Accommodation (MAR)', col: C.equality,
+      sublabel: 'quiet signal surfaced',
+      value: mar, onChange: setMar,
+      displayValue: pct(mar) + '%'
+    }),
+    Row({
+      label: 'Distress Tolerance', col: C.green,
+      sublabel: 'capacity to stay in the heat',
+      value: dtn, onChange: setDtn,
+      displayValue: pct(dtn) + '%'
+    }),
+ 
+    // Simulated vs actual comparison
+    ce('div', { style: Object.assign({}, gpInset, { marginTop: 16, display:'flex', alignItems:'center', justifyContent:'space-around', gap:12 }) },
+      ce('div', { style: { textAlign:'center', flex:1 } },
+        ce('div', { style: { fontSize:10, color:C.cream+'55', letterSpacing:1.5, fontWeight:700, marginBottom:2 } }, 'ACTUAL RC'),
+        ce('div', { style: { fontSize:28, fontWeight:300, color: rcTierColor(actualRC), fontFamily:'monospace' } }, pct(actualRC) + '%')
+      ),
+      ce('div', { style: { fontSize:20, color: delta>=0 ? C.green : C.rust, fontWeight:700, fontFamily:'monospace' } }, signedPct(delta)),
+      ce('div', { style: { textAlign:'center', flex:1 } },
+        ce('div', { style: { fontSize:10, color:C.gold, letterSpacing:1.5, fontWeight:700, marginBottom:2 } }, 'SIMULATED RC'),
+        ce('div', { style: { fontSize:28, fontWeight:300, color: rcTierColor(simRC), fontFamily:'monospace', textShadow:'0 0 20px ' + rcTierColor(simRC) + '66' } }, pct(simRC) + '%')
+      )
+    ),
+ 
+    // Biggest-lever coaching callout
+    biggest && biggest.gain > 0.01 && ce('div', { style: { marginTop: 14, padding:'12px 14px', background: C.gold+'10', border:'1px solid '+C.gold+'33', borderRadius:10 } },
+      ce('div', { style: { fontSize:10, color:C.gold, letterSpacing:1.5, fontWeight:700, marginBottom:4 } }, 'BIGGEST LEVER FOR THIS GROUP'),
+      ce('p', { style: { fontSize:13, lineHeight:1.65, color:C.cream+'CC', margin:0 } },
+        'Maxing out ',
+        ce('strong', { style: { color:C.gold } }, biggest.name),
+        ' alone would lift Relational Calibration by ',
+        ce('strong', { style: { color:C.green } }, '+' + Math.round(biggest.gain*100) + ' points'),
+        '. That\u2019s the conversation worth having next week.'
+      )
+    )
+  );
+}
+ 
+// ────────────────────────────────────────────────────────────────────────────
+// DeepDiveBreakdown — the heavier group metrics, revealed on toggle
+// Mirrors the architecture of the classic Pride tab but video-ready.
+// ────────────────────────────────────────────────────────────────────────────
+function DeepDiveBreakdown(props) {
+  var g = props.group || {};
+  var playerList = props.playerList || []; // [{pid, profile}]
+  var scenariosCount = props.scenariosCount || 0;
+ 
+  // Foundation-level metric card (reused for each of the three components)
+  function Block(props) {
+    return ce('div', { style: Object.assign({}, gp, { background: (props.bg || 'rgba(14,32,18,0.50)') }) },
+      ce('div', { style: sxT2(props.col) }, props.title),
+      ce('div', { style: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:10 } },
+        ce('div', { style: Object.assign({}, gpInset, { padding:'12px 14px' }) },
+          ce('div', { style: { fontSize:10, color:C.cream+'55', fontWeight:700, letterSpacing:1, marginBottom:4 } }, props.leftLabel),
+          ce('div', { style: { fontSize:24, fontWeight:300, color: props.leftCol || props.col, fontFamily:'monospace' } }, props.leftValue),
+          ce('div', { style: { fontSize:11, color:C.cream+'55', marginTop:2 } }, props.leftSub)
+        ),
+        ce('div', { style: Object.assign({}, gpInset, { padding:'12px 14px' }) },
+          ce('div', { style: { fontSize:10, color:C.cream+'55', fontWeight:700, letterSpacing:1, marginBottom:4 } }, props.rightLabel),
+          ce('div', { style: { fontSize:24, fontWeight:300, color: props.rightCol || props.col, fontFamily:'monospace' } }, props.rightValue),
+          ce('div', { style: { fontSize:11, color:C.cream+'55', marginTop:2 } }, props.rightSub)
+        )
+      ),
+      ce('p', { style: { fontSize:13, lineHeight:1.7, color:C.cream+'99', margin:0 } }, props.copy)
+    );
+  }
+ 
+  return ce('div', { className: 'cov-mirror-fade' },
+ 
+    // Moral Elasticity
+    Block({
+      title: 'Moral Elasticity',
+      col: C.gold,
+      leftLabel: 'Moral Diversity (MDT)',
+      leftValue: (g.foundationsUsed != null ? g.foundationsUsed : '\u2014') + ' / 6',
+      leftSub: 'foundations used',
+      leftCol: (g.mdt||0) > 0.5 ? C.green : (g.mdt||0) > 0.33 ? C.gold : C.rust,
+      rightLabel: 'Context Match (CMR)',
+      rightValue: pct(g.cmr || 0) + '%',
+      rightSub: (g.contextMatches || 0) + ' of ' + (g.contextTotal || 0) + ' matched',
+      rightCol: (g.cmr||0) > 0.5 ? C.green : (g.cmr||0) > 0.3 ? C.gold : C.rust,
+      copy: (g.moralElasticity || 0) > 0.5
+        ? 'This group shifted its moral lens across contexts \u2014 reading the terrain rather than defaulting to a single foundation. This is the foundation of adaptive decision-making.'
+        : (g.moralElasticity || 0) > 0.3
+        ? 'Moderate moral flexibility. The group accessed multiple foundations but didn\u2019t consistently match the contextual demands of each scenario.'
+        : 'Narrow moral palette. The group defaulted to the same foundation regardless of context \u2014 a hammer seeing every crisis as a nail.'
+    }),
+ 
+    // Adaptive Calibration
+    Block({
+      title: 'Adaptive Calibration',
+      col: C.equality,
+      leftLabel: 'Minority Accommodation',
+      leftValue: pct(g.mar || 0) + '%',
+      leftSub: (g.marCount || 0) + ' minority views reached consensus',
+      leftCol: (g.mar||0) > 0.3 ? C.green : C.gold,
+      rightLabel: 'Capstone Integration',
+      rightValue: pct(g.capstoneSR || 0) + '%',
+      rightSub: 'fragments surfaced',
+      rightCol: (g.capstoneSR||0) >= 0.8 ? C.green : C.rust,
+      copy: (g.adaptiveCalibration || 0) > 0.5
+        ? 'This group found the best signal, not just the loudest voice. Minority perspectives reached the final decision, and asymmetric information was synthesized under chaos.'
+        : 'The group\u2019s decisions tracked the majority pulse rather than integrating minority insight. Woolley\u2019s research is clear: groups that suppress quiet truths underperform those that amplify them.'
+    }),
+ 
+    // Holding Environment
+    Block({
+      title: 'The Holding Environment',
+      col: (g.holdingEnvironment||0) > 0.5 ? C.green : C.rust,
+      bg: ((g.holdingEnvironment||0) > 0.5 ? C.green : C.rust) + '12',
+      leftLabel: 'Distress Tolerance',
+      leftValue: (g.distressTolerance != null ? g.distressTolerance.toFixed(2) : '1.00') + '\u00d7',
+      leftSub: (g.distressTolerance||1) > 1.0 ? 'discussions grew under pressure' : 'discussions shortened under pressure',
+      leftCol: (g.distressTolerance||1) > 1.0 ? C.green : C.rust,
+      rightLabel: 'Conformity Pressure (CPI)',
+      rightValue: pct(g.cpi || 0) + '%',
+      rightSub: (g.cpi||0) < 0.35 ? 'low conformity pressure' : 'high conformity pressure',
+      rightCol: (g.cpi||0) < 0.35 ? C.green : C.rust,
+      copy: g.saf ? g.saf.de : 'The Holding Environment is where a group either contains its disequilibrium productively or collapses back into false consensus.'
+    }),
+ 
+    // Capstone Synthesis (compact — one stat + narrative)
+    ce('div', { style: Object.assign({}, gp, { background: (g.capstoneSynthesis||0) >= 0.8 ? C.green+'12' : C.rust+'12' }) },
+      ce('div', { style: sxT2((g.capstoneSynthesis||0) >= 0.8 ? C.green : C.rust) }, 'Capstone Synthesis \u2014 Cynefin Chaos'),
+      ce('div', { style: { display:'flex', alignItems:'center', gap:16, marginBottom:10 } },
+        ce('div', { style: { fontSize:44, fontWeight:300, color: (g.capstoneSynthesis||0) >= 0.8 ? C.green : C.rust, fontFamily:'monospace' } },
+          pct(g.capstoneSynthesis || 0) + '%'
+        ),
+        ce('p', { style: { fontSize:13, lineHeight:1.7, color:C.cream+'99', margin:0, flex:1 } },
+          (g.capstoneSynthesis || 0) >= 0.8
+            ? 'Every fragment surfaced. Asymmetric information was integrated under chaos. This is the hallmark of an adaptive organism.'
+            : 'Only ' + pct(g.capstoneSR || 0) + '% of fragments were surfaced. In the Chaotic domain, teams fail not from bad decisions, but from incomplete pictures.'
+        )
+      )
+    ),
+ 
+    // What-If sliders — the interactive coaching surface
+    ce(WhatIfSliders, { group: g }),
+ 
+    // Per-player Breaking Point curves
+    playerList.length > 0 && ce('div', { style: gp },
+      ce('div', { style: sxT2(C.rust) }, 'Breaking Points \u2014 Where Convictions Bend'),
+      ce('p', { style: { fontSize:12, color:C.cream+'66', marginTop:-4, marginBottom:14, fontStyle:'italic' } },
+        'Piecewise regression on each player\u2019s stress-response curve. The dashed line marks the exact stress level at which the baseline strategy collapsed.'
+      ),
+      ce('div', { style: { display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(280px, 1fr))', gap:16 } },
+        playerList.map(function(entry, idx) {
+          var p = entry.profile;
+          if (!p || !p.dbs || p.dbs.length < 2) return null;
+          return ce('div', { key: entry.pid || idx, style: Object.assign({}, gpInset, { padding:'12px 14px' }) },
+            ce('div', { style: { display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:6 } },
+              ce('span', { style: { fontSize:13, fontWeight:700, color:C.cream } }, p.name || 'Player'),
+              p.breakpoint && p.breakpoint.detected
+                ? ce('span', { style: { fontSize:11, color:C.rust, fontWeight:700 } }, 'BP @ S' + p.breakpoint.breakpoint)
+                : ce('span', { style: { fontSize:11, color:C.cream+'55' } }, 'No clear break')
+            ),
+            ce(BreakpointCurve, { dbs: p.dbs, bp: p.breakpoint })
+          );
+        })
+      )
+    )
+  );
+}
+ 
+// ────────────────────────────────────────────────────────────────────────────
+// GroupMirrorHost — the Campfire view, with Deep Dive toggle
+// This is what renders on the shared screen during the mirror phase.
+// ────────────────────────────────────────────────────────────────────────────
+function GroupMirrorHost(props) {
+  var results = props.results || {};
+  var scenariosCount = props.scenariosCount || 0;
+  var g = results.group || {};
+  var order = results.playerOrder || Object.keys(results.players || {});
+  var playerList = order.map(function(pid){ return { pid: pid, profile: (results.players||{})[pid] }; }).filter(function(e){ return !!e.profile; });
+ 
+  var _s1 = useState(false), deepDive = _s1[0], setDeepDive = _s1[1];
+ 
+  useEffect(function(){ injectMirrorStyles(); }, []);
+ 
+  if (results.error) {
+    return ce('div', { style: W },
+      ce('div', { style: Object.assign({}, gp, { textAlign:'center', maxWidth:620 }) },
+        ce('div', { style: sxT2(C.rust) }, 'The Mirror'),
+        ce('p', { style: { color:C.rust, fontSize:14, lineHeight:1.7 } }, 'Analysis encountered an issue: ' + results.error),
+        ce('p', { style: { color:C.cream+'66', fontSize:13, marginTop:12 } }, 'Check the browser console for the stack trace, or replay the session in classic mode.')
+      )
+    );
+  }
+ 
+  if (playerList.length === 0) {
+    return ce('div', { style: W }, ce('div', { style: Object.assign({}, gp, { textAlign:'center' }) },
+      ce('div', { style: sxT2(C.gold) }, 'The Mirror'),
+      ce('p', { style: { color:C.cream+'77', fontSize:14 } }, 'Results are not ready yet.')
+    ));
+  }
+ 
+  var RC = g.relationalCalibration || 0;
+  var rcCol = rcTierColor(RC);
+ 
+  return ce('div', { style: Object.assign({}, W, { justifyContent:'flex-start', paddingTop: 28, paddingBottom: 40 }) },
+    ce('div', { style: { width:'100%', maxWidth: 960 }, className:'cov-mirror-fade' },
+ 
+      // ── RC HEADLINE ──────────────────────────────────────────────────────
+      ce('div', { style: Object.assign({}, gp, { textAlign:'center', padding:'34px 24px', background:'rgba(10,26,12,0.55)' }) },
+        ce('div', { style: sxT2(C.gold) }, 'Relational Calibration'),
+        ce('div', { style: { fontSize:13, color:C.cream+'66', marginBottom:18, fontFamily:"'Playfair Display',Georgia,serif", fontStyle:'italic' } },
+          'The group\u2019s capacity to sustain the Productive Zone of Disequilibrium'
+        ),
+        ce('div', { style: Object.assign({}, ts, { fontSize: 84, fontWeight:300, color: rcCol, fontFamily:'monospace', lineHeight:1, textShadow:'0 0 40px ' + rcCol + '66, 0 4px 20px rgba(0,0,0,0.5)' }) },
+          pct(RC) + '%'
+        ),
+        // Four sub-component gauges
+        ce('div', { style: { display:'flex', justifyContent:'center', gap:18, flexWrap:'wrap', marginTop:22 } },
+          ce(RCGauge, { value: g.moralElasticity || 0,      label: 'Moral Elasticity',     color: C.gold,     size: 86 }),
+          ce(RCGauge, { value: g.adaptiveCalibration || 0,  label: 'Adaptive Calibration', color: C.equality, size: 86 }),
+          ce(RCGauge, { value: g.holdingEnvironment || 0,   label: 'Holding Environment',  color: C.green,    size: 86 }),
+          ce(RCGauge, { value: g.capstoneSynthesis || 0,    label: 'Capstone Synthesis',   color: C.purity,   size: 86 })
+        )
+      ),
+ 
+      // ── TWO-COLUMN: archetype + radar ────────────────────────────────────
+      ce('div', { style: { display:'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap:16 } },
+        // Group archetype card
+        g.ga && ce('div', { style: gp },
+          ce('div', { style: sxT2(C.gold) }, 'Group Archetype'),
+          ce('h2', { style: Object.assign({}, ts, { fontSize:26, color:C.gold, marginTop:0, marginBottom:10, fontFamily:"'Playfair Display'", fontWeight:400 }) }, g.ga.title),
+          ce('p', { style: { fontSize:14, lineHeight:1.75, color:C.cream+'BB', margin:0 } }, g.ga.prose)
+        ),
+        // Moral center of gravity (Haidt radar)
+        g.gf && ce('div', { style: gp },
+          ce('div', { style: sxT2(C.gold) }, 'Moral Center of Gravity'),
+          ce('div', { style: { display:'flex', justifyContent:'center' } },
+            ce(Radar, { fc: g.gf, tot: scenariosCount || 9, col: C.gold, sz: 260 })
+          )
+        )
+      ),
+ 
+      // ── GROUP NARRATIVES (the computed insights) ─────────────────────────
+      g.narratives && g.narratives.length > 0 && ce('div', { style: Object.assign({}, gp, { background:'rgba(212,168,68,0.08)', border:'1px solid '+C.gold+'33' }) },
+        ce('div', { style: sxT2(C.gold) }, 'The Collective Mirror'),
+        g.narratives.slice(0, 4).map(function(n, i){
+          return ce('p', { key: n.id || i, style: { fontSize:15, lineHeight:1.9, color:C.cream+'CC', marginTop: i===0 ? 0 : 12, marginBottom:0, fontFamily:"'Playfair Display',Georgia,serif", fontStyle:'italic' } }, n.text);
+        })
+      ),
+ 
+      // ── PLAYER CHIPS ROW ─────────────────────────────────────────────────
+      ce('div', { style: gp },
+        ce('div', { style: sxT2(C.gold) }, 'The Expedition'),
+        ce('div', { style: { display:'flex', gap:10, flexWrap:'wrap' } },
+          playerList.map(function(entry) {
+            return ce(MirrorPlayerCard, { key: entry.pid, player: entry.profile });
+          })
+        )
+      ),
+ 
+      // ── DEEP DIVE TOGGLE ─────────────────────────────────────────────────
+      ce('div', { style: { textAlign:'center', margin:'10px 0 20px' } },
+        ce('button', {
+          className: 'cov-deepdive-btn',
+          onClick: function(){ setDeepDive(!deepDive); }
+        },
+          deepDive ? '\u25b2  Collapse Deep Dive' : '\u25bc  Expand Deep Dive  \u2014  Breakdowns + What-If Simulation'
+        )
+      ),
+ 
+      // ── DEEP DIVE PANEL ──────────────────────────────────────────────────
+      deepDive && ce(DeepDiveBreakdown, {
+        group: g,
+        playerList: playerList,
+        scenariosCount: scenariosCount
+      })
+    )
+  );
+}
+ 
+// ────────────────────────────────────────────────────────────────────────────
+// PlayerMirrorPhone — the personal portrait on the phone
+// Mirrors the structure of the classic App's Footprints tab, scaled for mobile.
+// ────────────────────────────────────────────────────────────────────────────
+function PlayerMirrorPhone(props) {
+  var results = props.results || {};
+  var playerId = props.playerId;
+  useEffect(function(){ injectMirrorStyles(); }, []);
+ 
+  // Error branch — preserved from the existing minimal render.
+  if (results.error) {
+    return ce('div', { style: W }, ce('div', { style: Object.assign({}, gp, { textAlign:'center' }) },
+      ce('div', { style: sxT2(C.rust) }, 'Mirror'),
+      ce('p', { style: { color:C.rust, fontSize:14 } }, 'Analysis encountered an issue: ' + results.error),
+      ce('p', { style: dm }, 'The classic pass-the-device mode has the full Mirror experience. Try that next time!')
+    ));
+  }
+ 
+  // Find this player's profile. Support both keyed-by-pid and legacy index.
+  var players = results.players || {};
+  var myP = players[playerId];
+  if (!myP && playerId) {
+    var idx = parseInt(String(playerId).split('_')[1], 10);
+    if (!isNaN(idx)) {
+      var orderKey = (results.playerOrder || [])[idx];
+      if (orderKey) myP = players[orderKey];
+    }
+  }
+ 
+  if (!myP) {
+    return ce('div', { style: W }, ce('div', { style: Object.assign({}, gp, { textAlign:'center' }) },
+      ce('div', { style: { fontSize:48 } }, '\ud83e\ude9e'),
+      ce('div', { style: sxT2(C.gold) }, 'The Mirror'),
+      ce('p', { style: dm }, 'Waiting for your portrait...')
+    ));
+  }
+ 
+  var archIcon = (myP.arch && myP.arch.icon) || '\ud83e\ude9e';
+  var archName = (myP.arch && (myP.arch.title || myP.arch.nm)) || (myP.archBlend && myP.archBlend[0] ? myP.archBlend[0].name : 'Profile');
+  var archProse = (myP.arch && (myP.arch.prose || myP.arch.de)) || 'Your portrait is ready.';
+  var tfCol = FC[myP.tf] || C.gold;
+ 
+  return ce('div', { style: Object.assign({}, W, { justifyContent:'flex-start', paddingTop:24, paddingBottom:40 }) },
+    ce('div', { style: { width:'100%', maxWidth: 620 }, className:'cov-mirror-fade' },
+ 
+      // ── HEADLINE — archetype identity ───────────────────────────────────
+      ce('div', { style: Object.assign({}, gp, { textAlign:'center', padding:'28px 22px' }) },
+        ce('div', { style: sxT2(C.gold) }, 'Your Mirror Portrait'),
+        ce('div', { style: { fontSize:52, marginBottom:4 } }, archIcon),
+        ce('h1', { style: Object.assign({}, ts, { fontSize:32, color:C.gold, fontFamily:"'Playfair Display',Georgia,serif", fontWeight:400, margin:'4px 0 14px', lineHeight:1.15 }) }, archName),
+        ce('p', { style: { fontSize:14.5, lineHeight:1.8, color:C.cream+'AA', margin:0 } }, archProse),
+ 
+        // Archetype blend bars
+        myP.archBlend && myP.archBlend.length > 0 && ce(ArchetypeBlendBars, { blend: myP.archBlend })
+      ),
+ 
+      // ── KEY METRICS — 4-up ───────────────────────────────────────────────
+      ce('div', { style: Object.assign({}, gp, { padding:'18px 16px' }) },
+        ce('div', { style: sxT2(C.gold) }, 'The Numbers'),
+        ce('div', { style: { display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:8 } },
+          [
+            { v: Math.round(myP.dp || 0) + '%',  l: 'Social Drift',  c: (myP.dp||0) > 50 ? C.rust : C.gold },
+            { v: Math.round(myP.sdp || 0) + '%', l: 'Stress Drift',  c: (myP.sdp||0) > 50 ? C.rust : C.gold },
+            { v: Math.round(myP.pa || 0) + '%',  l: 'Awareness',     c: (myP.pa||0) > 65 ? C.green : C.gold },
+            { v: myP.rg != null ? myP.rg : '\u2014', l: 'Regulation', c: (myP.rg||0) > 60 ? C.green : C.rust }
+          ].map(function(m, i) {
+            return ce('div', { key: i, style: Object.assign({}, gpInset, { textAlign:'center', padding:'10px 6px' }) },
+              ce('div', { style: { fontSize:20, fontWeight:300, color: m.c, fontFamily:'monospace' } }, m.v),
+              ce('div', { style: { fontSize:10, color:C.cream+'55', marginTop:2 } }, m.l)
+            );
+          })
+        )
+      ),
+ 
+      // ── FOUNDATION SIGNATURE ────────────────────────────────────────────
+      ce('div', { style: Object.assign({}, gp, { borderLeft:'3px solid '+tfCol }) },
+        ce('div', { style: sxT2(tfCol) }, 'Your Moral Signature'),
+        ce('p', { style: { fontSize:14.5, lineHeight:1.8, color:C.cream+'AA', margin:0 } },
+          'Your dominant foundation is ',
+          ce('strong', { style: { color: tfCol } }, myP.tf || '\u2014'),
+          '. Your secondary is ',
+          ce('strong', { style: { color: FC[myP.sf] || C.cream } }, myP.sf || '\u2014'),
+          '. Together they form your moral voice.',
+          myP.shadowFoundation && myP.shadowScore > 0.5
+            ? [' And consistently, across every scenario where ', ce('strong', { key:'sf', style: { color: FC[myP.shadowFoundation] || C.rust } }, myP.shadowFoundation), ' was available, you walked past it ', ce('strong', { key:'ss', style: { color:C.rust } }, Math.round((myP.shadowScore||0)*100) + '%'), ' of the time \u2014 a measurable moral shadow.']
+            : ''
+        )
+      ),
+ 
+      // ── THE BREAKING POINT ──────────────────────────────────────────────
+      myP.dbs && myP.dbs.length >= 3 && ce('div', { style: gp },
+        ce('div', { style: sxT2(C.rust) }, 'The Breaking Point'),
+        ce(BreakpointCurve, { dbs: myP.dbs, bp: myP.breakpoint }),
+        myP.breakpoint && myP.breakpoint.detected
+          ? ce('p', { style: { fontSize:13.5, lineHeight:1.75, color:C.cream+'99', marginTop:10, marginBottom:0 } },
+              'Under stress level ',
+              ce('strong', { style: { color:C.rust } }, myP.breakpoint.breakpoint),
+              ', your decision pattern shifted. Below that threshold your baseline held; above it, a different strategy took over. Knowing where the line is means you can name it before it decides for you.')
+          : ce('p', { style: { fontSize:13.5, lineHeight:1.75, color:C.cream+'88', marginTop:10, marginBottom:0, fontStyle:'italic' } },
+              'No clear breakpoint detected \u2014 your response pattern was smooth across the stress gradient.')
+      ),
+ 
+      // ── DRIFT ARC + LATENCY (two-up) ────────────────────────────────────
+      ce('div', { style: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 } },
+        ce('div', { style: Object.assign({}, gp, { marginBottom:0, padding:'18px 16px' }) },
+          ce('div', { style: sxT2(myP.driftArc === 'Eroded Anchor' ? C.rust : myP.driftArc === 'Late Bloomer' ? C.green : C.gold) }, 'Drift Arc'),
+          ce('div', { style: { fontSize:17, fontWeight:700, color:C.cream, marginBottom:4 } }, myP.driftArc || 'Steady State'),
+          ce('p', { style: { fontSize:12.5, lineHeight:1.65, color:C.cream+'88', margin:0 } },
+            myP.driftArc === 'Eroded Anchor' ? 'Independent early, conforming late. The group\u2019s gravity won over time.' :
+            myP.driftArc === 'Late Bloomer'  ? 'Conformist early, dissenting late. You grew into your voice.' :
+                                               'Your conformity pattern was consistent throughout.'
+          )
+        ),
+        ce('div', { style: Object.assign({}, gp, { marginBottom:0, padding:'18px 16px' }) },
+          ce('div', { style: sxT2(myP.latencyType === 'Deliberator' ? C.green : myP.latencyType === 'Snap Reactor' ? C.rust : C.gold) }, 'Decision Latency'),
+          ce('div', { style: { fontSize:17, fontWeight:700, color:C.cream, marginBottom:4 } }, myP.latencyType || 'Steady Hand'),
+          ce('p', { style: { fontSize:12.5, lineHeight:1.65, color:C.cream+'88', margin:0 } },
+            myP.latencyType === 'Deliberator'  ? 'When stakes rose, you slowed down. Wise mind engaged.' :
+            myP.latencyType === 'Snap Reactor' ? 'Under pressure, your decisions accelerated. The amygdala took the wheel.' :
+                                                 'Your decision speed was stress-invariant. Equanimity or detachment \u2014 only you know which.'
+          )
+        )
+      ),
+ 
+      // ── COMPUTED NARRATIVES — the things impossible to know about yourself
+      myP.narratives && myP.narratives.length > 0 && ce('div', { style: Object.assign({}, gp, { background:'rgba(212,168,68,0.08)', border:'1px solid '+C.gold+'33', marginTop: 16 }) },
+        ce('div', { style: sxT2(C.gold) }, 'The Mirror \u2014 Computed Insights'),
+        ce('p', { style: { fontSize:11.5, color:C.cream+'55', marginTop:-4, marginBottom:14 } },
+          'Generated from your specific data patterns. No two players receive the same set.'
+        ),
+        myP.narratives.slice(0, 4).map(function(n, i){
+          return ce('p', { key: n.id || i, style: { fontSize:14, lineHeight:1.9, color:C.cream+'CC', marginTop: i===0 ? 0 : 14, marginBottom:0, fontFamily:"'Playfair Display',Georgia,serif", fontStyle:'italic', paddingLeft:14, borderLeft:'2px solid '+C.gold+'44' } }, n.text);
+        })
+      ),
+ 
+      // ── FOOTER — invitation to the shared screen ───────────────────────
+      ce('div', { style: { textAlign:'center', marginTop:24, padding:'16px 0 8px', color:C.cream+'55', fontSize:12 } },
+        'The full group Mirror \u2014 radar, breaking points, what-if simulation \u2014 is on the shared Campfire screen.'
+      )
+    )
+  );
+}
+ 
+
+
+
+
+
 function HostView() {
   var _s1=useState(null),sessionId=_s1[0],setSessionId=_s1[1];
   var _s2=useState(''),joinCode=_s2[0],setJoinCode=_s2[1];
@@ -1696,33 +2344,68 @@ var handleStart = function() {
   };
 
   // FIX #5: Robust analyze that assembles data from Firebase
-  var handleAnalyze = function() {
-    CovenantFirebase.setPhase(sessionId, 'analyzing');
-    CovenantFirebase.getSessionData(sessionId).then(function(sessionData) {
-      var transformed = CovenantFirebase.transformForAnalyze(sessionData);
-      try {
-        // Build campfire duration array from groupVotes
-var campDurArr = [];
-for (var i = 0; i < transformed.sc.length; i++) {
-  var rv = sessionData.groupVotes && sessionData.groupVotes[i];
-  campDurArr.push(rv ? (rv.campfire_duration_ms || 0) : 0);
-}
-var analysisResults = analyze(transformed.pl, transformed.gv, transformed.sc, campDurArr, transformed.sy);
-setResults(analysisResults);
-CovenantFirebase.writeResults(sessionId, analysisResults);
-setTimeout(function() {
-  CovenantFirebase.setPhase(sessionId, 'mirror');
-}, 1500);
-       
-      } catch(e) {
-        console.error('[CovenantFirebase] analyze() failed:', e);
-        // Write a minimal result so players see something
-        var minResult = { error: e.message, players: {}, group: {} };
-        CovenantFirebase.writeResults(sessionId, minResult);
-        CovenantFirebase.setPhase(sessionId, 'mirror');
-      }
-    });
-  };
+// ════════════════════════════════════════════════════════════════════════════
+// EDIT B — multiplayer-views-v2.js, HostView.handleAnalyze
+// ════════════════════════════════════════════════════════════════════════════
+// Find the existing `var handleAnalyze = function() { ... };` inside HostView
+// and REPLACE it with this version. It fixes three bugs at once:
+//   1. Argument order: analyze(pl, gv, sc, campDur, sy) — not (pl, sc, gv, sy)
+//   2. campDur is now passed (was dropped entirely, breaking Distress Tolerance)
+//   3. Output is reshaped before writeResults so PlayerView can read it
+ 
+// ════════════════════════════════════════════════════════════════════════════
+// MIRROR PHASE ROUTING FIX — surgical one-function replacement
+// ════════════════════════════════════════════════════════════════════════════
+//
+// In most_recent_group.html, find your current `var handleAnalyze = function() {`
+// (around line 2356) and REPLACE THE ENTIRE FUNCTION through its closing `};`
+// (around line 2391) with this version.
+//
+// ONLY CHANGE from the prior version: two new lines that flip round.phase to
+// 'mirror' after writeResults/minResult writes. This unblocks the view routing
+// so the Mirror UI actually renders instead of staying stuck on
+// "Computing your portrait...".
+// ════════════════════════════════════════════════════════════════════════════
+
+var handleAnalyze = function() {
+  CovenantFirebase.setPhase(sessionId, 'analyzing');
+  CovenantFirebase.getSessionData(sessionId).then(function(sessionData) {
+    var transformed = CovenantFirebase.transformForAnalyze(sessionData);
+    try {
+      // SIGNATURE: analyze(pl, gv, sc, campDur, sy)
+      var rawAnalysis = analyze(
+        transformed.pl,
+        transformed.gv,
+        transformed.sc,
+        transformed.campDur,
+        transformed.sy
+      );
+      var reshaped = CovenantFirebase.reshapeResultsForFirebase(
+        rawAnalysis,
+        transformed.playerIds,
+        transformed.playerNames
+      );
+      setResults(reshaped);
+      CovenantFirebase.writeResults(sessionId, reshaped);
+      CovenantFirebase.setPhase(sessionId, 'mirror');   // ← THE FIX
+    } catch (e) {
+      console.error('[CovenantFirebase] analyze() failed:', e);
+      console.error(e.stack);
+      var minResult = {
+        error: e.message,
+        players: {},
+        group: {},
+        playerOrder: transformed.playerIds || []
+      };
+      CovenantFirebase.writeResults(sessionId, minResult);
+      CovenantFirebase.setPhase(sessionId, 'mirror');
+    }
+  }).catch(function(e) {
+    console.error('[CovenantFirebase] getSessionData failed:', e);
+    CovenantFirebase.setPhase(sessionId, 'mirror');     // ← also unblock on bridge failure
+  });
+};
+ 
 
   // FIX #2: Compute drift data for reveal phase
   var driftData = null;
@@ -1951,17 +2634,16 @@ setTimeout(function() {
   }
 
   // ── MIRROR ──
-  if (phase === 'mirror' || config.status === 'mirror') {
-    if (results) {
-      return ce('div', { style: W },
-        ce('div', { style: cd },
-          ce('div', { style: sb }, 'The Mirror is Ready'),
-          ce('p', { style: dm }, 'Players can view their individual portraits on their phones. Group results are displayed below.'),
-          ce('p', { style: Object.assign({}, dm, { marginTop:20, color:C.green }) }, '\u2713 Results computed and shared with all players.')
-        )
-      );
-    }
-  }
+if (phase === 'mirror' || config.status === 'mirror') {
+     if (results) {
+       return ce(GroupMirrorHost, { results: results, scenariosCount: scenarios.length });
+     }
+     return ce('div', { style: W }, ce('div', { style: Object.assign({}, gp, { textAlign:'center' }) },
+       ce('div', { style: { fontSize:48 } }, '\ud83e\ude9e'),
+       ce('div', { style: sxT2(C.gold) }, 'The Mirror'),
+       ce('p', { style: dm }, 'Waiting for analysis...')
+     ));
+   }
 
   return ce('div', { style: W }, ce('div', { style: Object.assign({}, cd, { textAlign:'center' }) }, ce('p', { style: dm }, 'Loading... ('+phase+')')));
 }
@@ -2238,34 +2920,16 @@ function PlayerView() {
   }
 
   // MIRROR
-  if (phase==='mirror'||config.status==='mirror') {
-    if (myResults && playerId) {
-      var pIdx2 = parseInt(playerId.split('_')[1])||0;
-       var myP = myResults.ind ? myResults.ind[pIdx2] : null;
-      if (myP) {
-        return ce('div', { style: W },
-          ce('div', { style: cd },
-            ce('div', { style: sb }, 'Your Mirror Portrait'),
-            ce('h1', { style: Object.assign({}, h1, { fontSize:22 }), className:'dsp' }, myP.arch?myP.arch.title:'Your Profile'),
-            ce('p', { style: { fontSize:15, lineHeight:1.8, color:C.cream+'88' } }, myP.arch?myP.arch.prose:'Your results are ready.'),
-            ce('div', { style: { background:C.cream+'05', borderRadius:12, padding:16, marginTop:16 } },
-              ce('p', { style: { color:C.cream+'66', fontSize:13 } }, 'View the full group Mirror on the shared Campfire screen.'))
-          )
-        );
-      }
-      if (myResults.error) {
-        return ce('div', { style: W }, ce('div', { style: Object.assign({}, cd, { textAlign:'center' }) },
-          ce('div', { style: sb }, 'Mirror'),
-          ce('p', { style: { color:C.rust, fontSize:14 } }, 'Analysis encountered an issue: '+myResults.error),
-          ce('p', { style: dm }, 'The classic pass-the-device mode has the full Mirror experience. Try that next time!')
-        ));
-      }
-    }
-    return ce('div', { style: W }, ce('div', { style: Object.assign({}, cd, { textAlign:'center' }) },
-      ce('div', { style: { fontSize:48 } }, '\ud83e\ude9e'), ce('div', { style: sb }, 'The Mirror'),
-      ce('p', { style: dm }, 'Waiting for results...')
-    ));
-  }
+if (phase === 'mirror' || config.status === 'mirror') {
+     if (myResults) {
+       return ce(PlayerMirrorPhone, { results: myResults, playerId: playerId });
+     }
+     return ce('div', { style: W }, ce('div', { style: Object.assign({}, gp, { textAlign:'center' }) },
+       ce('div', { style: { fontSize:48 } }, '\ud83e\ude9e'),
+       ce('div', { style: sxT2(C.gold) }, 'The Mirror'),
+       ce('p', { style: dm }, 'Waiting for results...')
+     ));
+   }
 
   return ce('div', { style: W }, ce('div', { style: Object.assign({}, cd, { textAlign:'center' }) }, ce('p', { style: dm }, 'Syncing... ('+phase+')')));
 }
