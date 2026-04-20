@@ -2,6 +2,15 @@
 
 Short records of meaningful choices and the reasoning behind them. Append-only — don't rewrite history. If a decision is reversed, add a new entry explaining why.
 
+## 2026-04-19 — Server-side dedup is the structural fix; client-side locks are the seatbelt
+Client-side `*Locked` refs prevented most double-submits but not all (re-render races, tab-wake, rapid-fire taps on slow devices). The real fix for Bugs #1 and #2 was at the write boundary: `submitPulse` and `submitPrediction` now check if a record exists for that player/round BEFORE incrementing the counter. Duplicate calls overwrite the payload but cannot inflate the counter. Principle going forward: every critical write that advances shared state should use a check-then-write pattern. Client-side locks stay, but as the seatbelt, not the firewall.
+
+## 2026-04-19 — Keep the multiplayer React code inline in `group.html` for now
+Explicitly declined the option to extract the HostView/PlayerView components into a separate `multiplayer-views.js` file. Reasoning: file separation is a code-hygiene concern, not a bug-prevention concern. Every bug we just fixed would have existed in a separate file too. The higher-leverage bug-resistance investments are (a) centralizing the double-tap guard as a hook, (b) a state-machine constants object for phase names, (c) enabling React StrictMode in dev, and (d) the server-side dedup pattern above. File split can happen later if the inline block becomes unwieldy; for now, keeping everything in `group.html` reduces sync friction and makes the full game flow readable top-to-bottom in one file. Tracked in `backlog.md` Phase 4 hardening.
+
+## 2026-04-19 — Mirror enrichment before host visual atmosphere
+Two next-step candidates surfaced: enriching the Mirror output (players currently see ~5% of the engine's computed metrics) vs. expanding the host screen's visual atmosphere. Chose Mirror enrichment first. Reasoning: the Mirror is where the game cashes its check — a plain gameplay screen followed by a specific, cutting Mirror still blows players away, while a beautifully atmospheric gameplay screen followed by a bland Mirror leaves them flat. Fix the payoff first, polish the runway second. Exception: if a high-stakes demo playtest is imminent, visual polish moves up because first impression matters more than the ending.
+
 ## 2026-04-15 — Invest in a synthetic test harness before any further engine work
 After losing significant time to a hidden bug (analyze() argument order) that passed all superficial checks and was only discovered during teardown of a broken playtest, committed to maintaining a synthetic test harness that can run 6+ scenarios through analyze() in ~2 seconds. Stored in Claude project knowledge, not GitHub, because it's a dev tool rather than a product asset. Every future change to analyze(), selSess(), scenario weights, or narrative triggers must pass this harness before committing.
 
