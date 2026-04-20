@@ -2,6 +2,33 @@
 
 What has actually shipped, date-stamped. Newest first. Keep entries to 1–3 lines.
 
+## 2026-04-19 — All 5 playtest bugs fixed (awaiting real-game verification)
+
+All five bugs logged from the 2026-04-15 playtest have been patched in `group.html` and `firebase-bridge.js`. Fixes compiled locally; real multi-device playtest still needed to confirm.
+
+- **Bug #1 (pulse multi-vote):** Root cause was server-side — `submitPulse` unconditionally incremented `pulsesSubmitted` on every call, so any client-side lock failure inflated the counter. Added check-then-write: if a pulse already exists for that player/round, the payload overwrites but the counter does NOT re-increment.
+- **Bug #2 (prediction multi-vote):** Same pattern, same fix applied to `submitPrediction`.
+- **Bug #3 (pulse timer keeps counting):** `handlePulse` now explicitly sets `pulseTimer` to 0 and nulls `timerRef.current` so no stale render can show a ticking number post-submit.
+- **Bug #4 (confirmation flash too brief):** Added `flashUntil` state + pre-phase-routing intercept. The "✓ Pulse Submitted" / "✓ Prediction Submitted" screen now holds for a guaranteed 2 seconds even if the host advances the phase immediately.
+- **Bug #5 (drift display sync):** Player reveal view rewritten with explicit YOU CHOSE / GROUP CHOSE cards and color-coded verdict. "Loading drift data..." dead-end replaced with useful states that distinguish "no pulse on record" from "waiting for group vote".
+- **No architectural changes.** Bugs were addressed in-place inside `group.html`'s inline React code; the file split into `multiplayer-views-v2.js` was explicitly declined (see decisions log).
+
+## 2026-04-15 (evening) — FIRST SUCCESSFUL END-TO-END MULTIPLAYER GAME
+
+After 3 days of bug-hunting, a complete 2-player multiplayer session ran to completion with differentiated Mirror portraits rendered on both player devices.
+
+- **Players:** Ian (laptop host + Firefox incognito player_0) and Onur (iPhone Chrome player_1)
+- **Session:** 9 rounds + capstone synthesis
+- **Player 0 result:** "The Vanguard" — full prose narrative rendered
+- **Player 1 result:** "The Chameleon" — distinct archetype, full prose narrative rendered
+- **Bugs fixed during session to reach this state:**
+  - Bug #1 (analyze argument order) — previously documented
+  - Bug #2 (capstone randomization per-device) — previously documented
+  - Bug #3 (missing phase transition after writeResults) — fixed with setTimeout workaround
+  - Bug #4 (PlayerView reading myResults.players instead of myResults.ind)
+  - Bug #5 (PlayerView reading arch.nm/arch.de instead of arch.title/arch.prose)
+- **Known remaining gap:** Both host and player Mirror views render only the archetype title/prose — not the full 30-metric portrait (archBlend, shadow, drift arc, breaking point, latency type, computed narratives, radar chart, etc.). Engine data is complete in Firebase; UI needs to be expanded. Tracked in backlog as highest-priority Phase 3 item.
+
 ## 2026-04-15
 
 - **MVP progress reassessed at ~70%.** Phase 1 ~92%, Phase 2 ~80%, Phase 3 ~40%. Primary remaining risk: real multiplayer playtest has not yet verified today's bugfixes. Estimated 15-25 hours remaining across 6-10 focused sessions.
