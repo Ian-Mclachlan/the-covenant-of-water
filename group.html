@@ -2669,6 +2669,11 @@ function PlayerView() {
   // FIX #2: Track player's own pulse + group vote for drift display
   var _s14=useState(-1),myPulseChoice=_s14[0],setMyPulseChoice=_s14[1];
   var _s15=useState(null),groupVoteForRound=_s15[0],setGroupVoteForRound=_s15[1];
+  // BUG FIX #4: Hold the "vote submitted" confirmation on screen for at least
+  // 2 seconds even if the host advances the phase, so players register that
+  // their vote was captured.
+  var _s16=useState(0),flashUntil=_s16[0],setFlashUntil=_s16[1];
+  var _s17=useState(null),lastFlashKind=_s17[0],setLastFlashKind=_s17[1];
   var timerRef=useRef(null);
   var unsubs=useRef([]);
   // FIX #1: Ref-based lock to prevent double-tap
@@ -2714,6 +2719,16 @@ function PlayerView() {
     }
   }, [round.phase, round.roundIndex, pulseSubmitted]);
 
+  // BUG FIX #4: When the flash window is active, schedule a re-render at its
+  // expiry so the view can transition to the underlying phase.
+  useEffect(function() {
+    if (flashUntil > Date.now()) {
+      var ms = flashUntil - Date.now();
+      var t = setTimeout(function() { setFlashUntil(0); }, ms + 50);
+      return function() { clearTimeout(t); };
+    }
+  }, [flashUntil]);
+
   // ═══ Background layer sync ═══
   useEffect(function() {
     var ri2=round.roundIndex;var s2=scenarios[ri2]||null;var ph2=round.phase;
@@ -2736,9 +2751,17 @@ function PlayerView() {
   var handlePulse = function(optionIndex) {
     if (pulseLocked.current) return;
     pulseLocked.current = true;
+    // BUG FIX #3: Freeze the timer visually. clearInterval prevents future
+    // decrements, and explicitly setting the value to 0 ensures no stale
+    // render shows a ticking number after submission.
     clearInterval(timerRef.current);
+    timerRef.current = null;
+    setPulseTimer(0);
     setPulseSubmitted(true);
     setMyPulseChoice(optionIndex);
+    // BUG FIX #4: Show confirmation for at least 2 seconds.
+    setFlashUntil(Date.now() + 2000);
+    setLastFlashKind('pulse');
     var scenario=scenarios[round.roundIndex]; var option=scenario.options[optionIndex];
     var latencyMs=pulseStart?Date.now()-pulseStart:0;
     var timerPct=(pulseTimer/12)*100;
@@ -2756,10 +2779,33 @@ function PlayerView() {
     if (predLocked.current) return;
     predLocked.current = true;
     setPredSubmitted(true);
+    // BUG FIX #4: Show confirmation for at least 2 seconds.
+    setFlashUntil(Date.now() + 2000);
+    setLastFlashKind('prediction');
     CovenantFirebase.submitPrediction(sessionId, round.roundIndex, playerId, count);
   };
 
   var phase=round.phase, ri=round.roundIndex, s=scenarios[ri]||null, playerCount=config.playerCount||0;
+
+  // BUG FIX #4: If the vote confirmation flash is still active, keep the
+  // confirmation view on screen regardless of phase transitions. This ensures
+  // players see their vote was registered even when the host advances the
+  // phase immediately after all votes come in.
+  var flashActive = flashUntil > Date.now();
+  if (flashActive && lastFlashKind === 'pulse') {
+    return ce('div', { style: W }, ce('div', { style: Object.assign({}, cd, { textAlign:'center' }) },
+      ce('div', { style: { fontSize:64, color:C.green } }, '\u2713'),
+      ce('div', { style: Object.assign({}, sb, { color:C.green, fontSize:16 }) }, 'Pulse Submitted'),
+      ce('p', { style: dm }, 'Your gut instinct is locked in.')
+    ));
+  }
+  if (flashActive && lastFlashKind === 'prediction') {
+    return ce('div', { style: W }, ce('div', { style: Object.assign({}, cd, { textAlign:'center' }) },
+      ce('div', { style: { fontSize:64, color:C.green } }, '\u2713'),
+      ce('div', { style: Object.assign({}, sb, { color:C.green, fontSize:16 }) }, 'Prediction Submitted'),
+      ce('p', { style: dm }, 'Your read on the group is locked in.')
+    ));
+  }
 
   // NAME ENTRY
   if (!joined) {
@@ -2863,23 +2909,40 @@ function PlayerView() {
     );
   }
 
-  // REVEAL — FIX #2: Show player's own drift status
+  // REVEAL — BUG FIX #5: Drift display sync. Previously this view would show
+  // "Loading drift data..." indefinitely if state hadn't propagated. Now shows
+  // the player's choice and the group's choice as explicit cards, with a
+  // color-coded verdict, and distinguishes "no pulse on record" from
+  // "waiting for group vote".
   if (phase==='reveal') {
     var didDrift = myPulseChoice>=0 && groupVoteForRound!==null && myPulseChoice!==groupVoteForRound;
+    var hasData = myPulseChoice>=0 && groupVoteForRound!==null;
+    var myChoiceLabel = (s && myPulseChoice>=0 && s.options[myPulseChoice]) ? String.fromCharCode(65+myPulseChoice) : '?';
+    var groupChoiceLabel = (s && groupVoteForRound!==null && s.options[groupVoteForRound]) ? String.fromCharCode(65+groupVoteForRound) : '?';
 
     return ce('div', { style: W },
       ce('div', { style: Object.assign({}, cd, { textAlign:'center' }) },
         ce('div', { style: { fontSize:48 } }, '\ud83e\ude9e'),
         ce('div', { style: sb }, 'The Drift Revealed'),
-        groupVoteForRound!==null && myPulseChoice>=0 ? ce('div', null,
-          ce('div', { style: { fontSize:48, color:didDrift?C.rust:C.green, fontWeight:700, margin:'16px 0' } },
+        hasData ? ce('div', null,
+          ce('div', { style: { fontSize:40, color:didDrift?C.rust:C.green, fontWeight:700, margin:'16px 0 8px' } },
             didDrift ? 'You Drifted' : 'You Held Ground'),
+          ce('div', { style: { display:'flex', justifyContent:'center', gap:12, margin:'16px 0', fontFamily:'monospace' } },
+            ce('div', { style: { padding:'10px 14px', background:C.cream+'08', borderRadius:8, border:'1px solid '+C.cream+'15' } },
+              ce('div', { style: { fontSize:11, color:C.cream+'66', marginBottom:4 } }, 'YOU CHOSE'),
+              ce('div', { style: { fontSize:24, color:C.gold, fontWeight:700 } }, myChoiceLabel)
+            ),
+            ce('div', { style: { padding:'10px 14px', background:C.cream+'08', borderRadius:8, border:'1px solid '+C.cream+'15' } },
+              ce('div', { style: { fontSize:11, color:C.cream+'66', marginBottom:4 } }, 'GROUP CHOSE'),
+              ce('div', { style: { fontSize:24, color:didDrift?C.rust:C.green, fontWeight:700 } }, groupChoiceLabel)
+            )
+          ),
           ce('p', { style: Object.assign({}, dm, { fontSize:14 }) },
             didDrift
               ? 'Your private instinct was different from the group\u2019s decision. The question is whether the group persuaded you \u2014 or pressured you.'
               : 'Your private choice matched the group\u2019s decision. Conviction held.')
-        ) : ce('p', { style: dm }, 'Loading drift data...'),
-        ce('p', { style: Object.assign({}, dm, { marginTop:16 }) }, 'The host will advance when ready.')
+        ) : ce('p', { style: dm }, myPulseChoice<0 ? 'No pulse on record for this round.' : 'Waiting for group vote data\u2026'),
+        ce('p', { style: Object.assign({}, dm, { marginTop:16, fontSize:12, color:C.cream+'55' }) }, 'The host will advance when ready.')
       )
     );
   }
