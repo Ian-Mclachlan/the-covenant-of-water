@@ -725,8 +725,8 @@ const QB=[
 const BIOMES={
   A:{nm:'Short-Grass Plains',ds:'Orientation — fast recall, factual clarity',tier:'Simple'},
   B:{nm:'Acacia Savanna',ds:'Tactical decisions — pattern recognition emerging',tier:'Complicated'},
-  C:{nm:'Montane Highlands',ds:'Relational complexity — trust begins to fray',tier:'Complex'},
-  D:{nm:'Woodland & River',ds:'Systemic chaos — moral weight, no clean answers',tier:'Chaotic'}
+  C:{nm:'Woodland & River',ds:'Relational complexity — trust begins to fray',tier:'Complex'},
+  D:{nm:'Montane Highlands',ds:'Systemic chaos — moral weight, no clean answers',tier:'Chaotic'}
 };
 
 // ═══ AVATARS (animal archetypes with Enneagram mapping) ═══
@@ -855,17 +855,17 @@ const FATE_NARRATIVES={
 
 // Background images mapped per biome tier
 const TIER_BG={
-  A:"img/bg-wonder.jpg",
-  B:"img/bg-wonder.jpg",
+  A:"img/bg-plains.jpg",
+  B:"img/bg-savanna.jpg",
   C:"img/bg-river.jpg",
-  D:"img/bg-montane.jpg"
+  D:"img/bg-montane.png"
 };
 const PH=[
   "img/bg-splash.jpg",
-  "img/bg-wonder.jpg",
-  "img/bg-wonder.jpg",
+  "img/bg-plains.jpg",
+  "img/bg-savanna.jpg",
   "img/bg-river.jpg",
-  "img/bg-montane.jpg",
+  "img/bg-montane.png",
   "img/bg-results.jpg"
 ];
 
@@ -996,9 +996,9 @@ function getRulesHTML(){
 
   <div class="rule"><h4>Biome 2: Acacia Savanna (Complicated)</h4><p>Tactical scenarios with no single correct answer. Choose the response that resonates — each option secretly maps to psychological dimensions. Then Fate rolls the dice.</p></div>
 
-  <div class="rule"><h4>Biome 3: Montane Highlands (Complex)</h4><p>Relational dilemmas where trust, loyalty, and sacrifice collide. Your choices carry more weight here — the stress multiplier increases. Then choose your instinct response.</p></div>
+  <div class="rule"><h4>Biome 3: Woodland & River (Complex)</h4><p>Relational dilemmas where trust, loyalty, and sacrifice collide. Your choices carry more weight here — the stress multiplier increases. Then choose your instinct response.</p></div>
 
-  <div class="rule"><h4>Biome 4: Woodland & River (Chaotic)</h4><p>Systemic moral dilemmas with no clean answers. Every option costs something. This is where the mirror becomes sharpest.</p></div>
+  <div class="rule"><h4>Biome 4: Montane Highlands (Chaotic)</h4><p>Systemic moral dilemmas with no clean answers. Every option costs something. This is where the mirror becomes sharpest.</p></div>
 
   <div class="rule"><h4>Shared Ecosystem Meters</h4><p>Six meters track the health of the herd: Survival, Trust, Cohesion, Clarity, Morale, Flexibility. Every instinct choice pushes and pulls them differently. Start at 3/6 each.</p></div>
 
@@ -1021,7 +1021,7 @@ function getScoringHTML(){
   <div class="rule"><h4>Stress Weighting Formula</h4><p>Higher tiers count more heavily. The multiplier:<br><br>
   <strong>Gain = 2 × (1 + (TierWeight − 1) × 0.15)</strong><br><br>
   Tier A = ×1.00 · Tier B = ×1.15 · Tier C = ×1.30 · Tier D = ×1.60<br><br>
-  A choice made in the Woodland & River weighs 60% more than one made on the Plains.</p></div>
+  A choice made in the Montane Highlands weighs 60% more than one made on the Plains.</p></div>
 
   <div class="rule"><h4>The End-Game Portrait</h4><p>After all rounds, you receive: <strong>Dominant instinct</strong>, <strong>Secondary instinct</strong>, <strong>Stress shift</strong>, <strong>Hidden dimension signature</strong>, <strong>Inferred core fear</strong>, and a <strong>DBT-informed growth path</strong>. Not "you are a lion" — but a mirror of your adaptive decision style under these conditions.</p></div>`;
 }
@@ -1071,7 +1071,7 @@ function startGame(){
   
   /* ═══ STRATIFIED SAMPLING WITH SESSION MEMORY & SAFARI PRIORITY ═══
      Fisher-Yates shuffle each tier, then pull:
-     5 from Plains (A), 3 from Savanna (B), 2 from Highlands (C), 1 from River (D)
+     5 from Plains (A), 3 from Savanna (B), 2 from River (C), 1 from Highlands (D)
      = 11 questions total per playthrough.
      Safari/East Africa content (s:1) is drawn first; abstract questions fill gaps.
      Session tracking via localStorage avoids recently-seen questions. */
