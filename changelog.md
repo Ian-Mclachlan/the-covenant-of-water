@@ -2,6 +2,17 @@
 
 What has actually shipped, date-stamped. Newest first. Keep entries to 1–3 lines.
 
+## 2026-04-22 — Mirror bridge restored + drift reveal rewritten + avatar/name polish
+
+One evening pass on the post-Mirror-enrichment backlog. Five-in-one.
+
+- **Bridge regression found and fixed.** `firebase-bridge.js` was missing `reshapeResultsForFirebase`, `playerNames`, `latencies`, and per-round `campDur` — all of them silently dropped by the 2026-04-19 deduplication commit. `HostView.handleAnalyze` was falling into its catch branch on every session, writing `{error: ...}` to `/results`, so players have been rendering the error fallback, not the rich portrait. Restored from `5a9c81a`. The Mirror enrichment components (`PlayerMirrorPhone`, `GroupMirrorHost`) have been wired all along; they just never received real data.
+- **Drift reveal → historical outcome.** Host reveal phase now leads with "The Real Story" and the scenario's `teach` paragraph in a styled card; drift count is a compact footer line. Phones keep the personal YOU DRIFTED / YOU HELD GROUND verdict and append a "The Real Story" card beneath it. Shaming moment becomes educational.
+- **Mirror personalization.** `PlayerMirrorPhone` now threads `myName` into four spots: eyebrow ("IAN'S MIRROR"), moral-signature prose, breakpoint prose, and the computed-insights intro. Fallback copy preserved when name is missing.
+- **Solo avatar question rewritten.** Header on `S1` is now "Step 1 · Choose Your Avatar" with the subhead "What do you bring to the watering hole? Select the instinct that feels most natural to you." Ego-threat trigger ("Who do you think you are?") retired.
+- **Lion emoji → elephant portrait on the player join screen.** Real `img/elephant.jpg` in a circular frame replaces the 🦁 emoji. Not per-player yet (that's the avatar-selection task still in the backlog), but the visual upgrade alone is a meaningful welcome.
+- **Still needs:** real multi-device playtest to verify the bridge fix actually makes the rich Mirror render. Everything compiles; no end-to-end run yet.
+
 ## 2026-04-19 — All 5 playtest bugs fixed (awaiting real-game verification)
 
 All five bugs logged from the 2026-04-15 playtest have been patched in `group.html` and `firebase-bridge.js`. Fixes compiled locally; real multi-device playtest still needed to confirm.

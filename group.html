@@ -2117,13 +2117,14 @@ function PlayerMirrorPhone(props) {
   var archName = (myP.arch && (myP.arch.title || myP.arch.nm)) || (myP.archBlend && myP.archBlend[0] ? myP.archBlend[0].name : 'Profile');
   var archProse = (myP.arch && (myP.arch.prose || myP.arch.de)) || 'Your portrait is ready.';
   var tfCol = FC[myP.tf] || C.gold;
+  var myName = (myP.name || '').trim();
  
   return ce('div', { style: Object.assign({}, W, { justifyContent:'flex-start', paddingTop:24, paddingBottom:40 }) },
     ce('div', { style: { width:'100%', maxWidth: 620 }, className:'cov-mirror-fade' },
  
       // ── HEADLINE — archetype identity ───────────────────────────────────
       ce('div', { style: Object.assign({}, gp, { textAlign:'center', padding:'28px 22px' }) },
-        ce('div', { style: sxT2(C.gold) }, 'Your Mirror Portrait'),
+        ce('div', { style: sxT2(C.gold) }, myName ? (myName.toUpperCase() + '\u2019S MIRROR') : 'Your Mirror Portrait'),
         ce('div', { style: { fontSize:52, marginBottom:4 } }, archIcon),
         ce('h1', { style: Object.assign({}, ts, { fontSize:32, color:C.gold, fontFamily:"'Playfair Display',Georgia,serif", fontWeight:400, margin:'4px 0 14px', lineHeight:1.15 }) }, archName),
         ce('p', { style: { fontSize:14.5, lineHeight:1.8, color:C.cream+'AA', margin:0 } }, archProse),
@@ -2154,7 +2155,7 @@ function PlayerMirrorPhone(props) {
       ce('div', { style: Object.assign({}, gp, { borderLeft:'3px solid '+tfCol }) },
         ce('div', { style: sxT2(tfCol) }, 'Your Moral Signature'),
         ce('p', { style: { fontSize:14.5, lineHeight:1.8, color:C.cream+'AA', margin:0 } },
-          'Your dominant foundation is ',
+          (myName ? myName + ', your' : 'Your') + ' dominant foundation is ',
           ce('strong', { style: { color: tfCol } }, myP.tf || '\u2014'),
           '. Your secondary is ',
           ce('strong', { style: { color: FC[myP.sf] || C.cream } }, myP.sf || '\u2014'),
@@ -2171,7 +2172,7 @@ function PlayerMirrorPhone(props) {
         ce(BreakpointCurve, { dbs: myP.dbs, bp: myP.breakpoint }),
         myP.breakpoint && myP.breakpoint.detected
           ? ce('p', { style: { fontSize:13.5, lineHeight:1.75, color:C.cream+'99', marginTop:10, marginBottom:0 } },
-              'Under stress level ',
+              (myName ? myName + ', under stress level ' : 'Under stress level '),
               ce('strong', { style: { color:C.rust } }, myP.breakpoint.breakpoint),
               ', your decision pattern shifted. Below that threshold your baseline held; above it, a different strategy took over. Knowing where the line is means you can name it before it decides for you.')
           : ce('p', { style: { fontSize:13.5, lineHeight:1.75, color:C.cream+'88', marginTop:10, marginBottom:0, fontStyle:'italic' } },
@@ -2204,7 +2205,7 @@ function PlayerMirrorPhone(props) {
       myP.narratives && myP.narratives.length > 0 && ce('div', { style: Object.assign({}, gp, { background:'rgba(212,168,68,0.08)', border:'1px solid '+C.gold+'33', marginTop: 16 }) },
         ce('div', { style: sxT2(C.gold) }, 'The Mirror \u2014 Computed Insights'),
         ce('p', { style: { fontSize:11.5, color:C.cream+'55', marginTop:-4, marginBottom:14 } },
-          'Generated from your specific data patterns. No two players receive the same set.'
+          myName ? (myName + ', these were generated from your specific data patterns. No two players receive the same set.') : 'Generated from your specific data patterns. No two players receive the same set.'
         ),
         myP.narratives.slice(0, 4).map(function(n, i){
           return ce('p', { key: n.id || i, style: { fontSize:14, lineHeight:1.9, color:C.cream+'CC', marginTop: i===0 ? 0 : 14, marginBottom:0, fontFamily:"'Playfair Display',Georgia,serif", fontStyle:'italic', paddingLeft:14, borderLeft:'2px solid '+C.gold+'44' } }, n.text);
@@ -2530,34 +2531,35 @@ var handleAnalyze = function() {
     );
   }
 
-  // ── REVEAL — FIX #2: Actually show drift data ──
+  // ── REVEAL — historical outcome is the headline; drift count is a footer ──
   if (phase === 'reveal') {
+    var totalVoters = driftData ? (driftData.drifters.length + driftData.holders.length) : 0;
     return ce('div', { style: W },
-      ce('div', { style: Object.assign({}, cd, { textAlign:'center' }), className: 'fade-up' },
-        ce('div', { style: { fontSize:52, marginBottom:8 } }, '\ud83e\ude9e'),
-        ce('div', { style: sb }, 'The Drift Revealed'),
-
-        driftData ? ce('div', null,
-          ce('div', { style: { fontSize:64, fontWeight:300, color:driftData.total>0?C.rust:C.green, fontFamily:'monospace', margin:'16px 0' } },
-            driftData.total + ' of ' + (driftData.drifters.length+driftData.holders.length)),
-          ce('p', { style: Object.assign({}, dm, { fontSize:16, marginBottom:16 }) },
-            driftData.total > 0
-              ? 'player'+(driftData.total>1?'s':'')+' chose differently in private than the group decided.'
-              : 'Everyone\u2019s private choice matched the group decision.'),
-          driftData.total > 0 && ce('div', { style: { textAlign:'left', marginBottom:16 } },
-            ce('div', { style: { marginBottom:8 } },
-              ce('span', { style: { color:C.rust, fontWeight:700, fontSize:13 } }, 'DRIFTED: '),
-              ce('span', { style: { color:C.cream+'88', fontSize:14 } }, driftData.drifters.join(', '))
-            ),
-            ce('div', null,
-              ce('span', { style: { color:C.green, fontWeight:700, fontSize:13 } }, 'HELD GROUND: '),
-              ce('span', { style: { color:C.cream+'88', fontSize:14 } }, driftData.holders.join(', '))
+      ce('div', { style: cd, className: 'fade-up' },
+        ce('div', { style: { textAlign:'center', marginBottom:16 } },
+          ce('div', { style: { fontSize:44, marginBottom:6 } }, '\ud83c\udf0d'),
+          ce('div', { style: Object.assign({}, sb, { color:C.gold }) }, 'The Real Story'),
+          ce('h1', { style: Object.assign({}, h1, { fontSize:22 }), className: 'dsp' }, 'What actually happened')
+        ),
+        s && s.teach
+          ? ce('div', { style: { background:C.gold+'10', border:'1px solid '+C.gold+'33', borderRadius:12, padding:'18px 20px', marginBottom:16 } },
+              ce('p', { style: { fontSize:15.5, lineHeight:1.9, color:C.cream+'DD', margin:0, fontFamily:"'Playfair Display',Georgia,serif" } }, s.teach)
             )
+          : ce('p', { style: dm }, 'The group has made its decision.'),
+        driftData && ce('div', { style: { borderTop:'1px solid '+C.cream+'15', paddingTop:14, marginTop:8, display:'flex', justifyContent:'space-between', alignItems:'baseline', flexWrap:'wrap', gap:8 } },
+          ce('div', { style: { fontSize:12, color:C.cream+'77' } },
+            ce('span', { style: { color:driftData.total>0?C.rust:C.green, fontWeight:700, fontFamily:'monospace' } }, driftData.total + ' of ' + totalVoters),
+            driftData.total === 1 ? ' player' : ' players',
+            driftData.total === 0 ? ' matched the group in private.' : ' drifted in private.'
+          ),
+          driftData.total > 0 && ce('div', { style: { fontSize:11, color:C.cream+'55' } },
+            ce('span', { style: { color:C.rust } }, 'Drifted: '), driftData.drifters.join(', ')
           )
-        ) : ce('p', { style: dm }, 'Computing drift...'),
-
-        ce('button', { style: Object.assign({}, bt, { marginTop:12 }), onClick: handleNextRound },
-          ri < scenarios.length-1 ? 'Next Scenario \u2192' : '\u26A1 The Capstone Crisis')
+        ),
+        ce('div', { style: { textAlign:'center', marginTop:18 } },
+          ce('button', { style: bt, onClick: handleNextRound },
+            ri < scenarios.length-1 ? 'Next Scenario \u2192' : '\u26A1 The Capstone Crisis')
+        )
       )
     );
   }
@@ -2811,7 +2813,7 @@ function PlayerView() {
   if (!joined) {
     return ce('div', { style: W },
       ce('div', { style: Object.assign({}, cd, { textAlign:'center' }) },
-        ce('div', { style: { fontSize:48, marginBottom:8 } }, '\ud83e\udd81'),
+        ce('img', { src: 'img/elephant.jpg', alt: 'Expedition portrait', style: { width:88, height:88, borderRadius:'50%', objectFit:'cover', border:'2px solid '+C.gold+'55', boxShadow:'0 6px 20px rgba(0,0,0,0.35)', marginBottom:10 } }),
         ce('div', { style: sb }, 'Join the Expedition'),
         ce('input', { value:playerName, placeholder:'Your name',
           onChange:function(e){setPlayerName(e.target.value);},
@@ -2942,6 +2944,10 @@ function PlayerView() {
               ? 'Your private instinct was different from the group\u2019s decision. The question is whether the group persuaded you \u2014 or pressured you.'
               : 'Your private choice matched the group\u2019s decision. Conviction held.')
         ) : ce('p', { style: dm }, myPulseChoice<0 ? 'No pulse on record for this round.' : 'Waiting for group vote data\u2026'),
+        s && s.teach && ce('div', { style: { marginTop:20, padding:'14px 16px', background:C.gold+'10', border:'1px solid '+C.gold+'33', borderRadius:10, textAlign:'left' } },
+          ce('div', { style: { fontSize:10, letterSpacing:2, color:C.gold, fontWeight:700, marginBottom:6 } }, 'THE REAL STORY'),
+          ce('p', { style: { fontSize:13.5, lineHeight:1.8, color:C.cream+'CC', margin:0, fontFamily:"'Playfair Display',Georgia,serif" } }, s.teach)
+        ),
         ce('p', { style: Object.assign({}, dm, { marginTop:16, fontSize:12, color:C.cream+'55' }) }, 'The host will advance when ready.')
       )
     );

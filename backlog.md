@@ -5,15 +5,6 @@ Organized by priority. Move items into GitHub Issues when actively working on th
 
 ## Active / Next Up
 
-### Mirror view enrichment — THE next step
-
-The engine computes ~30 metrics per player but the multiplayer views only render 2 of them (archetype title + prose). Everything else is already in Firebase at `/sessions/{id}/results`. This is the single highest-leverage remaining task. Players are currently getting ~5% of the engine's output. Fixing it makes the multiplayer Mirror feel as specific as the Solo Safari Mirror.
-
-Broken into two tasks so progress is trackable:
-
-- **Task 1 — Upgrade the Player Phones (Player Mirror).** Rewrite the phone's Mirror view so it displays the deep data that's already computed: archetype blend percentages (e.g., "52% Vanguard / 28% Anchor"), top and shadow foundations, drift arc label, breaking point, latency type, and 2–4 computed narratives pulled from the trigger engine. Model the rendering after the Solo Safari's Mirror output — that's the target bar for specificity.
-- **Task 2 — Power Up the Host Screen (Host Mirror).** The visual components (`RCGauge`, `BreakpointCurve`, radar chart) already exist in `group.html` but are unplugged in the multiplayer render path. Wire them up during the `mirror` phase and add the group-level metrics: RC%, Moral Elasticity, Adaptive Calibration, Holding Environment, Capstone Synthesis, plus the group-level computed narratives.
-
 ### Host visual atmosphere expansion
 
 Beyond the CSS campfire patch. The group safari host screen is currently functional but visually thin compared to the Solo Safari. After Mirror enrichment is done, expand the host experience with:
@@ -24,19 +15,17 @@ Beyond the CSS campfire patch. The group safari host screen is currently functio
 - Capstone visual treatment for the chaotic/crisis vibe.
 
 ### Group safari avatar selection
-- **Replace the lion emoji on the player join screen with a real animal portrait.** Currently shows the same lion across all players. Easy fix using existing `/img/` portraits.
 - **Add avatar selection step before joining a session.** Player picks one of the 9 instinct animals (or a subset) before entering their name. Mirrors the Solo Safari's "What do you bring to the watering hole?" framing.
 - **Display chosen avatar throughout the player's experience:** in the lobby roster, at the top of the pulse screen, on the prediction screen, and on the personal Mirror.
 - **Capture avatar choice as data, but do NOT yet use it as a Bayesian prior in analyze().** Store at `sessions/{id}/players/{pid}/avatarId` for future research. See `decisions.md` for full reasoning.
+- ~~Replace the lion emoji on the player join screen with a real animal portrait.~~ ✅ Shipped 2026-04-22 — `elephant.jpg` portrait now renders on the join card.
 
 ### Content & messaging changes
-- **Replace drift reveal with historical outcome.** Instead of "X players drifted from the group," show what society actually did in this real-world scenario. Scenarios already have `teach` fields with "WHAT ACTUALLY HAPPENED" narratives — surface those in the reveal phase. Turns a subtle shaming moment into a genuinely educational one.
-- **Change the avatar question on solo safari.** Replace "Who do you think you are?" (ego-threat trigger) with:
-  - Heading: *Step 1: Choose Your Avatar*
-  - Subhead: *What do you bring to the watering hole? Select the instinct that feels most natural to you.*
-- **Personalize the Mirror narrative.** Use the player's name several times throughout their Mirror output so it feels genuinely addressed to them, not templated.
 - **Update solo safari context tabs (World, Rules, Scoring, Psychology).** Current copy describes the v1 psychometric engine. Rewrite to reflect v2 — foundation weights, Euclidean archetypes, piecewise breakpoints, shadow scoring, drift analysis.
 - **Add matching tabs to group safari.** New content covering Haidt's Moral Foundations Theory, Edmondson's psychological safety, Lencioni's team dysfunction model, and the group psychometric math at a high level. Significant writing task.
+- ~~Replace drift reveal with historical outcome.~~ ✅ Shipped 2026-04-22 — host reveal now leads with the scenario's real-world context (`teach` field); drift count is a footer line. Phones show "The Real Story" card beneath the personal drift verdict.
+- ~~Change the avatar question on solo safari.~~ ✅ Shipped 2026-04-22 — heading is "Choose Your Avatar" with the "watering hole" subhead.
+- ~~Personalize the Mirror narrative.~~ ✅ Shipped 2026-04-22 — player's name threads into the eyebrow, moral-signature prose, breakpoint prose, and insights intro on `PlayerMirrorPhone`.
 
 ### Solo safari polish
 - **Update final-tier image progression.** Last background needs many animals to emphasize ecological complexity. Currently backwards — earlier tiers are denser than the final.

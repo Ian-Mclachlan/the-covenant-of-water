@@ -524,17 +524,20 @@
     const capstone = sessionData.capstone || {};
 
     const playerIds = Object.keys(players).sort();
+    const playerNames = playerIds.map(pid => players[pid].name || pid);
     const roundCount = scenarios.length;
 
     // Build pl array in the format analyze() expects
     const pl = playerIds.map(pid => {
       const pulsesArr = [];
       const predsArr = [];
+      const latenciesArr = [];
 
       for (let r = 0; r < roundCount; r++) {
         const roundPulses = pulses[r] || {};
         const playerPulse = roundPulses[pid];
         pulsesArr.push(playerPulse ? playerPulse.selected_option_index : 0);
+        latenciesArr.push(playerPulse ? (playerPulse.pulse_latency_ms || 0) : 0);
 
         const roundPreds = predictions[r] || {};
         const playerPred = roundPreds[pid];
@@ -544,15 +547,18 @@
       return {
         name: players[pid].name,
         pulses: pulsesArr,
-        predictions: predsArr
+        predictions: predsArr,
+        latencies: latenciesArr
       };
     });
 
-    // Build gv array (group vote option indices per round)
+    // Build gv + campDur (group vote option indices + campfire duration per round)
     const gv = [];
+    const campDur = [];
     for (let r = 0; r < roundCount; r++) {
       const rv = groupVotes[r];
       gv.push(rv ? rv.selected_option_index : 0);
+      campDur.push(rv ? (rv.campfire_duration_ms || 0) : 0);
     }
 
     // Build sy array (capstone assessment per player)
@@ -578,12 +584,55 @@
       pl,
       sc: scenarios,
       gv,
+      campDur,
       sy,
       enrichedPulses,
       capstone,
       groupVotes,
       playerIds,
+      playerNames,
       playerCount: playerIds.length
+    };
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // RESHAPE ANALYZE OUTPUT → FIREBASE-FRIENDLY SHAPE
+  // ═══════════════════════════════════════════════════════════
+  // analyze() returns { ind: [...], grp: {...} }
+  // Firebase/PlayerView expects { players: {pid: profile}, group: {...} }.
+  // This bridges the two without changing the engine. Undefined fields are
+  // converted to null because Firebase silently drops undefined on write.
+
+  function reshapeResultsForFirebase(analyzeOut, playerIds, playerNames) {
+    if (!analyzeOut || !analyzeOut.ind || !analyzeOut.grp) {
+      return { players: {}, group: {}, playerOrder: playerIds || [], error: 'analyze() returned empty' };
+    }
+
+    const players = {};
+    playerIds.forEach(function(pid, idx) {
+      const profile = analyzeOut.ind[idx];
+      if (!profile) return;
+      const out = {};
+      Object.keys(profile).forEach(function(k) {
+        const v = profile[k];
+        out[k] = (v === undefined) ? null : v;
+      });
+      out.name = (playerNames && playerNames[idx]) || null;
+      out.playerIndex = idx;
+      players[pid] = out;
+    });
+
+    const group = {};
+    Object.keys(analyzeOut.grp).forEach(function(k) {
+      const v = analyzeOut.grp[k];
+      group[k] = (v === undefined) ? null : v;
+    });
+
+    return {
+      players: players,
+      group: group,
+      playerOrder: playerIds,
+      computedAt: Date.now()
     };
   }
 
@@ -642,6 +691,7 @@
     // Data retrieval
     getSessionData,
     transformForAnalyze,
+    reshapeResultsForFirebase,
 
     // Utilities
     generateJoinCode,
