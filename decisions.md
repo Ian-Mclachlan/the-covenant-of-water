@@ -2,6 +2,12 @@
 
 Short records of meaningful choices and the reasoning behind them. Append-only — don't rewrite history. If a decision is reversed, add a new entry explaining why.
 
+## 2026-04-22 — Reveal phase leads with historical outcome, not drift count
+The reveal phase used to headline with a large "N of M drifted" count. Two problems: (1) it made the moment subtly shaming for drifters, suppressing candor in later rounds, and (2) the `teach` field — carefully-written real-world context — was going unseen in every session. Rewrote host reveal to lead with "The Real Story" and the scenario's teach paragraph; drift count became a small footer line. Phones keep the personal YOU DRIFTED / YOU HELD GROUND verdict (that one IS the point — private feedback on your own conviction) and append the teach card beneath. Principle: if the game has carefully-written content sitting unused in the data model, the reveal phase is where it earns its keep.
+
+## 2026-04-22 — Bridge-API functions need boundary smoke tests, not just engine unit tests
+The 2026-04-19 dedup commit silently stripped `reshapeResultsForFirebase`, `playerNames`, `campDur`, and `latencies` from `firebase-bridge.js`. Every session since hit the catch branch in `handleAnalyze` because `CovenantFirebase.reshapeResultsForFirebase` was `undefined`, writing `{error: ...}` to `/results`. The synthetic test harness (see 2026-04-15) couldn't catch it — that harness exercises `analyze()` in isolation, not the full `transformForAnalyze → analyze → reshapeResultsForFirebase → writeResults` write path. Lesson: any function called across the module boundary (`window.CovenantFirebase.*`) needs a contract test at the boundary, not just inside. Cheap version for now: on every commit, run a 5-line check that every function named in the `window.CovenantFirebase` export object is actually defined. Tracked in `backlog.md` Phase 4.
+
 ## 2026-04-19 — Server-side dedup is the structural fix; client-side locks are the seatbelt
 Client-side `*Locked` refs prevented most double-submits but not all (re-render races, tab-wake, rapid-fire taps on slow devices). The real fix for Bugs #1 and #2 was at the write boundary: `submitPulse` and `submitPrediction` now check if a record exists for that player/round BEFORE incrementing the counter. Duplicate calls overwrite the payload but cannot inflate the counter. Principle going forward: every critical write that advances shared state should use a check-then-write pattern. Client-side locks stay, but as the seatbelt, not the firewall.
 

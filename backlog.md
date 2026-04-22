@@ -38,6 +38,7 @@ From the 2026-04-19 post-mortem on the playtest bugs. None of these are urgent; 
 - **State machine for phase transitions.** Phases are currently strings compared with `===`. A typo (`'capston_vote'`) fails silently. Define a `PHASES` constants object so typos become reference errors.
 - **Enable React StrictMode in development.** Wrap `<App />` in `<React.StrictMode>`. Intentionally double-invokes effects and renders in dev, which surfaces the "effect runs twice and breaks the counter" bug class months before a playtest finds it.
 - **Server-side dedup pattern for all critical writes.** `submitPulse` and `submitPrediction` now have check-then-write dedup. Extend the same pattern to `submitGroupVote`, `submitCapstoneAssessment`, and any future write that increments a counter or transitions a phase.
+- **Bridge-API contract smoke test** (from the 2026-04-22 regression). A tiny 5-line check run on every commit that confirms every function named in `window.CovenantFirebase` is actually defined. Would have caught the `reshapeResultsForFirebase` drop instantly. See `decisions.md` 2026-04-22.
 - **Consider extracting the React views into a separate `multiplayer-views.js` module.** Nice-to-have for version-control diff size, browser caching, and code hygiene — but NOT a bug-prevention mechanism. Do only if/when the inline script block becomes unwieldy. See decisions log.
 
 ### General hardening
