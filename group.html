@@ -19,7 +19,7 @@ body{font-family:'Source Sans 3',Georgia,serif;background:#0A1A0C;color:#F2ECDF;
 #root{position:relative;z-index:1;min-height:100vh}
 button{cursor:pointer;font-family:inherit}
 input{font-family:inherit}
-.back-link{position:fixed;top:16px;left:16px;color:#D4A844;text-decoration:none;font-size:14px;opacity:.6;z-index:100}
+.back-link{position:fixed;bottom:16px;left:16px;color:#D4A844;text-decoration:none;font-size:12px;opacity:.55;z-index:100;background:rgba(10,20,10,.85);padding:6px 10px;border-radius:12px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid rgba(212,168,68,.18)}
 .back-link:hover{opacity:1}
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 .fade-up{animation:fadeUp .6s ease-out both}
@@ -212,6 +212,31 @@ body::after{
   #campfireGlow, #tierVignette { transition: none; }
 }
 
+
+/* ═══ TAB NAV + INFO OVERLAY (2026-04-23 spec Part 2) ═══ */
+.gnav{position:fixed;top:0;left:0;right:0;z-index:500;background:rgba(10,20,10,.96);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid rgba(212,168,68,.16);padding:.45rem .8rem;display:flex;align-items:center;gap:.35rem;overflow-x:auto;transform:translateY(-100%);transition:transform .35s}
+.gnav.vis{transform:translateY(0)}
+.gnav .brand{font-family:'Playfair Display',Georgia,serif;font-size:.95rem;font-weight:700;color:#D4A844;margin-right:.5rem;white-space:nowrap;cursor:pointer}
+.gnav button{font-family:'Source Sans 3',system-ui,sans-serif;font-size:.62rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:rgba(242,236,223,.6);background:none;border:1px solid transparent;padding:.35rem .65rem;cursor:pointer;white-space:nowrap;transition:all .25s;border-radius:3px}
+.gnav button:hover{color:#E8C078}
+.gnav button.on{color:#D4A844;border-color:#D4A844;background:rgba(212,168,68,.06)}
+
+.info-overlay{position:fixed;inset:0;z-index:400;background:rgba(10,20,10,.97);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none;overflow-y:auto;padding:3.4rem 1.2rem 2rem}
+.info-overlay.vis{display:block}
+.info-close{position:fixed;top:.7rem;right:1rem;z-index:501;font-family:'Source Sans 3',system-ui,sans-serif;font-size:.7rem;color:#F2ECDF;background:rgba(212,168,68,.08);border:1px solid rgba(212,168,68,.28);padding:.4rem .85rem;cursor:pointer;border-radius:3px;letter-spacing:.08em}
+.info-close:hover{background:rgba(212,168,68,.18);color:#D4A844}
+.info-inner{max-width:720px;margin:0 auto;padding-bottom:2rem}
+.info-inner .hdr{font-family:'Playfair Display',Georgia,serif;font-size:clamp(1.5rem,4vw,2.1rem);font-weight:700;color:#D4A844;margin-bottom:.3rem;line-height:1.2}
+.info-inner .sub2{font-family:'Playfair Display',Georgia,serif;font-size:.98rem;color:rgba(242,236,223,.7);font-style:italic;margin-bottom:1.5rem;line-height:1.5}
+.info-inner .rule{background:rgba(212,168,68,.04);border-left:3px solid #D4A844;padding:1rem 1.1rem;margin-bottom:.9rem;border-radius:3px}
+.info-inner .rule h4{font-family:'Playfair Display',Georgia,serif;font-size:1.02rem;color:#D4A844;margin:0 0 .35rem;font-weight:600}
+.info-inner .rule p{font-family:'Source Sans 3',Georgia,serif;font-size:.93rem;color:rgba(242,236,223,.85);line-height:1.7;margin:0 0 .5rem}
+.info-inner .rule p:last-child{margin-bottom:0}
+.info-inner .rule ul{margin:.6rem 0 0;padding-left:1.2rem;color:rgba(242,236,223,.85);font-family:'Source Sans 3',Georgia,serif;font-size:.93rem;line-height:1.7}
+.info-inner .rule li{margin-bottom:.3rem}
+.info-inner .rule strong{color:#E8C078}
+.info-inner .rule em{color:#F2ECDF;font-style:italic}
+
 </style>
 </head>
 <body>
@@ -221,6 +246,19 @@ body::after{
 <div id="campfireGlow"></div>
 <div id="emberLayer"></div>
 <div id="root"></div>
+<nav class="gnav vis" id="gNav">
+  <span class="brand" onclick="closeInfo()">The Covenant of Water</span>
+  <button onclick="showInfo('world')" id="nt-world">World</button>
+  <button onclick="showInfo('rules')" id="nt-rules">Rules</button>
+  <button onclick="showInfo('scoring')" id="nt-scoring">Scoring</button>
+  <button onclick="showInfo('theory')" id="nt-theory">Theory</button>
+  <button onclick="showInfo('apps')" id="nt-apps">Applications</button>
+  <button onclick="closeInfo()" id="nt-play" class="on">Play</button>
+</nav>
+<div class="info-overlay" id="infoOv">
+  <button class="info-close" onclick="closeInfo()">✕ Close</button>
+  <div class="info-inner" id="infoIn"></div>
+</div>
 <script type="text/babel">
 
 const {useState,useEffect,useRef}=React;
@@ -285,6 +323,187 @@ function updateAtmosphere(phase){
     body.classList.add('atmo-campfire');
   }
 }
+
+// ═══ TAB NAV CONTENT (2026-04-23 spec Part 2) ═══
+// Populated into #infoIn on demand. Content is static HTML; no React involved.
+var INFO_TABS = {
+  world: `<h2 class="hdr">The World</h2>
+<p class="sub2">You are on safari — but the safari is a metaphor. The terrain is your team’s shared capacity to navigate uncertainty together.</p>
+
+<div class="rule">
+  <h4>Four Biomes, One Framework</h4>
+  <p>The game moves you through four distinct landscapes, each mapped to a domain of the <strong>Cynefin framework</strong> — a sense-making model that distinguishes between problems with known solutions and problems where the rules themselves are in flux. You start on the Plains (Clear), move through the Savanna (Complicated), cross Woodland &amp; River (Complex), and climb into Montane Highlands (Chaotic). Each terrain demands a different kind of thinking.</p>
+</div>
+
+<div class="rule">
+  <h4>Then: The Campfire</h4>
+  <p>After the four biomes, the terrain changes again. You return to camp. The fire is lit. The stars come out. And the questions turn inward — not about the landscape, but about your group itself. This is The Mirror. It is where the safari stops being about animals and starts being about you.</p>
+</div>
+
+<div class="rule">
+  <h4>The Real Subject</h4>
+  <p>This game is not measuring what you know. It is measuring how your team behaves as conditions get harder — whether you maintain coordination under stress, whether you can hear each other when the stakes rise, whether you can hold complexity without collapsing into it. These are the capacities that distinguish teams that innovate from teams that merely function.</p>
+</div>
+
+<div class="rule">
+  <h4>Why Safari</h4>
+  <p>East Africa is where humans first became human — where the cognitive, social, and moral architecture of our species was forged against the pressures of an unpredictable landscape. The safari is not incidental decoration. It is a reminder that every framework in this game has evolutionary depth. We have been solving wicked problems together, around fires, for a very long time.</p>
+</div>`,
+  rules: `<h2 class="hdr">How to Play</h2>
+<p class="sub2">A nine-round multiplayer experience. Each round has the same rhythm, but the terrain underneath keeps shifting.</p>
+
+<div class="rule">
+  <h4>The Round Structure</h4>
+  <p>Each scenario unfolds in five phases:
+  <strong>Pulse</strong> (private vote on your phone) →
+  <strong>Campfire</strong> (open discussion, scenario visible on the shared screen) →
+  <strong>Group Vote</strong> (collective decision, one option wins) →
+  <strong>Prediction</strong> (private guess about which teammates drifted from the group) →
+  <strong>Reveal</strong> (the drift count is unveiled, along with what the real world did in this situation).</p>
+</div>
+
+<div class="rule">
+  <h4>Nine Scenarios Across Five Tiers</h4>
+  <p>The engine guarantees a specific stress gradient: 2 scenarios in <em>Clear</em> terrain, 3 in <em>Complicated</em>, 2 in <em>Complex</em>, 1 in <em>Chaotic</em>, and 1 <em>Reflective</em> scenario that turns the lens on your group itself. You will feel the progression.</p>
+</div>
+
+<div class="rule">
+  <h4>The Capstone</h4>
+  <p>Before the Mirror, the group faces one final integrative scenario — a chaotic, high-stakes dilemma that pulls on everything you have built. How your group handles the capstone often reveals more than all nine preceding rounds combined.</p>
+</div>
+
+<div class="rule">
+  <h4>The Mirror</h4>
+  <p>At the end, you will see three things: your group’s overall profile, your individual profile, and a synthesis of what the game actually measured — grounded in the scholars whose work informs every layer of the engine. The Mirror is not a verdict. It is a starting point.</p>
+</div>
+
+<div class="rule">
+  <h4>A Note on Phones and the Shared Screen</h4>
+  <p>Every player uses their own phone for private voting. The host device projects the shared Campfire screen — scenarios, group results, and the final Mirror diagnostic. Do not share pulse votes aloud before they submit; the psychometric math depends on capturing your private instinct before the group conversation influences it.</p>
+</div>`,
+  scoring: `<h2 class="hdr">The Scoring Engine</h2>
+<p class="sub2">Six group-level metrics. Each one measures a different facet of how your team holds together under pressure.</p>
+
+<div class="rule">
+  <h4>Relational Calibration (RC)</h4>
+  <p>The headline metric. RC measures your group’s capacity to maintain what Ronald Heifetz calls the <strong>Productive Zone of Disequilibrium</strong> — enough stress to mobilize creative work, not so much that the group fractures. High RC groups don’t avoid hard conversations; they metabolize them.</p>
+</div>
+
+<div class="rule">
+  <h4>Moral Elasticity</h4>
+  <p>How flexibly does your group shift between moral foundations as context demands? A group stuck on a single foundation (always Care, always Authority) often misreads situations that require a different moral lens. High Moral Elasticity means the group can recognize when Loyalty matters more than Fairness, or vice versa.</p>
+</div>
+
+<div class="rule">
+  <h4>Adaptive Calibration</h4>
+  <p>Does your group’s response pattern match the Cynefin domain it’s in? Chaotic problems require different moves than Complicated ones. Groups that treat every problem the same way — applying expertise where novelty is needed, or vice versa — show low Adaptive Calibration.</p>
+</div>
+
+<div class="rule">
+  <h4>Holding Environment</h4>
+  <p>Amy Edmondson’s psychological safety construct, operationalized. Does your group stay cohesive under stress, or does it shed members as complexity rises? Measured through prediction accuracy, drift patterns, and campfire-phase participation.</p>
+</div>
+
+<div class="rule">
+  <h4>Turn-Taking Equality</h4>
+  <p>A behavioral proxy for Anita Woolley’s <strong>collective intelligence (c-factor)</strong>. In her research, the single strongest predictor of a group’s performance on novel problems was equality of conversational turns. We measure this by tracking how evenly each player’s voice shaped the group’s decisions across all rounds.</p>
+</div>
+
+<div class="rule">
+  <h4>The Group Archetype</h4>
+  <p>Every group’s scoring profile is assigned to a characteristic archetype using Euclidean distance across all metrics — not threshold buckets. Your archetype is a pattern, not a label. Two groups with identical RC scores but different Moral Elasticity and Turn-Taking profiles will receive different archetypes.</p>
+</div>`,
+  theory: `<h2 class="hdr">The Theory</h2>
+<p class="sub2">Every metric in this game is grounded in published research. Here is who built the scaffolding.</p>
+
+<div class="rule">
+  <h4>Dave Snowden — The Cynefin Framework</h4>
+  <p>A Welsh management researcher who developed the Cynefin framework at IBM in the early 2000s. Cynefin (Welsh for “habitat”) distinguishes <strong>four decision-making domains</strong> — Clear, Complicated, Complex, and Chaotic — and argues that the most common leadership failure is applying the wrong kind of thinking to the wrong kind of problem. The four biomes in this game are Cynefin made tangible.</p>
+</div>
+
+<div class="rule">
+  <h4>Ronald Heifetz &amp; Marty Linsky — Adaptive Leadership</h4>
+  <p>Harvard Kennedy School faculty who separated <strong>technical problems</strong> (known solutions, can be delegated to experts) from <strong>adaptive challenges</strong> (no known solution, requiring groups to shift values, assumptions, or identities). Their concept of the Productive Zone of Disequilibrium is the conceptual heart of this game’s RC metric — the optimal range of stress where innovation actually happens.</p>
+</div>
+
+<div class="rule">
+  <h4>Amy Edmondson — Psychological Safety</h4>
+  <p>Harvard Business School professor whose 1999 research produced a surprising result: the highest-performing medical teams did not make fewer errors — they <em>reported</em> more errors, because members felt safe enough to speak up. Her construct of psychological safety is now the most validated predictor of team learning and innovation in the organizational literature. Google’s Project Aristotle re-discovered it as the single strongest factor in team effectiveness across 180 teams studied.</p>
+</div>
+
+<div class="rule">
+  <h4>Anita Woolley — Collective Intelligence</h4>
+  <p>Carnegie Mellon professor whose 2010 paper in <em>Science</em> established the <strong>c-factor</strong> — a measurable “group IQ” that predicts a team’s performance across a wide range of cognitive tasks. The three strongest predictors of c-factor: equality of speaking turns, social perceptiveness, and gender diversity. High-c-factor groups achieve outcomes that exceed what any individual member could produce alone.</p>
+</div>
+
+<div class="rule">
+  <h4>Jonathan Haidt — Moral Foundations Theory</h4>
+  <p>NYU social psychologist whose research mapped human moral intuition onto six foundations — Care, Fairness/Equality, Loyalty, Authority, Purity/Sanctity, and Liberty — that people and cultures emphasize in different combinations. Every scenario in this game is tagged with multi-vector foundation weights, which is how the engine detects your group’s Moral Elasticity.</p>
+</div>
+
+<div class="rule">
+  <h4>Horst Rittel &amp; Melvin Webber — Wicked Problems</h4>
+  <p>Planning theorists who, in a 1973 paper, coined the term <strong>wicked problems</strong> — problems that are unique, ambiguous, have no stopping rule, and cannot be solved with expertise alone. Cynefin’s Complex and Chaotic domains are where wicked problems live. The entire Group Safari is training for them.</p>
+</div>`,
+  apps: `<h2 class="hdr">Applications</h2>
+<p class="sub2">Why this matters on Monday morning — in your team, your organization, your community.</p>
+
+<div class="rule">
+  <h4>For Real Teams Facing Real Wicked Problems</h4>
+  <p>Climate adaptation. Organizational change. Product innovation under uncertainty. Public health response. All of these are adaptive challenges, not technical ones — and teams that perform well on them are teams that maintain their holding environment under escalating complexity. This game is a compressed rehearsal for that work.</p>
+</div>
+
+<div class="rule">
+  <h4>Innovation Readiness, Not Innovation Itself</h4>
+  <p>This game does not measure your team’s innovation output — that requires actual creative tasks with real outcomes. What it measures is the <em>conditions</em> under which innovation emerges: psychological safety, adaptive calibration, moral elasticity, conversational equality. A 2023 meta-analysis found teams with high psychological safety exhibit 27% higher innovation output. If your team scored well on Holding Environment here, the innovation literature predicts you will outperform comparable teams on novel problems.</p>
+</div>
+
+<div class="rule">
+  <h4>Diagnostic, Not Prescriptive</h4>
+  <p>Your group’s profile tells you where your team’s capacity is strongest and where it is most vulnerable. A team with high Moral Elasticity but low Turn-Taking Equality has a different development path than a team with the opposite profile. Use the Mirror as a diagnostic, then build from it.</p>
+</div>
+
+<div class="rule">
+  <h4>Practical Moves That Raise These Metrics</h4>
+  <p>Research-backed practices that teams can start with immediately:</p>
+  <ul>
+    <li><strong>For Psychological Safety:</strong> Leaders model fallibility; normalize “I don’t know”; ask questions before asserting.</li>
+    <li><strong>For Turn-Taking Equality:</strong> Use structured rounds in meetings; monitor airtime explicitly; invite quieter voices first.</li>
+    <li><strong>For Moral Elasticity:</strong> Name the moral foundations in play when disagreements arise; practice steelmanning opposing positions.</li>
+    <li><strong>For Adaptive Calibration:</strong> Before problem-solving, ask “What kind of problem is this?” Resist the urge to apply technical fixes to adaptive challenges.</li>
+  </ul>
+</div>
+
+<div class="rule">
+  <h4>A Closing Thought</h4>
+  <p>The teams that will matter most in the coming decades are the ones that can hold themselves together while the landscape changes underneath them. Wicked problems don’t yield to individual brilliance. They yield to groups who have learned to think together — under stress, across disagreement, in the dark, by the fire. That is what this game is for.</p>
+</div>`
+};
+function showInfo(key) {
+  var overlay = document.getElementById('infoOv');
+  var inner = document.getElementById('infoIn');
+  if (!overlay || !inner) return;
+  inner.innerHTML = INFO_TABS[key] || '';
+  overlay.classList.add('vis');
+  inner.scrollTop = 0;
+  overlay.scrollTop = 0;
+  var buttons = document.querySelectorAll('#gNav button');
+  for (var i = 0; i < buttons.length; i++) buttons[i].classList.remove('on');
+  var btn = document.getElementById('nt-' + key);
+  if (btn) btn.classList.add('on');
+}
+function closeInfo() {
+  var overlay = document.getElementById('infoOv');
+  if (!overlay) return;
+  overlay.classList.remove('vis');
+  var buttons = document.querySelectorAll('#gNav button');
+  for (var i = 0; i < buttons.length; i++) buttons[i].classList.remove('on');
+  var play = document.getElementById('nt-play');
+  if (play) play.classList.add('on');
+}
+// Expose for inline onclick handlers (Babel-compiled scope is IIFE-wrapped).
+window.showInfo = showInfo;
+window.closeInfo = closeInfo;
 
 // ═══ CAMPFIRE ATMOSPHERE — tier broadcaster + ember spawner ═══
 (function(){

@@ -2,6 +2,18 @@
 
 What has actually shipped, date-stamped. Newest first. Keep entries to 1–3 lines.
 
+## 2026-04-23 (later) — Stage 2: five context tabs
+
+Persistent top-nav with five tabs (World / Rules / Scoring / Theory / Applications) accessible throughout every phase of the Group Safari — lobby, gameplay, and Mirror. Mirrors the Solo Safari tab pattern and architecture but with group-specific content.
+
+- **Nav bar.** `<nav class="gnav vis">` added as a sibling of `#root`, visible on load. Brand ("The Covenant of Water") doubles as a close-overlay affordance. Five tab buttons + one "Play" button that closes the overlay.
+- **Info overlay.** `<div class="info-overlay">` renders tab HTML into `#infoIn` on click. Smooth transform + blur backdrop. Reused DOM pattern from Solo so the muscle memory is the same.
+- **Tab content** lifted verbatim from the 2026-04-23 spec Part 2 (~400–500 words per tab). Theory names Snowden (Cynefin), Heifetz & Linsky (adaptive leadership), Edmondson (psych safety), Woolley (c-factor), Haidt (moral foundations), Rittel & Webber (wicked problems). Applications closes with four concrete practices teams can start Monday.
+- **Back-link relocated** to bottom-left (was colliding behind the new top-fixed nav).
+- **`showInfo` / `closeInfo`** attached to `window` so the inline `onclick` attributes resolve (Babel wraps the top-level script in an IIFE by default).
+
+Still to come (Stage 3): restructure `GroupMirrorHost` into the 5-section spec debrief (Arrival / Group Profile / Metrics / Academic Synthesis / Bridge) with dynamic qualitative descriptors driven by RC, Holding Environment, and Turn-Taking scores.
+
 ## 2026-04-23 — Stage 1 of the Innovation-Readiness spec
 
 Foundation commit for the 2026-04-23 Group Safari spec. Introduces the display-label split, the new biome background images, the biome-intro title card, and the Turn-Taking Equality c-factor metric. Tabs and Mirror-debrief restructure are Stages 2 and 3.
