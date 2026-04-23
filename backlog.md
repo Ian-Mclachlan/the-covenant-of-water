@@ -22,10 +22,13 @@ Beyond the CSS campfire patch. The group safari host screen is currently functio
 
 ### Content & messaging changes
 - **Update solo safari context tabs (World, Rules, Scoring, Psychology).** Current copy describes the v1 psychometric engine. Rewrite to reflect v2 — foundation weights, Euclidean archetypes, piecewise breakpoints, shadow scoring, drift analysis.
-- **Add matching tabs to group safari.** New content covering Haidt's Moral Foundations Theory, Edmondson's psychological safety, Lencioni's team dysfunction model, and the group psychometric math at a high level. Significant writing task.
+- ~~Add matching tabs to group safari.~~ ✅ Shipped 2026-04-23 — five tabs (World / Rules / Scoring / Theory / Applications), persistent top-nav, content lifted from the 2026-04-23 Innovation-Readiness spec. Theory names Snowden, Heifetz, Edmondson, Woolley, Haidt, Rittel & Webber.
 - ~~Replace drift reveal with historical outcome.~~ ✅ Shipped 2026-04-22 — host reveal now leads with the scenario's real-world context (`teach` field); drift count is a footer line. Phones show "The Real Story" card beneath the personal drift verdict.
 - ~~Change the avatar question on solo safari.~~ ✅ Shipped 2026-04-22 — heading is "Choose Your Avatar" with the "watering hole" subhead.
 - ~~Personalize the Mirror narrative.~~ ✅ Shipped 2026-04-22 — player's name threads into the eyebrow, moral-signature prose, breakpoint prose, and insights intro on `PlayerMirrorPhone`.
+- ~~Mirror debrief restructure (2026-04-23 spec Part 3).~~ ✅ Shipped 2026-04-23 — `GroupMirrorHost` now leads with the 5-section spec layout (Arrival, Group Profile, Metrics, Academic Synthesis, Bridge) with dynamic descriptors threaded to RC / Holding Environment / Turn-Taking scores. Rich visuals moved to Deep Dive panel.
+- ~~Innovation-Readiness metric (turn-taking equality).~~ ✅ Shipped 2026-04-23 — `computeTurnTakingEquality` wired into `analyze()` as a Woolley c-factor proxy; exposed via `grp.turnTakingEquality`, shown as a 5th RC gauge, two new narrative triggers (GT-TT-HIGH/LOW).
+- ~~Biome display names + Cynefin subtitles + biome intro cards.~~ ✅ Shipped 2026-04-23 — internal codes WONDER/TENSION/FRACTURE/ABYSS/MIRROR unchanged; display layer uses Short-Grass Plains / Acacia Savanna / Woodland & River / Montane Highlands / The Campfire.
 
 ### Solo safari polish
 - **Update final-tier image progression.** Last background needs many animals to emphasize ecological complexity. Currently backwards — earlier tiers are denser than the final.

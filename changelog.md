@@ -2,6 +2,19 @@
 
 What has actually shipped, date-stamped. Newest first. Keep entries to 1–3 lines.
 
+## 2026-04-23 (latest) — Stage 3: Mirror debrief restructure
+
+`GroupMirrorHost` rewritten to the spec's 5-section layout. The existing rich visuals (RC gauges, Moral Center radar, per-player chips, What-If sliders, per-player breakpoints, computed narratives) are fully preserved but moved inside the Deep Dive toggle — nothing is lost; the top-level view just leads with synthesis instead of dashboards.
+
+- **Section 1 — The Arrival.** Single italic serif line acknowledging what the group just moved through (N scenarios across four Cynefin domains). No data, just gravitas.
+- **Section 2 — Group Profile.** Archetype title + engine prose + large RC percentage, centered.
+- **Section 3 — The Metrics.** Five rows with interpretive one-liners per metric (Moral Elasticity, Adaptive Calibration, Holding Environment, Turn-Taking, Capstone Synthesis). Each interpretation is threshold-based and swaps with the value.
+- **Section 4 — What You Just Lived Through.** Academic synthesis. Names Heifetz (RC descriptor), Edmondson (HE interpretation), Woolley (turn-taking descriptor). Conditional fourth paragraph fires when Moral Elasticity or Adaptive Calibration is a standout (≥0.65 or ≤0.30), invoking Haidt or Snowden respectively.
+- **Section 5 — The Bridge.** Innovation-readiness paragraph with three-tier thresholds (RC + HE + TT all high → confident framing; all low → "work to do" framing; otherwise mixed). Two CTA buttons that call `showInfo('theory')` / `showInfo('apps')` to surface the Theory and Applications tabs.
+- **Deep Dive panel** now collects: 5 RC gauges, Moral Center radar, Computed Narratives, player chips, and the existing `DeepDiveBreakdown` (What-If sliders + per-player breakpoint curves). Toggle copy updated to reflect the wider scope.
+
+With Stages 1, 2, and 3 now shipped to `main`, the 2026-04-23 Innovation-Readiness spec is functionally complete. Acceptance-criteria playtest pending.
+
 ## 2026-04-23 (later) — Stage 2: five context tabs
 
 Persistent top-nav with five tabs (World / Rules / Scoring / Theory / Applications) accessible throughout every phase of the Group Safari — lobby, gameplay, and Mirror. Mirrors the Solo Safari tab pattern and architecture but with group-specific content.

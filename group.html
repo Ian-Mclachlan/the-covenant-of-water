@@ -2314,11 +2314,11 @@ function GroupMirrorHost(props) {
   var g = results.group || {};
   var order = results.playerOrder || Object.keys(results.players || {});
   var playerList = order.map(function(pid){ return { pid: pid, profile: (results.players||{})[pid] }; }).filter(function(e){ return !!e.profile; });
- 
+
   var _s1 = useState(false), deepDive = _s1[0], setDeepDive = _s1[1];
- 
+
   useEffect(function(){ injectMirrorStyles(); }, []);
- 
+
   if (results.error) {
     return ce('div', { style: W },
       ce('div', { style: Object.assign({}, gp, { textAlign:'center', maxWidth:620 }) },
@@ -2328,90 +2328,192 @@ function GroupMirrorHost(props) {
       )
     );
   }
- 
+
   if (playerList.length === 0) {
     return ce('div', { style: W }, ce('div', { style: Object.assign({}, gp, { textAlign:'center' }) },
       ce('div', { style: sxT2(C.gold) }, 'The Mirror'),
       ce('p', { style: { color:C.cream+'77', fontSize:14 } }, 'Results are not ready yet.')
     ));
   }
- 
+
   var RC = g.relationalCalibration || 0;
   var rcCol = rcTierColor(RC);
- 
+  var HE = g.holdingEnvironment || 0;
+  var TT = g.turnTakingEquality || 0;
+  var ME = g.moralElasticity || 0;
+  var AC = g.adaptiveCalibration || 0;
+  var CS = g.capstoneSynthesis || 0;
+
+  // Styles reused across the synthesis paragraphs
+  var synthParaStyle = { fontSize:15, lineHeight:1.9, color:C.cream+'CC', margin:'0 0 14px', fontFamily:"'Source Sans 3',system-ui,sans-serif" };
+  var sectionHdr = { fontSize:11, letterSpacing:2.5, textTransform:'uppercase', fontWeight:700, color:C.gold, marginBottom:10 };
+  var mirrorWidth = { width:'100%', maxWidth: 960 };
+
+  // ─── Dynamic descriptors (spec Part 3.3) ─────────────────────────────────
+  var rcDesc =
+    RC >= 0.75 ? 'with unusual steadiness even as stress escalated' :
+    RC >= 0.55 ? 'well through the Complicated and Complex tiers, with some turbulence in Chaotic' :
+    RC >= 0.40 ? 'partially — your group maintained it under moderate stress but fractured at the Chaotic edge' :
+                 'only briefly — the group\'s coordination broke down as complexity rose, a pattern worth examining';
+  var edmondsonInterp =
+    HE >= 0.70 ? 'your members felt safe enough to dissent, disagree, and take interpersonal risks — the foundation of team learning' :
+    HE >= 0.50 ? 'mixed signals — some members felt safe speaking up, others did not' :
+                 'signs that some members held back, limiting the group\'s access to its own thinking';
+  var ttDesc =
+    TT >= 0.70 ? 'was strongly present' :
+    TT >= 0.50 ? 'was present but uneven' :
+                 'was weak — a small number of voices shaped most decisions, reducing the group\'s effective collective intelligence';
+  var innovationReadinessPara;
+  if (RC >= 0.65 && HE >= 0.65 && TT >= 0.60) {
+    innovationReadinessPara = 'On three of the most validated predictors of team innovation in the organizational literature — psychological safety, adaptive capacity, and conversational equality — your group scored in the range associated with high-performing innovation teams. This does not guarantee you will innovate together. It means the conditions for innovation are present.';
+  } else if (RC < 0.40 && HE < 0.40 && TT < 0.40) {
+    innovationReadinessPara = 'Your group has work to do on the foundational capacities that precede innovation — psychological safety, adaptive calibration, and conversational equality. These are learnable. The Applications tab is where to start.';
+  } else {
+    innovationReadinessPara = 'Your group shows strong capacity on some innovation predictors and weaker capacity on others. The Applications tab lists specific practices that can raise the weaker metrics.';
+  }
+  // Conditional 4th paragraph fires only if Moral Elasticity or Adaptive Calibration is a standout.
+  var fourthScholar = null;
+  if (ME >= 0.65) {
+    fourthScholar = ce('p', { style: synthParaStyle }, '• Jonathan Haidt\'s moral foundations theory: this group exercised unusually broad moral agility, shifting between foundations as the context demanded. The consensus drew from ' + (g.foundationsUsed||0) + ' of 6 foundations, rare in groups that default to a single moral lens.');
+  } else if (ME <= 0.30) {
+    fourthScholar = ce('p', { style: synthParaStyle }, '• Jonathan Haidt\'s moral foundations theory: this group mostly spoke one moral language. When a situation calls for a different foundation, this pattern means the group misreads the terrain.');
+  } else if (AC >= 0.65) {
+    fourthScholar = ce('p', { style: synthParaStyle }, '• Dave Snowden\'s Cynefin framework: this group matched its responses to the terrain — a Chaotic problem got chaotic moves, a Complicated problem got expert analysis. That adaptive calibration is the opposite of the most common leadership failure.');
+  } else if (AC <= 0.30) {
+    fourthScholar = ce('p', { style: synthParaStyle }, '• Dave Snowden\'s Cynefin framework: this group applied the same kind of thinking to every problem. Treating every challenge as technical, or every challenge as chaos, is the most common leadership failure; see the Theory tab for the distinction.');
+  }
+
   return ce('div', { style: Object.assign({}, W, { justifyContent:'flex-start', paddingTop: 28, paddingBottom: 40 }) },
-    ce('div', { style: { width:'100%', maxWidth: 960 }, className:'cov-mirror-fade' },
- 
-      // ── RC HEADLINE ──────────────────────────────────────────────────────
-      ce('div', { style: Object.assign({}, gp, { textAlign:'center', padding:'34px 24px', background:'rgba(10,26,12,0.55)' }) },
-        ce('div', { style: sxT2(C.gold) }, 'Relational Calibration'),
-        ce('div', { style: { fontSize:13, color:C.cream+'66', marginBottom:18, fontFamily:"'Playfair Display',Georgia,serif", fontStyle:'italic' } },
-          'The group\u2019s capacity to sustain the Productive Zone of Disequilibrium'
-        ),
-        ce('div', { style: Object.assign({}, ts, { fontSize: 84, fontWeight:300, color: rcCol, fontFamily:'monospace', lineHeight:1, textShadow:'0 0 40px ' + rcCol + '66, 0 4px 20px rgba(0,0,0,0.5)' }) },
-          pct(RC) + '%'
-        ),
-        // Five sub-component gauges (added Turn-Taking Equality 2026-04-23)
-        ce('div', { style: { display:'flex', justifyContent:'center', gap:18, flexWrap:'wrap', marginTop:22 } },
-          ce(RCGauge, { value: g.moralElasticity || 0,      label: 'Moral Elasticity',     color: C.gold,     size: 86 }),
-          ce(RCGauge, { value: g.adaptiveCalibration || 0,  label: 'Adaptive Calibration', color: C.equality, size: 86 }),
-          ce(RCGauge, { value: g.holdingEnvironment || 0,   label: 'Holding Environment',  color: C.green,    size: 86 }),
-          ce(RCGauge, { value: g.turnTakingEquality || 0,   label: 'Turn-Taking',          color: C.rust,     size: 86 }),
-          ce(RCGauge, { value: g.capstoneSynthesis || 0,    label: 'Capstone Synthesis',   color: C.purity,   size: 86 })
+    ce('div', { style: mirrorWidth, className:'cov-mirror-fade' },
+
+      // ═══ SECTION 1 — ARRIVAL ═══
+      ce('div', { style: Object.assign({}, gp, { textAlign:'center', padding:'28px 22px', background:'rgba(10,26,12,0.55)' }) },
+        ce('div', { style: sxT2(C.gold) }, 'The Mirror'),
+        ce('p', { style: { fontSize:16, lineHeight:1.8, color:C.cream+'DD', margin:0, fontFamily:"'Playfair Display',Georgia,serif", fontStyle:'italic' } },
+          'This group moved through ' + scenariosCount + ' scenarios across four Cynefin domains, from Short-Grass Plains to Montane Highlands, and now returns to The Campfire. That is a compression few teams ever experience deliberately.'
         )
       ),
- 
-      // ── TWO-COLUMN: archetype + radar ────────────────────────────────────
-      ce('div', { style: { display:'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap:16 } },
-        // Group archetype card
-        g.ga && ce('div', { style: gp },
-          ce('div', { style: sxT2(C.gold) }, 'Group Archetype'),
-          ce('h2', { style: Object.assign({}, ts, { fontSize:26, color:C.gold, marginTop:0, marginBottom:10, fontFamily:"'Playfair Display'", fontWeight:400 }) }, g.ga.title),
-          ce('p', { style: { fontSize:14, lineHeight:1.75, color:C.cream+'BB', margin:0 } }, g.ga.prose)
+
+      // ═══ SECTION 2 — GROUP PROFILE ═══
+      g.ga && ce('div', { style: Object.assign({}, gp, { textAlign:'center', padding:'30px 24px' }) },
+        ce('div', { style: sectionHdr }, 'Your Group Profile'),
+        ce('h2', { style: Object.assign({}, ts, { fontSize:32, color:C.gold, margin:'0 0 12px', fontFamily:"'Playfair Display'", fontWeight:400 }) }, g.ga.title),
+        ce('div', { style: Object.assign({}, ts, { fontSize: 72, fontWeight:300, color: rcCol, fontFamily:'monospace', lineHeight:1, textShadow:'0 0 40px ' + rcCol + '66' }) },
+          pct(RC) + '%'
         ),
-        // Moral center of gravity (Haidt radar)
+        ce('div', { style: { fontSize:11, letterSpacing:2, color:C.cream+'77', marginTop:6, fontWeight:600 } }, 'RELATIONAL CALIBRATION'),
+        ce('p', { style: { fontSize:14.5, lineHeight:1.8, color:C.cream+'BB', margin:'18px auto 0', maxWidth:560 } }, g.ga.prose)
+      ),
+
+      // ═══ SECTION 3 — METRICS PANEL ═══
+      ce('div', { style: gp },
+        ce('div', { style: sectionHdr }, 'The Metrics'),
+        [
+          { label:'Moral Elasticity',     value: ME, col: C.gold,
+            interp: ME >= 0.60 ? 'Broad moral palette — the consensus shifted between foundations as the terrain demanded.' : ME >= 0.40 ? 'Moderate — multiple foundations in play, but not consistently matched to context.' : 'Narrow — the group defaulted to a single moral language regardless of context.' },
+          { label:'Adaptive Calibration', value: AC, col: C.equality,
+            interp: AC >= 0.60 ? 'Strong signal integration — minority voices reached the final decision; capstone fragments surfaced.' : AC >= 0.40 ? 'Mixed — some minority perspectives were accommodated, others were lost.' : 'Weak — the group\'s decisions tracked the majority pulse rather than the best signal.' },
+          { label:'Holding Environment',  value: HE, col: C.green,
+            interp: HE >= 0.60 ? 'Cohesive under pressure — Edmondson\'s psychological safety, operationally present.' : HE >= 0.40 ? 'Partially held — stress shortened discussions and spiked conformity in places.' : 'Fragile — under heat, the group chose speed over depth. Conformity spiked.' },
+          { label:'Turn-Taking Equality', value: TT, col: C.rust,
+            interp: TT >= 0.60 ? 'Voices were evenly distributed — the behavioral signature of high collective intelligence (Woolley).' : TT >= 0.40 ? 'Uneven — a few voices weighted more than the rest, limiting group IQ.' : 'Heavily skewed — a minority shaped most decisions. The group never accessed its full thinking.' },
+          { label:'Capstone Synthesis',   value: CS, col: C.purity,
+            interp: CS >= 0.70 ? 'Every fragment surfaced. Asymmetric information was integrated under chaos.' : CS >= 0.45 ? 'Partial — some fragments reached the decision; others were lost under pressure.' : 'In the Chaotic domain, teams fail not from bad decisions but from incomplete pictures. This is one of those cases.' }
+        ].map(function(m, i) {
+          return ce('div', { key: i, style: { padding:'12px 0', borderBottom: i < 4 ? '1px solid '+C.cream+'10' : 'none' } },
+            ce('div', { style: { display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:4 } },
+              ce('div', { style: { fontSize:14, fontWeight:700, color:m.col, letterSpacing:.5 } }, m.label),
+              ce('div', { style: { fontSize:16, fontFamily:'monospace', fontWeight:700, color:m.col } }, pct(m.value) + ' / 100')
+            ),
+            ce('p', { style: { fontSize:13, lineHeight:1.65, color:C.cream+'99', margin:0, fontStyle:'italic' } }, m.interp)
+          );
+        })
+      ),
+
+      // ═══ SECTION 4 — ACADEMIC SYNTHESIS ═══
+      ce('div', { style: Object.assign({}, gp, { background:'rgba(212,168,68,0.06)', border:'1px solid '+C.gold+'33' }) },
+        ce('div', { style: sectionHdr }, 'What You Just Lived Through'),
+        ce('p', { style: Object.assign({}, synthParaStyle, { fontStyle:'italic', color:C.cream+'AA' }) },
+          'This game operationalizes five bodies of research. In your case, three are most directly relevant to what the data shows:'
+        ),
+        ce('p', { style: synthParaStyle },
+          '• Ronald Heifetz\'s adaptive leadership framework: you held the Productive Zone of Disequilibrium ', rcDesc, '.'
+        ),
+        ce('p', { style: synthParaStyle },
+          '• Amy Edmondson\'s psychological safety: your Holding Environment score of ', pct(HE), ' suggests ', edmondsonInterp, '.'
+        ),
+        ce('p', { style: synthParaStyle },
+          '• Anita Woolley\'s collective intelligence research: the strongest behavioral predictor of group problem-solving — equality of conversational turns — ', ttDesc, ' in your group.'
+        ),
+        fourthScholar
+      ),
+
+      // ═══ SECTION 5 — THE BRIDGE ═══
+      ce('div', { style: gp },
+        ce('div', { style: sectionHdr }, 'What This Means Outside the Game'),
+        ce('p', { style: synthParaStyle }, innovationReadinessPara),
+        ce('p', { style: Object.assign({}, synthParaStyle, { fontStyle:'italic', color:C.cream+'AA', marginBottom:20 }) },
+          'Wicked problems don\'t yield to individual brilliance. They yield to groups who have learned to think together under pressure. Your group\'s profile here is a snapshot of that capacity.'
+        ),
+        ce('div', { style: { display:'flex', gap:12, flexWrap:'wrap', justifyContent:'center', marginTop:8 } },
+          ce('button', { className:'cov-deepdive-btn', onClick: function(){ if (window.showInfo) window.showInfo('theory'); } }, 'Explore the Theory →'),
+          ce('button', { className:'cov-deepdive-btn', onClick: function(){ if (window.showInfo) window.showInfo('apps'); } }, 'Explore the Applications →')
+        )
+      ),
+
+      // ═══ DEEP DIVE TOGGLE ═══
+      ce('div', { style: { textAlign:'center', margin:'16px 0 16px' } },
+        ce('button', {
+          className: 'cov-deepdive-btn',
+          onClick: function(){ setDeepDive(!deepDive); }
+        },
+          deepDive ? '▲  Collapse Deep Dive' : '▼  Expand Deep Dive  —  Gauges · Radar · Collective Mirror · Breakpoints · What-If'
+        )
+      ),
+
+      // ═══ DEEP DIVE PANEL (everything previously at the top now lives here) ═══
+      deepDive && ce('div', { className:'cov-mirror-fade' },
+        // Gauges row
+        ce('div', { style: Object.assign({}, gp, { textAlign:'center' }) },
+          ce('div', { style: sxT2(C.gold) }, 'The Five Gauges'),
+          ce('div', { style: { display:'flex', justifyContent:'center', gap:18, flexWrap:'wrap', marginTop:8 } },
+            ce(RCGauge, { value: ME, label: 'Moral Elasticity',     color: C.gold,     size: 86 }),
+            ce(RCGauge, { value: AC, label: 'Adaptive Calibration', color: C.equality, size: 86 }),
+            ce(RCGauge, { value: HE, label: 'Holding Environment',  color: C.green,    size: 86 }),
+            ce(RCGauge, { value: TT, label: 'Turn-Taking',          color: C.rust,     size: 86 }),
+            ce(RCGauge, { value: CS, label: 'Capstone Synthesis',   color: C.purity,   size: 86 })
+          )
+        ),
+        // Moral Center of Gravity (Haidt radar)
         g.gf && ce('div', { style: gp },
           ce('div', { style: sxT2(C.gold) }, 'Moral Center of Gravity'),
           ce('div', { style: { display:'flex', justifyContent:'center' } },
             ce(Radar, { fc: g.gf, tot: scenariosCount || 9, col: C.gold, sz: 260 })
           )
-        )
-      ),
- 
-      // ── GROUP NARRATIVES (the computed insights) ─────────────────────────
-      g.narratives && g.narratives.length > 0 && ce('div', { style: Object.assign({}, gp, { background:'rgba(212,168,68,0.08)', border:'1px solid '+C.gold+'33' }) },
-        ce('div', { style: sxT2(C.gold) }, 'The Collective Mirror'),
-        g.narratives.slice(0, 4).map(function(n, i){
-          return ce('p', { key: n.id || i, style: { fontSize:15, lineHeight:1.9, color:C.cream+'CC', marginTop: i===0 ? 0 : 12, marginBottom:0, fontFamily:"'Playfair Display',Georgia,serif", fontStyle:'italic' } }, n.text);
-        })
-      ),
- 
-      // ── PLAYER CHIPS ROW ─────────────────────────────────────────────────
-      ce('div', { style: gp },
-        ce('div', { style: sxT2(C.gold) }, 'The Expedition'),
-        ce('div', { style: { display:'flex', gap:10, flexWrap:'wrap' } },
-          playerList.map(function(entry) {
-            return ce(MirrorPlayerCard, { key: entry.pid, player: entry.profile });
+        ),
+        // Computed narratives (preserved; they're data-driven and specific)
+        g.narratives && g.narratives.length > 0 && ce('div', { style: Object.assign({}, gp, { background:'rgba(212,168,68,0.06)', border:'1px solid '+C.gold+'33' }) },
+          ce('div', { style: sxT2(C.gold) }, 'The Collective Mirror — Computed Insights'),
+          g.narratives.slice(0, 4).map(function(n, i){
+            return ce('p', { key: n.id || i, style: { fontSize:15, lineHeight:1.9, color:C.cream+'CC', marginTop: i===0 ? 0 : 12, marginBottom:0, fontFamily:"'Playfair Display',Georgia,serif", fontStyle:'italic' } }, n.text);
           })
-        )
-      ),
- 
-      // ── DEEP DIVE TOGGLE ─────────────────────────────────────────────────
-      ce('div', { style: { textAlign:'center', margin:'10px 0 20px' } },
-        ce('button', {
-          className: 'cov-deepdive-btn',
-          onClick: function(){ setDeepDive(!deepDive); }
-        },
-          deepDive ? '\u25b2  Collapse Deep Dive' : '\u25bc  Expand Deep Dive  \u2014  Breakdowns + What-If Simulation'
-        )
-      ),
- 
-      // ── DEEP DIVE PANEL ──────────────────────────────────────────────────
-      deepDive && ce(DeepDiveBreakdown, {
-        group: g,
-        playerList: playerList,
-        scenariosCount: scenariosCount
-      })
+        ),
+        // Player chips
+        ce('div', { style: gp },
+          ce('div', { style: sxT2(C.gold) }, 'The Expedition'),
+          ce('div', { style: { display:'flex', gap:10, flexWrap:'wrap' } },
+            playerList.map(function(entry) {
+              return ce(MirrorPlayerCard, { key: entry.pid, player: entry.profile });
+            })
+          )
+        ),
+        // Full breakdown + What-If + per-player breakpoints
+        ce(DeepDiveBreakdown, {
+          group: g,
+          playerList: playerList,
+          scenariosCount: scenariosCount
+        })
+      )
     )
   );
 }
