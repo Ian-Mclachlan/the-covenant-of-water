@@ -2,6 +2,13 @@
 
 What has actually shipped, date-stamped. Newest first. Keep entries to 1–3 lines.
 
+## 2026-04-23 (evening) — Background imagery visibility + Chaotic Capstone spacing
+
+Two surgical visual fixes. Zero changes to `analyze()`, Firebase, `updateBgLayer()`, or `BG_MAP`.
+
+- **`#bgLayer` overlay relaxed** so tier background images are visible as a warm tint across all phases. Compounded `filter: brightness(.3) saturate(.7)` + 85%-opaque top/bottom overlay + 50% corner vignette previously reduced visible image signal to ~5%; revised to `brightness(.55) saturate(.9)` + 55%/15% gradient + 30% vignette (~45% signal in the middle band). Card surface remains ~87% opaque with backdrop-blur, so text legibility is unchanged.
+- **Capstone intro vertical rhythm rebalanced.** The "No single person has enough information to act" sentence, scenario description, and phone-fragment instruction now sit at 28px / 22px / 32px gaps rather than 16/8/20. Scenario paragraph capped at 540px max-width with centered auto margins. Instruction line italicized + letter-spaced to mark it as meta-instruction, not narrative prose. The single-device classic App capstone was left alone — only the multiplayer HostView block was touched.
+
 ## 2026-04-23 (latest) — Stage 3: Mirror debrief restructure
 
 `GroupMirrorHost` rewritten to the spec's 5-section layout. The existing rich visuals (RC gauges, Moral Center radar, per-player chips, What-If sliders, per-player breakpoints, computed narratives) are fully preserved but moved inside the Deep Dive toggle — nothing is lost; the top-level view just leads with synthesis instead of dashboards.

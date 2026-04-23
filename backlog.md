@@ -13,6 +13,7 @@ Beyond the CSS campfire patch. The group safari host screen is currently functio
 - Phase-specific visual choreography (pulse phase, campfire phase, reveal phase each have distinct moods).
 - Reveal phase animation — drift count should land with weight, not just appear.
 - Capstone visual treatment for the chaotic/crisis vibe.
+- **Consider phase-aware overlay intensity.** The 2026-04-23 background visibility patch uses a single global overlay tuned for middle readability. Biome intro screens and the Mirror phase could justify an even lighter overlay (imagery as hero) while dense-text phases like `reading` + `pulsing` could revert to a heavier scrim. Defer until the current global setting reads wrong for a specific phase; premature optimization otherwise.
 
 ### Group safari avatar selection
 - **Add avatar selection step before joining a session.** Player picks one of the 9 instinct animals (or a subset) before entering their name. Mirrors the Solo Safari's "What do you bring to the watering hole?" framing.

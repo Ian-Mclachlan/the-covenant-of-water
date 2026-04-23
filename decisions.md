@@ -64,3 +64,6 @@ Single-axis tagging (`f: "Care"`) gave one data point per choice. Multi-vector (
 
 ## 2026-04-13 — Guaranteed stress gradient in scenario selection
 Random selection within tier left too few data points per stress level for piecewise regression to converge. `selSess()` now returns exactly 2 WONDER + 3 TENSION + 2 FRACTURE + 1 ABYSS + 1 MIRROR in escalating order. The MIRROR scenario is excluded from curve fitting and used as a self-referential narrative coda.
+
+## 2026-04-23 — Outer overlay stays global; text-protection lives on the card
+Considered splitting `#bgLayer` overlay intensity by phase (heavier scrim during dense-text phases like reading/pulsing, lighter during intro/mirror for hero imagery). Declined for now. Reason: the card surface (`cd = C.bg1+"DD"` + backdrop-blur) already does the legibility work — it anchors text on an opaque panel regardless of what's behind. The outer overlay only has to manage atmosphere and avoid competing with nav + headers. A single tuned global pass is simpler to reason about, cheaper to roll back, and passes the "light tint" bar. Revisit if a specific phase demands more or less image prominence than the global setting provides.
