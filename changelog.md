@@ -2,6 +2,18 @@
 
 What has actually shipped, date-stamped. Newest first. Keep entries to 1–3 lines.
 
+## 2026-04-23 — Stage 1 of the Innovation-Readiness spec
+
+Foundation commit for the 2026-04-23 Group Safari spec. Introduces the display-label split, the new biome background images, the biome-intro title card, and the Turn-Taking Equality c-factor metric. Tabs and Mirror-debrief restructure are Stages 2 and 3.
+
+- **TIER_DISPLAY constant + biome names.** Internal data codes (`WONDER`, `TENSION`, `FRACTURE`, `ABYSS`, `MIRROR`) stay unchanged in scenario tags and Firebase writes. Display layer now shows: Short-Grass Plains, Acacia Savanna, Woodland & River, Montane Highlands, The Campfire — with Cynefin domain as subtitle. Helpers `tierLabel(code)` and `tierCynefin(code)` used across the UI.
+- **BG_MAP updated** per spec: WONDER→bg-plains, TENSION→bg-savanna, FRACTURE→bg-river (unchanged), ABYSS→bg-montane.png, MIRROR→bg-milkyway (unchanged), CAPSTONE→bg-abyss (was bg-campfire), plus new CAMPFIRE_PHASE→bg-campfire for the discussion phase. Phase routing in both Host and Player useEffects now sends `campfire` and `capstone_discuss` phases to CAMPFIRE_PHASE while keeping the tier atmosphere.
+- **Biome intro card.** New `biome_intro` phase inserted whenever the game crosses a tier boundary (always at round 0; then again at each new biome). Full-screen title card with "BIOME N OF 5" eyebrow, biome name in Playfair, Cynefin domain in caps, a one-line tagline, and an "Enter [Biome] →" button on the host. Phones mirror a compact version. Host controls advance; no auto-advance (keeps host/player in lockstep on LAN-latency devices).
+- **Turn-Taking Equality metric (Woolley c-factor proxy).** New `computeTurnTakingEquality(pl, gv)` helper computes how evenly each player's pulses align with the group's consensus across all rounds. Perfect equality → 1.0. Attached to `grp.turnTakingEquality` in the `analyze()` return and available to phones via `reshapeResultsForFirebase` (which copies all `grp` keys). Added a 5th `RCGauge` to the `GroupMirrorHost` gauge row.
+- **Two new narrative triggers:** `GT-TT-HIGH` (≥0.75) and `GT-TT-LOW` (≤0.40) surface Woolley's research directly in the "Collective Mirror" panel.
+
+Still to come: tabs (World/Rules/Scoring/Theory/Applications), Mirror-debrief restructure, persistent top-nav for tab access.
+
 ## 2026-04-22 (late) — Campfire atmosphere patch v2 applied
 
 Second-generation atmosphere system replaces the class-based tier rules that were in place since 2026-04-15. All atmospheric effects now hang off `document.body[data-tier]` and a handful of CSS custom properties (`--emb-color`, `--emb-intensity`, `--glow-color`, `--glow-strength`, `--vignette-strength`, `--breath-amp`).

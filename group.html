@@ -231,15 +231,28 @@ const E={lion:"\ud83e\udd81",lock:"\ud83d\udd12",fire:"\ud83d\udd25",crystal:"\u
 
 // ═══ BACKGROUND IMAGE LAYER ═══
 const BG_MAP={
-  WONDER:"img/bg-wonder.jpg",
-  TENSION:"img/bg-tension.jpg",
+  WONDER:"img/bg-plains.jpg",
+  TENSION:"img/bg-savanna.jpg",
   FRACTURE:"img/bg-river.jpg",
-  ABYSS:"img/bg-montane.jpg",
+  ABYSS:"img/bg-montane.png",
   MIRROR:"img/bg-milkyway.jpg",
-  CAPSTONE:"img/bg-campfire.jpg",
+  CAPSTONE:"img/bg-abyss.jpg",
+  CAMPFIRE_PHASE:"img/bg-campfire.jpg",
   welcome:"img/bg-splash.jpg",
   setup:"img/bg-splash.jpg"
 };
+// ═══ TIER DISPLAY — biome name + Cynefin domain + intro tagline ═══
+// Internal data codes (WONDER/TENSION/FRACTURE/ABYSS/MIRROR) are unchanged.
+// Only the display layer uses TIER_DISPLAY[code] for biome name + Cynefin.
+const TIER_DISPLAY={
+  WONDER:   {name:"Short-Grass Plains",   cynefin:"Clear",        tagline:"Orientation. The rules are visible. Trust your senses.",                                    order:1},
+  TENSION:  {name:"Acacia Savanna",       cynefin:"Complicated",  tagline:"Tradeoffs appear. There is no single right answer — only better-informed ones.",          order:2},
+  FRACTURE: {name:"Woodland & River",     cynefin:"Complex",      tagline:"The terrain shifts as you move through it. Trust frays. Loyalty bends.",                  order:3},
+  ABYSS:    {name:"Montane Highlands",    cynefin:"Chaotic",      tagline:"No clean options remain. Every choice costs something. Act anyway.",                      order:4},
+  MIRROR:   {name:"The Campfire",         cynefin:"Reflective",   tagline:"Now the terrain is you. Look at what you became.",                                        order:5}
+};
+function tierLabel(code){var d=TIER_DISPLAY[code];return d?d.name:(code||'');}
+function tierCynefin(code){var d=TIER_DISPLAY[code];return d?d.cynefin:'';}
 function updateBgLayer(key){
   var el=document.getElementById('bgLayer');
   if(!el)return;
@@ -490,7 +503,11 @@ const GROUP_TRIGGERS = [
   {id:"GT-007",conditions:[{m:"distressTolerance",op:">",v:1.2},{m:"cpi",op:"<",v:0.35},{m:"mdt",op:">",v:0.50}],
    narrative:"This group found the Productive Zone of Disequilibrium — enough tension to force honest reckoning, but not so much that bonds fractured. Campfire discussions grew longer under pressure. Private convictions survived the group\'s gravity. Multiple moral languages were spoken."},
   {id:"GT-008",conditions:[{m:"relationalCalibration",op:"<",v:0.35}],
-   narrative:"This group\'s Relational Calibration score was {rcScore} — below the threshold where collective intelligence can emerge. The weakest dimension was {lowestComponent}, scoring {lowestScore}. {lowestDiagnosis}"}
+   narrative:"This group\'s Relational Calibration score was {rcScore} — below the threshold where collective intelligence can emerge. The weakest dimension was {lowestComponent}, scoring {lowestScore}. {lowestDiagnosis}"},
+  {id:"GT-TT-HIGH",conditions:[{m:"turnTakingEquality",op:">=",v:0.75}],
+   narrative:"Your group\'s voice-alignment distribution is remarkably even ({turnTakingEqualityPct}/100). Woolley\'s collective-intelligence research identifies this kind of conversational equality as the strongest behavioral predictor of a team\'s capacity to solve novel problems together."},
+  {id:"GT-TT-LOW",conditions:[{m:"turnTakingEquality",op:"<=",v:0.40}],
+   narrative:"A minority of voices shaped most of your group\'s decisions (turn-taking equality: {turnTakingEqualityPct}/100). This is the pattern Woolley\'s research links to lower collective intelligence — not because the quieter members had less to offer, but because the group never fully accessed it."}
 ];
 
 const SHADOW_DESCS = {
@@ -545,6 +562,32 @@ function generateNarratives(triggers, metrics) {
 // ═══════════════════════════════════════════════════════════════
 // THE ENHANCED ANALYZE FUNCTION
 // ═══════════════════════════════════════════════════════════════
+
+// ═══ TURN-TAKING EQUALITY — c-factor proxy (Woolley) ═══
+// Measures how evenly each player's pulses align with the group's eventual
+// consensus. Perfectly equal alignment → 1.0. Heavily skewed alignment → ~0.
+// Woolley et al. (2010, Science) identified equality-of-turns as the strongest
+// behavioral predictor of collective intelligence (c-factor) on novel problems.
+// We proxy "turns" via pulse ↔ group-vote alignment since direct turn timing
+// isn't captured. Returns a fraction 0–1 (stored like other RC components).
+function computeTurnTakingEquality(pl, gv) {
+  if (!pl || pl.length < 2 || !gv || gv.length === 0) return 0.5;
+  var N = gv.length;
+  var alignCounts = pl.map(function(p) {
+    var c = 0;
+    for (var i = 0; i < N; i++) {
+      if (p.pulses && p.pulses[i] !== undefined && gv[i] !== undefined && p.pulses[i] === gv[i]) c++;
+    }
+    return c;
+  });
+  var sum = alignCounts.reduce(function(a, b) { return a + b; }, 0);
+  if (sum === 0) return 0.5;
+  var mean = sum / alignCounts.length;
+  var variance = alignCounts.reduce(function(acc, c) { return acc + (c - mean) * (c - mean); }, 0) / alignCounts.length;
+  var stddev = Math.sqrt(variance);
+  var cv = mean === 0 ? 0 : stddev / mean;
+  return Math.max(0, Math.min(1, 1 - cv));
+}
 
 function analyze(pl,gv,sc,campDur,sy){
 const N=sc.length;
@@ -852,6 +895,9 @@ if(sy&&sy.length>0){
 }
 const capstoneSynthesis=capstoneSR*synthesisMod;
 
+// ── NEW: Turn-Taking Equality (Woolley c-factor proxy) ──
+const turnTakingEquality = computeTurnTakingEquality(pl, gv);
+
 // ═══ THE NORTH STAR: RELATIONAL CALIBRATION ═══
 const relationalCalibration=(moralElasticity*0.25)+(adaptiveCalibration*0.30)+(holdingEnvironment*0.25)+(capstoneSynthesis*0.20);
 
@@ -895,7 +941,9 @@ const grpNarrativeMetrics={
   rcScore:Math.round(relationalCalibration*100)/100,
   lowestComponent:lowestRC[0].replace("_"," "),
   lowestScore:Math.round(lowestRC[1]*100)/100,
-  lowestDiagnosis:RC_DIAGNOSES[lowestRC[0]]||""
+  lowestDiagnosis:RC_DIAGNOSES[lowestRC[0]]||"",
+  turnTakingEquality:turnTakingEquality,
+  turnTakingEqualityPct:Math.round(turnTakingEquality*100)
 };
 const grpNarratives=generateNarratives(GROUP_TRIGGERS, grpNarrativeMetrics);
 
@@ -908,6 +956,7 @@ return{ind:res,grp:{ad:ad,gf:gf,gak:gak,ga:GA[gak],saf:saf,ap:ap,
   foundationsUsed:foundationsUsed,contextMatches:contextMatches,contextTotal:contextTotal,
   rcComponents:rcComponents,lowestRC:lowestRC,
   domGrpFound:domGrpFound,domGrpFoundPct:domGrpFoundPct,
+  turnTakingEquality:turnTakingEquality,
   narratives:grpNarratives
 }};
 }
@@ -1114,7 +1163,7 @@ const sel=selSess();setSc(sel);setSi(0);setPi(0);setGv([]);setSy([]);setPh("scen
 if(ph==="scen")return ce("div",{style:W},ce("div",{style:cd,className:"fade-up"},
 ce("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:12}},
 ce("div",{style:sb},`Scenario ${si+1} of 9`),
-ce("div",null,ce("span",{style:tg(C.rust)},s.tier),ce("span",{style:tg(C.gold)},`Stress ${s.stress}/10`))),
+ce("div",null,ce("span",{style:tg(C.rust)},tierLabel(s.tier)),ce("span",{style:tg(C.cream+'66')},tierCynefin(s.tier)),ce("span",{style:tg(C.gold)},`Stress ${s.stress}/10`))),
 ce("p",{style:{fontSize:17,lineHeight:1.85,marginBottom:20,fontFamily:"'Playfair Display',Georgia,serif"}},s.text),
 ce("div",{style:{marginBottom:20}},s.options.map((o,i)=>ce("div",{key:i,style:{...ob(false),cursor:"default",opacity:.6}},
 ce("span",{style:{color:C.gold,fontWeight:700,marginRight:8}},String.fromCharCode(65+i)+"."),o.t))),
@@ -2083,11 +2132,12 @@ function GroupMirrorHost(props) {
         ce('div', { style: Object.assign({}, ts, { fontSize: 84, fontWeight:300, color: rcCol, fontFamily:'monospace', lineHeight:1, textShadow:'0 0 40px ' + rcCol + '66, 0 4px 20px rgba(0,0,0,0.5)' }) },
           pct(RC) + '%'
         ),
-        // Four sub-component gauges
+        // Five sub-component gauges (added Turn-Taking Equality 2026-04-23)
         ce('div', { style: { display:'flex', justifyContent:'center', gap:18, flexWrap:'wrap', marginTop:22 } },
           ce(RCGauge, { value: g.moralElasticity || 0,      label: 'Moral Elasticity',     color: C.gold,     size: 86 }),
           ce(RCGauge, { value: g.adaptiveCalibration || 0,  label: 'Adaptive Calibration', color: C.equality, size: 86 }),
           ce(RCGauge, { value: g.holdingEnvironment || 0,   label: 'Holding Environment',  color: C.green,    size: 86 }),
+          ce(RCGauge, { value: g.turnTakingEquality || 0,   label: 'Turn-Taking',          color: C.rust,     size: 86 }),
           ce(RCGauge, { value: g.capstoneSynthesis || 0,    label: 'Capstone Synthesis',   color: C.purity,   size: 86 })
         )
       ),
@@ -2356,7 +2406,9 @@ function HostView() {
     updateAtmosphere(ph2);
     if(ph2==='lobby')updateBgLayer('welcome');
     else if(ph2==='analyzing'||ph2==='mirror'||ph2==='final')updateBgLayer('MIRROR');
+    else if(ph2==='capstone_discuss')updateBgLayer('CAMPFIRE_PHASE');
     else if(ph2&&ph2.indexOf('capstone')===0)updateBgLayer('CAPSTONE');
+    else if(ph2==='campfire')updateBgLayer('CAMPFIRE_PHASE');
     else if(s2)updateBgLayer(s2.tier||'WONDER');
     else updateBgLayer('welcome');
   }, [round, scenarios]);
@@ -2375,7 +2427,11 @@ var handleStart = function() {
     var capIdx = Math.floor(Math.random() * CAPSTONES.length);
     setCapstoneByIndex(capIdx);
     firebase.database().ref('sessions/' + sessionId + '/capstoneIndex').set(capIdx);
-    CovenantFirebase.startGame(sessionId, selected);
+    // First scenario is always a new biome (WONDER / Plains). Override startGame's
+    // default phase='reading' with 'biome_intro' so the player sees the biome card first.
+    CovenantFirebase.startGame(sessionId, selected).then(function(){
+      return CovenantFirebase.setPhase(sessionId, 'biome_intro');
+    });
 };
 
   // FIX #3: Store group vote locally + in allGroupVotes array
@@ -2399,7 +2455,14 @@ var handleStart = function() {
     if (nextIndex >= scenarios.length) {
       CovenantFirebase.setPhase(sessionId, 'capstone_intro');
     } else {
-      CovenantFirebase.setRound(sessionId, nextIndex);
+      var nextTier = scenarios[nextIndex] && scenarios[nextIndex].tier;
+      var prevTier = scenarios[ri] && scenarios[ri].tier;
+      var crossingBiome = nextTier && nextTier !== prevTier;
+      CovenantFirebase.setRound(sessionId, nextIndex).then(function(){
+        if (crossingBiome) {
+          return CovenantFirebase.setPhase(sessionId, 'biome_intro');
+        }
+      });
     }
   };
 
@@ -2498,13 +2561,27 @@ var handleAnalyze = function() {
   // ── LOBBY ──
   if (phase === 'lobby') return ce(HostLobby, { sessionId:sessionId, joinCode:joinCode, players:players, onStart:handleStart });
 
+  // ── BIOME INTRO — full-screen title card on tier transitions ──
+  if (phase === 'biome_intro' && s) {
+    var td_ = TIER_DISPLAY[s.tier] || { name: s.tier, cynefin: '', tagline: '', order: 0 };
+    return ce('div', { style: W },
+      ce('div', { style: { width:'100%', maxWidth:720, padding:'56px 40px', textAlign:'center', background:'rgba(10,20,10,0.55)', borderRadius:20, backdropFilter:'blur(10px)', WebkitBackdropFilter:'blur(10px)', border:'1px solid '+C.gold+'44', boxShadow:'0 20px 60px rgba(0,0,0,0.45)' }, className:'fade-up' },
+        ce('div', { style: { fontSize:11, letterSpacing:3, color:C.gold, fontWeight:700, marginBottom:10 } }, 'BIOME ' + td_.order + ' OF 5'),
+        ce('h1', { style: Object.assign({}, ts, { fontSize:'clamp(28px,5vw,44px)', fontFamily:"'Playfair Display',Georgia,serif", color:C.cream, margin:'0 0 10px', lineHeight:1.1 }) }, td_.name),
+        ce('div', { style: { fontSize:13, letterSpacing:2, color:C.gold, marginBottom:26, fontWeight:600 } }, (td_.cynefin||'').toUpperCase()),
+        ce('p', { style: { fontSize:17, lineHeight:1.7, fontStyle:'italic', color:C.cream+'CC', maxWidth:480, margin:'0 auto 32px', fontFamily:"'Playfair Display',Georgia,serif" } }, td_.tagline),
+        ce('button', { style: bt, onClick: function(){ CovenantFirebase.setPhase(sessionId, 'reading'); } }, 'Enter ' + td_.name + ' →')
+      )
+    );
+  }
+
   // ── READING ──
   if (phase === 'reading' && s) {
     return ce('div', { style: W },
       ce('div', { style: cd, className: 'fade-up' },
         ce('div', { style: { display:'flex', justifyContent:'space-between', marginBottom:12 } },
           ce('div', { style: sb }, 'Scenario '+(ri+1)+' of '+scenarios.length),
-          ce('div', null, ce('span', { style: tg(C.rust) }, s.tier), ce('span', { style: tg(C.gold) }, 'Stress '+s.stress+'/10'))
+          ce('div', null, ce('span', { style: tg(C.rust) }, tierLabel(s.tier)), ce('span', { style: tg(C.cream+'66') }, tierCynefin(s.tier)), ce('span', { style: tg(C.gold) }, 'Stress '+s.stress+'/10'))
         ),
         ce('p', { style: { fontSize:17, lineHeight:1.85, marginBottom:20, fontFamily:"'Playfair Display',Georgia,serif" } }, s.text),
         ce('div', { style: { marginBottom:20 } },
@@ -2808,7 +2885,9 @@ function PlayerView() {
     updateAtmosphere(ph2);
     if(ph2==='lobby')updateBgLayer('setup');
     else if(ph2==='analyzing'||ph2==='mirror'||ph2==='final')updateBgLayer('MIRROR');
+    else if(ph2==='capstone_discuss')updateBgLayer('CAMPFIRE_PHASE');
     else if(ph2&&ph2.indexOf('capstone')===0)updateBgLayer('CAPSTONE');
+    else if(ph2==='campfire')updateBgLayer('CAMPFIRE_PHASE');
     else if(s2)updateBgLayer(s2.tier||'WONDER');
     else updateBgLayer('setup');
   }, [round, scenarios]);
@@ -2909,6 +2988,18 @@ function PlayerView() {
           ce('div', { style: { color:C.gold, fontSize:14, fontWeight:600 } }, playerCount+' players connected'))
       )
     );
+  }
+
+  // BIOME INTRO — phones mirror the biome card shown on the host screen
+  if (phase === 'biome_intro') {
+    var td_ = (s && TIER_DISPLAY[s.tier]) || { name: 'New Biome', cynefin: '', tagline: '', order: 0 };
+    return ce('div', { style: W }, ce('div', { style: Object.assign({}, cd, { textAlign:'center' }), className:'fade-up' },
+      ce('div', { style: { fontSize:10, letterSpacing:3, color:C.gold, fontWeight:700, marginBottom:8 } }, 'BIOME ' + td_.order + ' OF 5'),
+      ce('h1', { style: Object.assign({}, h1, { fontSize:26, fontFamily:"'Playfair Display',Georgia,serif", color:C.cream, margin:'0 0 6px' }) }, td_.name),
+      ce('div', { style: { fontSize:11, letterSpacing:2, color:C.gold, marginBottom:18, fontWeight:600 } }, (td_.cynefin||'').toUpperCase()),
+      ce('p', { style: { fontSize:14.5, lineHeight:1.7, fontStyle:'italic', color:C.cream+'AA', fontFamily:"'Playfair Display'" } }, td_.tagline),
+      ce('p', { style: Object.assign({}, dm, { marginTop:22, fontSize:12 }) }, 'The host will continue.')
+    ));
   }
 
   // READING
