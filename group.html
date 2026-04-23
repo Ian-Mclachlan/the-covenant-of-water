@@ -51,32 +51,6 @@ h1.dsp{font-family:'Playfair Display',Georgia,serif;font-weight:400;letter-spaci
   filter: blur(0.4px);
   opacity: 0;
 }
-@keyframes emberRise {
-  0%   { opacity: 0; transform: translateY(0) translateX(0) scale(1); }
-  8%   { opacity: 1; }
-  55%  { opacity: 0.85; transform: translateY(-55vh) translateX(14px) scale(0.9); }
-  100% { opacity: 0; transform: translateY(-115vh) translateX(-8px) scale(0.3); }
-}
-.ember:nth-child(1)  { left: 8%;  animation: emberRise 9s  linear infinite; animation-delay: 0s; }
-.ember:nth-child(2)  { left: 14%; animation: emberRise 11s linear infinite; animation-delay: 1.8s; }
-.ember:nth-child(3)  { left: 22%; animation: emberRise 8.5s linear infinite; animation-delay: 3s; }
-.ember:nth-child(4)  { left: 28%; animation: emberRise 12s linear infinite; animation-delay: 0.5s; }
-.ember:nth-child(5)  { left: 35%; animation: emberRise 10s linear infinite; animation-delay: 4s; }
-.ember:nth-child(6)  { left: 42%; animation: emberRise 7.8s linear infinite; animation-delay: 2s; }
-.ember:nth-child(7)  { left: 48%; animation: emberRise 11.5s linear infinite; animation-delay: 5s; }
-.ember:nth-child(8)  { left: 55%; animation: emberRise 9.5s linear infinite; animation-delay: 1.2s; }
-.ember:nth-child(9)  { left: 62%; animation: emberRise 13s linear infinite; animation-delay: 3.8s; }
-.ember:nth-child(10) { left: 69%; animation: emberRise 10.5s linear infinite; animation-delay: 0.8s; }
-.ember:nth-child(11) { left: 76%; animation: emberRise 8.8s linear infinite; animation-delay: 4.5s; }
-.ember:nth-child(12) { left: 82%; animation: emberRise 12.5s linear infinite; animation-delay: 2.5s; }
-.ember:nth-child(13) { left: 89%; animation: emberRise 9.8s linear infinite; animation-delay: 5.5s; }
-.ember:nth-child(14) { left: 94%; animation: emberRise 11.8s linear infinite; animation-delay: 1.5s; width: 3px; height: 3px; }
-.ember:nth-child(15) { left: 18%; animation: emberRise 14s linear infinite; animation-delay: 6s;   width: 5px; height: 5px; }
-.ember:nth-child(16) { left: 45%; animation: emberRise 13.5s linear infinite; animation-delay: 7s;  width: 5px; height: 5px; }
-.ember:nth-child(17) { left: 72%; animation: emberRise 15s linear infinite; animation-delay: 8s;   width: 3px; height: 3px; }
-.ember:nth-child(18) { left: 32%; animation: emberRise 12.8s linear infinite; animation-delay: 6.5s; width: 3px; height: 3px; }
-.ember:nth-child(19) { left: 58%; animation: emberRise 10.8s linear infinite; animation-delay: 7.5s; width: 4px; height: 4px; }
-.ember:nth-child(20) { left: 86%; animation: emberRise 14.5s linear infinite; animation-delay: 4.8s; width: 4px; height: 4px; }
 
 /* Campfire glow — warm radial light emanating from bottom-center */
 #campfireGlow {
@@ -113,23 +87,8 @@ h1.dsp{font-family:'Playfair Display',Georgia,serif;font-weight:400;letter-spaci
 }
 
 /* ── Tier-based body classes ── */
-body.tier-WONDER   #tierVignette { opacity: 0.35; box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.30); }
-body.tier-TENSION  #tierVignette { opacity: 0.55; box-shadow: inset 0 0 220px rgba(40, 15, 5, 0.50); }
-body.tier-FRACTURE #tierVignette { opacity: 0.75; box-shadow: inset 0 0 300px rgba(80, 20, 10, 0.65); }
-body.tier-ABYSS    #tierVignette { opacity: 0.92; box-shadow: inset 0 0 380px rgba(20, 5, 15, 0.85),
-                                                              inset 0 0 140px rgba(100, 30, 20, 0.30); }
-body.tier-MIRROR   #tierVignette { opacity: 0.60; box-shadow: inset 0 0 260px rgba(10, 20, 40, 0.55); }
-body.tier-CAPSTONE #tierVignette { opacity: 0.82; box-shadow: inset 0 0 320px rgba(60, 20, 10, 0.70); }
 
 /* Ember intensity scales with tier */
-body.tier-WONDER   #emberLayer { opacity: 0.25; }
-body.tier-TENSION  #emberLayer { opacity: 0.50; }
-body.tier-FRACTURE #emberLayer { opacity: 0.80; }
-body.tier-ABYSS    #emberLayer { opacity: 1.00; }
-body.tier-MIRROR   #emberLayer { opacity: 0.35; }
-body.tier-CAPSTONE #emberLayer { opacity: 1.00; }
-body.tier-welcome  #emberLayer,
-body.tier-setup    #emberLayer { opacity: 0; }
 
 /* Campfire-specific atmosphere — kicks in during 'campfire' and 'capstone_discuss' phases */
 body.atmo-campfire #campfireGlow { opacity: 1; }
@@ -171,6 +130,88 @@ body.tier-ABYSS #root > div > div {
   }
   #emberLayer { display: none; }
 } 
+
+/* ═══ CAMPFIRE ATMOSPHERE PATCH v2 — data-tier driven ═══
+   Replaces the class-based tier rules above with CSS-variable-driven
+   rules keyed on body[data-tier]. Coexists with the card-warmth rules
+   (still class-based) since they target a different selector surface. */
+
+body{
+  --emb-color: #D4A844;
+  --emb-intensity: 0.06;
+  --glow-color: 200,164,90;
+  --glow-strength: 0.05;
+  --vignette-strength: 0.55;
+  --breath-amp: 0;
+  transition: background .8s ease;
+}
+body[data-tier="WONDER"]   { --emb-color:#E8C078; --emb-intensity:.05; --glow-color:200,164,90;  --glow-strength:.06; --vignette-strength:.45; --breath-amp:0; }
+body[data-tier="TENSION"]  { --emb-color:#E8A050; --emb-intensity:.08; --glow-color:212,140,68;  --glow-strength:.09; --vignette-strength:.55; --breath-amp:0; }
+body[data-tier="FRACTURE"] { --emb-color:#D87038; --emb-intensity:.12; --glow-color:184, 92,58;  --glow-strength:.12; --vignette-strength:.68; --breath-amp:.015; }
+body[data-tier="ABYSS"]    { --emb-color:#C84028; --emb-intensity:.16; --glow-color:160, 40,40;  --glow-strength:.14; --vignette-strength:.78; --breath-amp:.025; }
+body[data-tier="CAPSTONE"] { --emb-color:#E08838; --emb-intensity:.18; --glow-color:212,120,48;  --glow-strength:.16; --vignette-strength:.72; --breath-amp:.020; }
+body[data-tier="MIRROR"]   { --emb-color:#7CB5E8; --emb-intensity:.04; --glow-color: 80,120,180; --glow-strength:.05; --vignette-strength:.50; --breath-amp:0; }
+body[data-tier="welcome"], body[data-tier="setup"] { --emb-intensity:0; --glow-strength:0; --vignette-strength:.30; }
+
+#campfireGlow{
+  position:fixed; inset:0; z-index:2; pointer-events:none;
+  background: radial-gradient(ellipse 70% 50% at 50% 100%,
+              rgba(var(--glow-color), var(--glow-strength)) 0%,
+              transparent 65%);
+  transition: background 1.2s ease;
+  opacity: 1;
+}
+
+#tierVignette{
+  position:fixed; inset:0; z-index:3; pointer-events:none;
+  background: radial-gradient(ellipse at center,
+              transparent 35%,
+              rgba(8,4,4, var(--vignette-strength)) 100%);
+  transition: background 1.2s ease;
+  animation: vignetteBreathe 7s ease-in-out infinite;
+  opacity: 1;
+  box-shadow: none;
+}
+@keyframes vignetteBreathe{
+  0%,100%{ filter: brightness(1); }
+  50%   { filter: brightness(calc(1 + var(--breath-amp))); }
+}
+
+#emberLayer{
+  position:fixed; inset:0; z-index:2; pointer-events:none; overflow:hidden;
+  opacity: 1;
+}
+.ember{
+  position:absolute; bottom:-12px;
+  width:3px; height:3px;
+  background: var(--emb-color);
+  border-radius:50%;
+  opacity:0;
+  filter: blur(0.5px);
+  box-shadow: 0 0 6px var(--emb-color);
+  animation: emberFloat var(--dur,11s) var(--delay,0s) infinite ease-in;
+}
+@keyframes emberFloat{
+  0%   { opacity:0; transform: translate3d(0,0,0) scale(.7); }
+  10%  { opacity: calc(var(--max-op,.10) * var(--emb-intensity, 0.06) * 8); }
+  85%  { opacity: calc(var(--max-op,.10) * var(--emb-intensity, 0.06) * 8); }
+  100% { opacity:0; transform: translate3d(var(--drift,20px), -110vh, 0) scale(1.1); }
+}
+
+body::after{
+  content:''; position:fixed; inset:0; z-index:9999;
+  pointer-events:none; opacity:.04;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+  background-repeat:repeat; background-size:256px;
+  mix-blend-mode:overlay;
+}
+
+@media (prefers-reduced-motion: reduce){
+  .ember, #tierVignette { animation: none !important; }
+  .ember { display:none; }
+  #campfireGlow, #tierVignette { transition: none; }
+}
+
 </style>
 </head>
 <body>
@@ -178,13 +219,7 @@ body.tier-ABYSS #root > div > div {
 <div id="bgLayer"></div>
   <div id="tierVignette"></div>
 <div id="campfireGlow"></div>
-<div id="emberLayer">
-  <div class="ember"></div><div class="ember"></div><div class="ember"></div><div class="ember"></div>
-  <div class="ember"></div><div class="ember"></div><div class="ember"></div><div class="ember"></div>
-  <div class="ember"></div><div class="ember"></div><div class="ember"></div><div class="ember"></div>
-  <div class="ember"></div><div class="ember"></div><div class="ember"></div><div class="ember"></div>
-  <div class="ember"></div><div class="ember"></div><div class="ember"></div><div class="ember"></div>
-</div>
+<div id="emberLayer"></div>
 <div id="root"></div>
 <script type="text/babel">
 
@@ -237,6 +272,42 @@ function updateAtmosphere(phase){
     body.classList.add('atmo-campfire');
   }
 }
+
+// ═══ CAMPFIRE ATMOSPHERE — tier broadcaster + ember spawner ═══
+(function(){
+  // Wrap updateBgLayer so every tier change also propagates to body[data-tier].
+  // All atmospheric CSS hangs off this attribute.
+  var _origUpdateBg = updateBgLayer;
+  updateBgLayer = function(key){
+    try { document.body.setAttribute('data-tier', key || 'welcome'); } catch(e){}
+    return _origUpdateBg(key);
+  };
+
+  // Spawn 20 ember elements with randomized timing/drift/opacity.
+  // Pure DOM — no React, no state, no re-renders.
+  function spawnEmbers(){
+    var layer = document.getElementById('emberLayer');
+    if(!layer || layer.childElementCount > 0) return;
+    var rand = function(min,max){ return min + Math.random()*(max-min); };
+    for(var i=0;i<20;i++){
+      var em = document.createElement('div');
+      em.className = 'ember';
+      em.style.left           = rand(4, 96).toFixed(1) + '%';
+      em.style.setProperty('--dur',    rand(8, 15).toFixed(1) + 's');
+      em.style.setProperty('--delay',  rand(0, 12).toFixed(1) + 's');
+      em.style.setProperty('--drift',  rand(-50, 50).toFixed(0) + 'px');
+      em.style.setProperty('--max-op', rand(0.6, 1.4).toFixed(2));
+      layer.appendChild(em);
+    }
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', spawnEmbers);
+  } else {
+    spawnEmbers();
+  }
+})();
+// ═══ END CAMPFIRE ATMOSPHERE ═══
+
 // Preload background images
 Object.values(BG_MAP).forEach(function(src){var img=new Image();img.src=src;});
 const ALL=[{id:"GS-001",tier:"WONDER",stress:2,cynefin:"Clear",theme:"Sacred",text:"A dung beetle navigates the Serengeti using the faint light of the Milky Way to roll its ball in a straight line. A fellow traveler reaches down to pick it up for a photo, disorienting its celestial alignment.",caf:"Care",options:[{t:"Speak up immediately to protect the beetle from unnecessary stress.",f:"Care",fw:{Care:0.85,Authority:0.15}},{t:"Remind the traveler that park rules strictly forbid touching wildlife.",f:"Authority",fw:{Authority:0.90}},{t:"Explain that every creature, no matter how small, deserves undisturbed passage.",f:"Equality",fw:{Equality:0.80,Care:0.25}},{t:"Silently step between the traveler and the beetle to block them.",f:"Purity",fw:{Purity:0.70,Care:0.30}}],teach:"Dung beetles are the first known non-human animals to use the Milky Way for navigation, confirmed by researchers at Wits University."},

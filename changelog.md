@@ -2,6 +2,19 @@
 
 What has actually shipped, date-stamped. Newest first. Keep entries to 1–3 lines.
 
+## 2026-04-22 (late) — Campfire atmosphere patch v2 applied
+
+Second-generation atmosphere system replaces the class-based tier rules that were in place since 2026-04-15. All atmospheric effects now hang off `document.body[data-tier]` and a handful of CSS custom properties (`--emb-color`, `--emb-intensity`, `--glow-color`, `--glow-strength`, `--vignette-strength`, `--breath-amp`).
+
+- **Tier broadcaster.** `updateBgLayer` wrapped in an IIFE that also calls `body.setAttribute('data-tier', key)` on every phase transition. Original class-setting left intact so existing card-warmth and campfire-phase rules keep working.
+- **Randomized ember spawner.** 20 static `<div class="ember">` elements removed from `<body>`; JS now creates 20 fresh embers on DOMContentLoaded with randomized `--dur`, `--delay`, `--drift`, `--max-op` per particle. No more hardcoded nth-child timings.
+- **Vignette, glow, embers all rebuilt** as radial gradients with tier-responsive intensity via CSS vars instead of per-tier opacity/box-shadow rules. Deleted ~40 lines of dead class-based CSS.
+- **Film grain** layer added via `body::after` at 4% opacity with `mix-blend-mode: overlay`.
+- **Vignette-breathe** animation — subtle brightness pulse, amplitude scales with tier stress (0 at WONDER/TENSION/MIRROR, 1.5% FRACTURE, 2.5% ABYSS, 2.0% CAPSTONE).
+- **Reduced-motion preserved** — all ember animation and vignette breathe disabled when `prefers-reduced-motion: reduce`.
+
+Quick verification: DevTools → `<body>` should show `data-tier="WONDER"` (or current tier) as an attribute.
+
 ## 2026-04-22 — Mirror bridge restored + drift reveal rewritten + avatar/name polish
 
 One evening pass on the post-Mirror-enrichment backlog. Five-in-one.

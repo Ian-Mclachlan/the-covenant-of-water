@@ -8,7 +8,7 @@ Organized by priority. Move items into GitHub Issues when actively working on th
 ### Host visual atmosphere expansion
 
 Beyond the CSS campfire patch. The group safari host screen is currently functional but visually thin compared to the Solo Safari. After Mirror enrichment is done, expand the host experience with:
-- Apply the campfire atmosphere patch (already written, CSS-only, zero-logic — `CAMPFIRE_ATMOSPHERE_PATCH.md`).
+- ~~Apply the campfire atmosphere patch (already written, CSS-only, zero-logic — `CAMPFIRE_ATMOSPHERE_PATCH.md`).~~ ✅ Shipped 2026-04-22 — v2 patch applied (data-tier attribute system, CSS-variable driven, randomized per-ember vars via JS spawner, film grain, vignette-breathe). Old class-based rules removed; card warmth and campfire-phase overrides retained.
 - Per-scenario atmospheric backgrounds, not just per-tier.
 - Phase-specific visual choreography (pulse phase, campfire phase, reveal phase each have distinct moods).
 - Reveal phase animation — drift count should land with weight, not just appear.
