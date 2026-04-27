@@ -2,6 +2,13 @@
 
 What has actually shipped, date-stamped. Newest first. Keep entries to 1–3 lines.
 
+## 2026-04-23 (night) — The two fixes that finally make tier imagery visible
+
+The earlier "background imagery visibility" patch tuned the right knobs but missed two structural blockers above `#bgLayer` in the stack:
+
+- **Multiplayer `W` wrapper was painting a solid dark-green gradient.** `#root` sits at z-index:1 above `#bgLayer` at z-index:0, and `W`'s gradient was filling the entire viewport. No amount of relaxing `#bgLayer`'s overlay could help because `W` was opaque on top. Set `W.background` to `transparent`. Now the stacking chain is: body bg fallback → `#bgLayer` image + relaxed overlay → `#root` → transparent `W` → translucent cards.
+- **The `cd` card was 87% opaque** (`C.bg1+"DD"` = `rgba(10,26,12,0.87)`). Fine on phones where the 620px card fills the narrow viewport, terrible on iPad/desktop where the biome image is visible around the card and the eye lands on a flat opaque rectangle in the middle. Switched `cd` to the same translucent-glass recipe already used on the Mirror's `gp` style: `rgba(14,32,18,0.62)` background + `blur(20px) saturate(140%)` backdrop filter (with `-webkit-` prefix for Safari) + soft drop shadow. Text legibility is preserved by the heavier blur and saturation; biomes now read through as soft halo color.
+
 ## 2026-04-23 (evening) — Background imagery visibility + Chaotic Capstone spacing
 
 Two surgical visual fixes. Zero changes to `analyze()`, Firebase, `updateBgLayer()`, or `BG_MAP`.
