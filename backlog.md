@@ -16,10 +16,10 @@ Beyond the CSS campfire patch. The group safari host screen is currently functio
 - **Consider phase-aware overlay intensity.** The 2026-04-23 background visibility patch uses a single global overlay tuned for middle readability. Biome intro screens and the Mirror phase could justify an even lighter overlay (imagery as hero) while dense-text phases like `reading` + `pulsing` could revert to a heavier scrim. Defer until the current global setting reads wrong for a specific phase; premature optimization otherwise.
 
 ### Group safari avatar selection
-- **Add avatar selection step before joining a session.** Player picks one of the 9 instinct animals (or a subset) before entering their name. Mirrors the Solo Safari's "What do you bring to the watering hole?" framing.
-- **Display chosen avatar throughout the player's experience:** in the lobby roster, at the top of the pulse screen, on the prediction screen, and on the personal Mirror.
-- **Capture avatar choice as data, but do NOT yet use it as a Bayesian prior in analyze().** Store at `sessions/{id}/players/{pid}/avatarId` for future research. See `decisions.md` for full reasoning.
-- ~~Replace the lion emoji on the player join screen with a real animal portrait.~~ ✅ Shipped 2026-04-22 — `elephant.jpg` portrait now renders on the join card.
+- ~~Add avatar selection step before joining a session.~~ ✅ Shipped 2026-04-24 — 3×3 picker between join code and name entry. Required, no skip. Solo's 9 instincts (Elephant, Lion, Hippo, Monkey, Owl, Meerkat, Bonobo, Peacock, Songbird) reused exactly. Uniqueness enforced live in the picker (greys out taken animals via `onPlayersChanged` snapshot) and defensively at the bridge (`joinSession` re-checks before write).
+- ~~Display chosen avatar throughout the player's experience.~~ ✅ Shipped 2026-04-24 — lobby roster (host + player), pulse screen header, prediction screen header, `PlayerMirrorPhone` secondary badge, `MirrorPlayerCard` chips on host (replaces emoji). `reshapeResultsForFirebase` now copies `avatarId` onto each engine profile so display surfaces don't need their own subscription.
+- ~~Capture avatar choice as data, but do NOT yet use it as a Bayesian prior in analyze().~~ ✅ Shipped 2026-04-24 — stored at `sessions/{id}/players/{pid}/avatarId`. `analyze()` does NOT read it. See `decisions.md` (2026-04-24 — Avatar choice is captured but excluded from analyze() as a prior) for the demand-characteristics reasoning.
+- ~~Replace the lion emoji on the player join screen with a real animal portrait.~~ ✅ Shipped 2026-04-22.
 
 ### Content & messaging changes
 - **Update solo safari context tabs (World, Rules, Scoring, Psychology).** Current copy describes the v1 psychometric engine. Rewrite to reflect v2 — foundation weights, Euclidean archetypes, piecewise breakpoints, shadow scoring, drift analysis.

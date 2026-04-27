@@ -142,9 +142,11 @@
    *
    * @param {string} sessionId
    * @param {string} playerName
+   * @param {string|null} [avatarId] - Optional avatar id chosen during the picker step.
+   *   Stored on the player object for display + future research; NOT used in analyze().
    * @returns {Promise<{playerId: string}>}
    */
-  async function joinSession(sessionId, playerName) {
+  async function joinSession(sessionId, playerName, avatarId) {
     ensureInit();
     const deviceId = generateDeviceId();
 
@@ -161,7 +163,16 @@
       if (pdata.deviceId === deviceId) {
         console.log('[CovenantFirebase] Reconnected as', pid);
         await db.ref('sessions/' + sessionId + '/players/' + pid + '/connected').set(true);
-        return { playerId: pid };
+        return { playerId: pid, avatarId: pdata.avatarId || null };
+      }
+    }
+
+    // Enforce avatar uniqueness — defensive check; the picker UI also disables taken ones.
+    if (avatarId) {
+      for (const [, pdata] of Object.entries(existingPlayers)) {
+        if (pdata.avatarId === avatarId) {
+          throw new Error('That avatar is already taken in this session');
+        }
       }
     }
 
@@ -173,6 +184,7 @@
     await db.ref('sessions/' + sessionId + '/players/' + playerId).set({
       name: playerName.trim(),
       deviceId: deviceId,
+      avatarId: avatarId || null,
       joinedAt: firebase.database.ServerValue.TIMESTAMP,
       connected: true
     });
@@ -184,8 +196,8 @@
     const connRef = db.ref('sessions/' + sessionId + '/players/' + playerId + '/connected');
     connRef.onDisconnect().set(false);
 
-    console.log('[CovenantFirebase] Joined as', playerId, ':', playerName);
-    return { playerId };
+    console.log('[CovenantFirebase] Joined as', playerId, ':', playerName, 'avatar:', avatarId || '(none)');
+    return { playerId, avatarId: avatarId || null };
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -525,6 +537,7 @@
 
     const playerIds = Object.keys(players).sort();
     const playerNames = playerIds.map(pid => players[pid].name || pid);
+    const playerAvatarIds = playerIds.map(pid => players[pid].avatarId || null);
     const roundCount = scenarios.length;
 
     // Build pl array in the format analyze() expects
@@ -591,6 +604,7 @@
       groupVotes,
       playerIds,
       playerNames,
+      playerAvatarIds,
       playerCount: playerIds.length
     };
   }
@@ -603,7 +617,7 @@
   // This bridges the two without changing the engine. Undefined fields are
   // converted to null because Firebase silently drops undefined on write.
 
-  function reshapeResultsForFirebase(analyzeOut, playerIds, playerNames) {
+  function reshapeResultsForFirebase(analyzeOut, playerIds, playerNames, playerAvatarIds) {
     if (!analyzeOut || !analyzeOut.ind || !analyzeOut.grp) {
       return { players: {}, group: {}, playerOrder: playerIds || [], error: 'analyze() returned empty' };
     }
@@ -618,6 +632,7 @@
         out[k] = (v === undefined) ? null : v;
       });
       out.name = (playerNames && playerNames[idx]) || null;
+      out.avatarId = (playerAvatarIds && playerAvatarIds[idx]) || null;
       out.playerIndex = idx;
       players[pid] = out;
     });

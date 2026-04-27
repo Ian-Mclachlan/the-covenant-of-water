@@ -2,6 +2,15 @@
 
 What has actually shipped, date-stamped. Newest first. Keep entries to 1–3 lines.
 
+## 2026-04-24 — Avatar selection flow (Group Safari)
+
+Players now pick one of the 9 instinct animals (Solo Safari's `IN[]`) before joining a session. The flow on phones is: enter join code → **pick avatar** → enter name → land in lobby. The avatar carries through every player-facing surface so each player has a visible identity from start to finish, while the engine's archetype output remains the primary identity in the Mirror.
+
+- **`firebase-bridge.js`.** `joinSession(sessionId, name, avatarId)` now accepts an avatar id, defensively re-checks uniqueness against `players[*].avatarId`, and writes it atomically alongside name + deviceId. Reconnect path returns the existing avatar from the player record. `transformForAnalyze` builds a `playerAvatarIds` parallel array; `reshapeResultsForFirebase(... , playerAvatarIds)` copies each `avatarId` onto the engine profile so the Mirror surfaces have it without re-querying.
+- **Picker.** New phase before name entry on phones: 3×3 grid of portraits, gold ring on selection, taken animals greyed out + disabled (live from `onPlayersChanged`). Required step — no skip, no default.
+- **Display points wired.** Lobby roster (host + player), pulse-screen header, prediction-screen header, `PlayerMirrorPhone` (small secondary badge top-left), `MirrorPlayerCard` chips on the host (replaces emoji with portrait when avatar is set).
+- **Engine isolation.** `analyze()` does NOT read `avatarId`. Captured for display + future research only — see `decisions.md` (2026-04-24 entry on demand-characteristics avoidance).
+
 ## 2026-04-23 (night) — The two fixes that finally make tier imagery visible
 
 The earlier "background imagery visibility" patch tuned the right knobs but missed two structural blockers above `#bgLayer` in the stack:

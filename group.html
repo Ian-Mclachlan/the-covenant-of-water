@@ -295,6 +295,23 @@ const TIER_DISPLAY={
 };
 function tierLabel(code){var d=TIER_DISPLAY[code];return d?d.name:(code||'');}
 function tierCynefin(code){var d=TIER_DISPLAY[code];return d?d.cynefin:'';}
+
+// ═══ AVATARS — 9 instinct animals borrowed from Solo Safari ═══
+// id matches Solo's IN[] entries; portraits live in /img/.
+// avatarId is captured per-player at join time but is NEVER used as a prior in
+// analyze() — see decisions.md (2026-04-23 Avatar choice excluded as a prior).
+var AVATARS = [
+  { id:'elephant', name:'Elephant', label:'Order',     blurb:'Structure, protocol',  img:'img/elephant.jpg' },
+  { id:'lion',     name:'Lion',     label:'Force',     blurb:'Assert control',       img:'img/lion.jpg'     },
+  { id:'hippo',    name:'Hippo',    label:'Harmony',   blurb:'De-escalate, hold',    img:'img/hippo.jpg'    },
+  { id:'monkey',   name:'Monkey',   label:'Explore',   blurb:'Creative path',        img:'img/monkey.png'   },
+  { id:'owl',      name:'Owl',      label:'Know',      blurb:'Pause, observe',       img:'img/owl.jpg'      },
+  { id:'meerkat',  name:'Meerkat',  label:'Vigilance', blurb:'Guard the group',      img:'img/meerkat.jpg'  },
+  { id:'bonobo',   name:'Bonobo',   label:'Care',      blurb:'Repair bonds',         img:'img/bonobo.jpg'   },
+  { id:'peacock',  name:'Peacock',  label:'Status',    blurb:'Manage optics',        img:'img/peacock.jpg'  },
+  { id:'songbird', name:'Songbird', label:'Meaning',   blurb:'Honor purpose',        img:'img/songbird.jpg' }
+];
+function avatarById(id){ if(!id)return null; for(var i=0;i<AVATARS.length;i++){ if(AVATARS[i].id===id) return AVATARS[i]; } return null; }
 function updateBgLayer(key){
   var el=document.getElementById('bgLayer');
   if(!el)return;
@@ -1902,10 +1919,16 @@ function HostLobby(props) {
         playerList.length===0 && ce('p', { style: Object.assign({}, dm, { fontStyle:'italic' }) }, 'Waiting for players to join...'),
         playerList.map(function(entry) {
           var pid=entry[0], p=entry[1];
-          return ce('div', { key: pid, style: { display:'flex', alignItems:'center', gap:10, padding:'10px 14px', marginBottom:6, background:C.cream+'05', borderRadius:10, border:'1px solid '+C.cream+'0A' } },
-            ce('div', { style: { width:10, height:10, borderRadius:'50%', background: p.connected?C.green:C.rust } }),
-            ce('span', { style: { color:C.cream, fontSize:16, fontWeight:500 } }, p.name),
-            ce('span', { style: { color:C.cream+'33', fontSize:12, marginLeft:'auto' } }, p.connected?'connected':'disconnected')
+          var av = avatarById(p.avatarId);
+          return ce('div', { key: pid, style: { display:'flex', alignItems:'center', gap:12, padding:'8px 12px', marginBottom:6, background:C.cream+'05', borderRadius:10, border:'1px solid '+C.cream+'0A' } },
+            av
+              ? ce('img', { src: av.img, alt: av.name, style: { width:36, height:36, borderRadius:'50%', objectFit:'cover', border:'1px solid '+C.gold+'44', flexShrink:0, opacity: p.connected?1:0.45 } })
+              : ce('div', { style: { width:36, height:36, borderRadius:'50%', background:C.cream+'10', border:'1px solid '+C.cream+'22', flexShrink:0 } }),
+            ce('div', { style: { display:'flex', flexDirection:'column', flex:1, overflow:'hidden' } },
+              ce('span', { style: { color:C.cream, fontSize:15, fontWeight:600, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' } }, p.name),
+              av && ce('span', { style: { color:C.gold, fontSize:11, fontWeight:600, letterSpacing:1, marginTop:1 } }, av.name + ' · ' + av.label)
+            ),
+            ce('div', { style: { width:8, height:8, borderRadius:'50%', background: p.connected?C.green:C.rust, flexShrink:0 }, title: p.connected?'connected':'disconnected' })
           );
         })
       ),
@@ -2021,7 +2044,12 @@ function MirrorPlayerCard(props) {
   },
     isMe && ce('div', { style: { position:'absolute', top:8, right:10, fontSize:9, color:C.gold, letterSpacing:1.5, fontWeight:700 } }, 'YOU'),
     ce('div', { style: { display:'flex', alignItems:'center', gap:8, marginBottom:6 } },
-      ce('span', { style: { fontSize:22 } }, archIcon),
+      (function(){
+        var av = avatarById(p.avatarId);
+        return av
+          ? ce('img', { src: av.img, alt: av.name, style: { width:32, height:32, borderRadius:'50%', objectFit:'cover', border:'1px solid '+C.gold+'44', flexShrink:0 } })
+          : ce('span', { style: { fontSize:22 } }, archIcon);
+      })(),
       ce('div', { style: { overflow:'hidden' } },
         ce('div', { style: Object.assign({}, ts, { fontSize:13, fontWeight:700, color:C.cream, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }) }, p.name || 'Player'),
         ce('div', { style: { fontSize:10, color:C.cream+'66', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' } }, archName + (topPct!=null ? ' \u00b7 ' + topPct + '%' : ''))
@@ -2569,7 +2597,17 @@ function PlayerMirrorPhone(props) {
     ce('div', { style: { width:'100%', maxWidth: 620 }, className:'cov-mirror-fade' },
  
       // ── HEADLINE — archetype identity ───────────────────────────────────
-      ce('div', { style: Object.assign({}, gp, { textAlign:'center', padding:'28px 22px' }) },
+      ce('div', { style: Object.assign({}, gp, { textAlign:'center', padding:'28px 22px', position:'relative' }) },
+        // Secondary avatar badge — who you brought, not what you became.
+        (function(){
+          var av = avatarById(myP.avatarId);
+          return av
+            ? ce('div', { style: { position:'absolute', top:14, left:14, display:'flex', alignItems:'center', gap:6, opacity:0.85 } },
+                ce('img', { src: av.img, alt: av.name, style: { width:32, height:32, borderRadius:'50%', objectFit:'cover', border:'1px solid '+C.gold+'55' } }),
+                ce('div', { style: { fontSize:9, letterSpacing:1, color:C.cream+'88', fontWeight:600, lineHeight:1.2, textAlign:'left' } }, ce('div', null, av.name.toUpperCase()), ce('div', { style: { color:C.gold, fontSize:9 } }, av.label.toUpperCase()))
+              )
+            : null;
+        })(),
         ce('div', { style: sxT2(C.gold) }, myName ? (myName.toUpperCase() + '\u2019S MIRROR') : 'Your Mirror Portrait'),
         ce('div', { style: { fontSize:52, marginBottom:4 } }, archIcon),
         ce('h1', { style: Object.assign({}, ts, { fontSize:32, color:C.gold, fontFamily:"'Playfair Display',Georgia,serif", fontWeight:400, margin:'4px 0 14px', lineHeight:1.15 }) }, archName),
@@ -2843,7 +2881,8 @@ var handleAnalyze = function() {
       var reshaped = CovenantFirebase.reshapeResultsForFirebase(
         rawAnalysis,
         transformed.playerIds,
-        transformed.playerNames
+        transformed.playerNames,
+        transformed.playerAvatarIds
       );
       setResults(reshaped);
       CovenantFirebase.writeResults(sessionId, reshaped);
@@ -3149,6 +3188,11 @@ function PlayerView() {
   // their vote was captured.
   var _s16=useState(0),flashUntil=_s16[0],setFlashUntil=_s16[1];
   var _s17=useState(null),lastFlashKind=_s17[0],setLastFlashKind=_s17[1];
+  // Avatar selection state (2026-04-23). selectedAvatarId is the id picked
+  // during the picker phase; sessionPlayers is the live snapshot of players
+  // in the session so the picker can grey out already-taken animals.
+  var _s18=useState(null),selectedAvatarId=_s18[0],setSelectedAvatarId=_s18[1];
+  var _s19=useState({}),sessionPlayers=_s19[0],setSessionPlayers=_s19[1];
   var timerRef=useRef(null);
   var unsubs=useRef([]);
   // FIX #1: Ref-based lock to prevent double-tap
@@ -3170,6 +3214,8 @@ function PlayerView() {
     }));
     unsubs.current.push(CovenantFirebase.onConfigChanged(sessionId, setConfig));
     unsubs.current.push(CovenantFirebase.onResults(sessionId, function(r) { if (r&&playerId) setMyResults(r); }));
+    // Live players snapshot (drives the picker's taken/disabled state and the lobby roster).
+    unsubs.current.push(CovenantFirebase.onPlayersChanged(sessionId, function(ps) { setSessionPlayers(ps || {}); }));
     // FIX #2: Listen for group votes to compute drift
     var gvRef = firebase.database().ref('sessions/'+sessionId+'/groupVotes');
     gvRef.on('value', function(snap) {
@@ -3218,9 +3264,13 @@ function PlayerView() {
   }, [round, scenarios]);
 
   var handleJoin = function() {
+    if (!selectedAvatarId) { setError('Pick an avatar first'); return; }
     if (!playerName.trim()) { setError('Enter your name'); return; }
-    CovenantFirebase.joinSession(sessionId, playerName.trim()).then(function(result) {
-      setPlayerId(result.playerId); sessionStorage.setItem('cov_player_id', result.playerId); setJoined(true);
+    CovenantFirebase.joinSession(sessionId, playerName.trim(), selectedAvatarId).then(function(result) {
+      setPlayerId(result.playerId);
+      sessionStorage.setItem('cov_player_id', result.playerId);
+      if (result.avatarId) sessionStorage.setItem('cov_avatar_id', result.avatarId);
+      setJoined(true);
     }).catch(function(e) { setError(e.message); });
   };
 
@@ -3284,29 +3334,73 @@ function PlayerView() {
     ));
   }
 
-  // NAME ENTRY
+  // AVATAR PICKER (2026-04-23) — fires before name entry.
+  // Greys out animals already chosen by other players in this session.
+  if (!joined && !selectedAvatarId) {
+    var takenSet = {};
+    for (var pkey in sessionPlayers) { if (sessionPlayers[pkey] && sessionPlayers[pkey].avatarId) takenSet[sessionPlayers[pkey].avatarId] = true; }
+    return ce('div', { style: W },
+      ce('div', { style: Object.assign({}, cd, { textAlign:'center', maxWidth:560 }) },
+        ce('div', { style: { fontSize:11, letterSpacing:3, color:C.gold, fontWeight:700, marginBottom:6 } }, 'STEP 1'),
+        ce('h1', { style: Object.assign({}, h1, { fontSize:24, marginBottom:6 }), className:'dsp' }, 'Choose Your Avatar'),
+        ce('p', { style: Object.assign({}, dm, { fontSize:13.5, fontStyle:'italic', marginBottom:18 }) }, 'What do you bring to the watering hole? Pick the instinct that feels most natural.'),
+        ce('div', { style: { display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:10, marginBottom:18 } },
+          AVATARS.map(function(av) {
+            var taken = !!takenSet[av.id];
+            return ce('button', {
+              key: av.id, disabled: taken,
+              onClick: function(){ if(!taken) setSelectedAvatarId(av.id); },
+              style: {
+                background: taken ? 'rgba(255,255,255,0.02)' : 'rgba(212,168,68,0.06)',
+                border: '1px solid ' + (taken ? C.cream+'18' : C.gold+'33'),
+                borderRadius: 12, padding: '10px 6px 8px', cursor: taken ? 'not-allowed' : 'pointer',
+                opacity: taken ? 0.35 : 1, transition: 'all .2s ease', fontFamily: 'inherit'
+              }
+            },
+              ce('img', { src: av.img, alt: av.name, style: { width:64, height:64, borderRadius:'50%', objectFit:'cover', border:'2px solid '+(taken?C.cream+'22':C.gold+'55'), boxShadow:'0 3px 10px rgba(0,0,0,0.35)', display:'block', margin:'0 auto 6px', filter: taken ? 'grayscale(70%)' : 'none' } }),
+              ce('div', { style: { fontSize:12, fontWeight:700, color:C.cream, letterSpacing:0.5 } }, av.name),
+              ce('div', { style: { fontSize:10.5, color:C.gold, fontWeight:600, marginTop:2 } }, av.label),
+              taken ? ce('div', { style: { fontSize:9, color:C.cream+'55', marginTop:2, fontStyle:'italic' } }, 'taken') : null
+            );
+          })
+        ),
+        error && ce('p', { style: { color:C.rust, fontSize:13, marginBottom:8 } }, error),
+        ce('p', { style: Object.assign({}, dm, { fontSize:11, color:C.cream+'55' }) }, 'Tap an animal to select. Each can be chosen by one player only.')
+      )
+    );
+  }
+
+  // NAME ENTRY — shows the chosen avatar at the top of the card.
   if (!joined) {
+    var picked = avatarById(selectedAvatarId);
     return ce('div', { style: W },
       ce('div', { style: Object.assign({}, cd, { textAlign:'center' }) },
-        ce('img', { src: 'img/elephant.jpg', alt: 'Expedition portrait', style: { width:88, height:88, borderRadius:'50%', objectFit:'cover', border:'2px solid '+C.gold+'55', boxShadow:'0 6px 20px rgba(0,0,0,0.35)', marginBottom:10 } }),
-        ce('div', { style: sb }, 'Join the Expedition'),
+        ce('img', { src: picked ? picked.img : 'img/elephant.jpg', alt: picked ? picked.name : 'Expedition portrait', style: { width:88, height:88, borderRadius:'50%', objectFit:'cover', border:'2px solid '+C.gold+'66', boxShadow:'0 6px 20px rgba(0,0,0,0.35)', marginBottom:8 } }),
+        picked ? ce('div', { style: { fontSize:11, letterSpacing:2, color:C.gold, fontWeight:700, marginBottom:2 } }, picked.name.toUpperCase() + ' · ' + picked.label.toUpperCase()) : null,
+        ce('div', { style: Object.assign({}, sb, { marginTop: picked ? 6 : 0 }) }, 'Join the Expedition'),
         ce('input', { value:playerName, placeholder:'Your name',
           onChange:function(e){setPlayerName(e.target.value);},
           onKeyDown:function(e){if(e.key==='Enter')handleJoin();},
           style:{ width:'100%', background:C.cream+'08', border:'1px solid '+C.cream+'15', borderRadius:10, padding:'14px 16px', color:C.cream, fontSize:18, fontFamily:'inherit', outline:'none', textAlign:'center', marginBottom:12, boxSizing:'border-box' }
         }),
         error && ce('p', { style: { color:C.rust, fontSize:13 } }, error),
-        ce('button', { style: bt, onClick: handleJoin }, 'Join \u2192')
+        ce('button', { style: bt, onClick: handleJoin }, 'Join \u2192'),
+        ce('button', { style: { background:'transparent', border:'none', color:C.cream+'55', fontSize:12, marginTop:10, cursor:'pointer', fontFamily:'inherit' }, onClick: function(){ setSelectedAvatarId(null); setError(''); } }, '\u2190 change avatar')
       )
     );
   }
 
   // LOBBY
   if (phase==='lobby') {
+    var myP_ = (sessionPlayers && playerId) ? sessionPlayers[playerId] : null;
+    var myAv_ = avatarById(myP_ && myP_.avatarId);
     return ce('div', { style: W },
       ce('div', { style: Object.assign({}, cd, { textAlign:'center' }) },
-        ce('div', { style: { fontSize:48, marginBottom:8 } }, '\ud83d\udd25'),
-        ce('div', { style: sb }, 'Waiting at the Campfire'),
+        myAv_
+          ? ce('img', { src: myAv_.img, alt: myAv_.name, style: { width:72, height:72, borderRadius:'50%', objectFit:'cover', border:'2px solid '+C.gold+'66', boxShadow:'0 4px 16px rgba(0,0,0,0.35)', marginBottom:8 } })
+          : ce('div', { style: { fontSize:48, marginBottom:8 } }, '\ud83d\udd25'),
+        myAv_ ? ce('div', { style: { fontSize:11, letterSpacing:2, color:C.gold, fontWeight:700, marginBottom:2 } }, myAv_.name.toUpperCase() + ' · ' + myAv_.label.toUpperCase()) : null,
+        ce('div', { style: Object.assign({}, sb, { marginTop: myAv_ ? 4 : 0 }) }, 'Waiting at the Campfire'),
         ce('h1', { style: Object.assign({}, h1, { fontSize:22 }), className:'dsp' }, 'You\u2019re in.'),
         ce('p', { style: dm }, 'The host will start the expedition when everyone is ready.'),
         ce('div', { style: { background:C.cream+'06', borderRadius:12, padding:16, marginTop:20 } },
@@ -3346,8 +3440,18 @@ function PlayerView() {
         ce('p', { style: dm }, 'Waiting for other players...')
       ));
     }
+    var pulseMyP = (sessionPlayers && playerId) ? sessionPlayers[playerId] : null;
+    var pulseMyAv = avatarById(pulseMyP && pulseMyP.avatarId);
     return ce('div', { style: W },
       ce('div', { style: cd, className:'fade-up' },
+        pulseMyAv && ce('div', { style: { display:'flex', alignItems:'center', gap:8, marginBottom:10, paddingBottom:10, borderBottom:'1px solid '+C.cream+'10' } },
+          ce('img', { src: pulseMyAv.img, alt: pulseMyAv.name, style: { width:36, height:36, borderRadius:'50%', objectFit:'cover', border:'1px solid '+C.gold+'44' } }),
+          ce('div', { style: { display:'flex', flexDirection:'column' } },
+            ce('span', { style: { fontSize:13, fontWeight:600, color:C.cream } }, pulseMyP && pulseMyP.name ? pulseMyP.name : 'You'),
+            ce('span', { style: { fontSize:10, color:C.gold, letterSpacing:1, fontWeight:600 } }, pulseMyAv.name + ' · ' + pulseMyAv.label.toUpperCase())
+          ),
+          ce('span', { style: { marginLeft:'auto', fontSize:11, color:C.cream+'66', fontWeight:600 } }, 'Round ' + (round.roundIndex+1))
+        ),
         ce('div', { style: { display:'flex', justifyContent:'space-between', marginBottom:12 } },
           ce('div', { style: Object.assign({}, sb, { color:C.rust }) }, '\ud83d\udd12 Your Gut Pulse'),
           ce('div', { style: { fontSize:32, fontWeight:300, color:pulseTimer<=3?C.rust:C.gold, fontFamily:'monospace' } }, pulseTimer+'s')
@@ -3382,8 +3486,18 @@ function PlayerView() {
         ce('p', { style: dm }, 'Waiting for other players...')
       ));
     }
+    var predMyP = (sessionPlayers && playerId) ? sessionPlayers[playerId] : null;
+    var predMyAv = avatarById(predMyP && predMyP.avatarId);
     return ce('div', { style: W },
       ce('div', { style: cd, className:'fade-up' },
+        predMyAv && ce('div', { style: { display:'flex', alignItems:'center', gap:8, marginBottom:10, paddingBottom:10, borderBottom:'1px solid '+C.cream+'10' } },
+          ce('img', { src: predMyAv.img, alt: predMyAv.name, style: { width:36, height:36, borderRadius:'50%', objectFit:'cover', border:'1px solid '+C.gold+'44' } }),
+          ce('div', { style: { display:'flex', flexDirection:'column' } },
+            ce('span', { style: { fontSize:13, fontWeight:600, color:C.cream } }, predMyP && predMyP.name ? predMyP.name : 'You'),
+            ce('span', { style: { fontSize:10, color:C.gold, letterSpacing:1, fontWeight:600 } }, predMyAv.name + ' · ' + predMyAv.label.toUpperCase())
+          ),
+          ce('span', { style: { marginLeft:'auto', fontSize:11, color:C.cream+'66', fontWeight:600 } }, 'Round ' + (round.roundIndex+1))
+        ),
         ce('div', { style: sb }, '\ud83d\udd2e Your Prediction'),
         ce('h1', { style: Object.assign({}, h1, { fontSize:20 }), className:'dsp' }, 'How many people chose differently in private vs. the group vote?'),
         ce('p', { style: Object.assign({}, dm, { marginBottom:16 }) }, 'Including yourself. (0 to '+playerCount+')'),
