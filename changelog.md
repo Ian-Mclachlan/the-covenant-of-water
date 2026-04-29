@@ -2,6 +2,13 @@
 
 What has actually shipped, date-stamped. Newest first. Keep entries to 1–3 lines.
 
+## 2026-04-26 — Glass card → frame; drift reveal counts only
+
+Two patches from the 2026-04-26 playtest brief, separate commits.
+
+- **Glass card structural fix (Direction 1: frame, not fill).** Prior treatment (`rgba(14,32,18,0.62)` + `blur(20px) saturate(140%)`) destroyed tier imagery on iPad/laptop; opacity tuning could not fix the underlying problem. Card is now a gold border + deep drop shadow — image bleeds through the entire interior. Text legibility provided by an inherited `text-shadow` set on `cd` itself, picked up by all text descendants without per-render-branch changes. No backdrop-filter anywhere. See `decisions.md` (2026-04-26) for the architectural reasoning.
+- **Drift reveal: aggregate counts only, no names.** Host reveal phase no longer renders `DRIFTED: Alice, Bob`. New treatment shows two large monospace numbers under `DRIFTED` and `HELD GROUND` labels — no attribution. Player-side `You Drifted / You Held Ground` (self-disclosure) preserved. `drifters` / `holders` arrays remain in Firebase for any future host-only diagnostic view. See `decisions.md` (2026-04-26 — Aggregate counts; named attribution stays private).
+
 ## 2026-04-24 — Avatar selection flow (Group Safari)
 
 Players now pick one of the 9 instinct animals (Solo Safari's `IN[]`) before joining a session. The flow on phones is: enter join code → **pick avatar** → enter name → land in lobby. The avatar carries through every player-facing surface so each player has a visible identity from start to finish, while the engine's archetype output remains the primary identity in the Mirror.

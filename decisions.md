@@ -73,3 +73,18 @@ The 9-instinct avatar that each player selects at join time is written to `sessi
 
 ## 2026-04-24 — Avatar uniqueness enforced both at the picker and at the bridge
 The picker UI greys out already-taken animals based on a live `onPlayersChanged` snapshot. But two players could in principle tap the same animal in the brief race window before each other's `joinSession` write lands. The bridge guards against this in `joinSession` itself: before writing a new player, it scans `existingPlayers` for any `avatarId === requested` and throws `'That avatar is already taken in this session'`. The losing player sees the error and can pick another. UI is the seatbelt; the server-side check is the firewall — same principle as the 2026-04-19 dedup fix.
+
+## 2026-04-26 — Card surface is a frame, not a fill (Direction 1)
+The 2026-04-23 glass treatment (`rgba(14,32,18,0.62)` + `backdrop-filter: blur(20px)`) destroyed tier imagery on iPad/laptop. Three architectural directions were considered:
+1. **Frame, not fill.** Card has border + drop shadow only. Image bleeds through. Text legibility from inherited `text-shadow`.
+2. **Localized text shadow.** No card structure at all. Heavy `text-shadow` on all text. Best for large/high-weight type only.
+3. **Bottom-anchored scrim.** Vertical gradient scrim behind card region (movie-poster pattern).
+
+Chose **Direction 1**. Direction 2 loses the visual anchor that signals "this is a card." Direction 3 breaks the brief's "behind AND around the card content" criterion in the upper card region and pattern-matches a movie-poster aesthetic that fights the eyebrow→h1→body→buttons stacking already in use. Implementation: `text-shadow` set on the `cd` style itself rather than via descendant CSS. Text-shadow inherits, so all text descendants pick it up without per-render-branch changes. Buttons and inset blocks keep their own backgrounds; the inherited shadow is invisible against their solid fills.
+
+This is the pattern for every card-on-image surface from this point forward (biome intro, capstone intro, future Mirror chrome). The Mirror's `gp` style retains its translucent fill + blur for now because Mirror sections sit on top of the moving campfire atmosphere where text contrast over animated embers matters more than image legibility — but `gp` should be revisited if playtest shows it competing with tier imagery.
+
+## 2026-04-26 — Aggregate counts on the host screen; named attribution stays private
+The host's reveal phase used to render `DRIFTED: Alice, Bob / HELD GROUND: Carol, Dave`. Playtesters described this as invasive — having the shared screen call out who broke from the group felt like public outing rather than productive feedback. New rule: **counts are public, names are not** on any shared host surface. The drift footer now shows two large monospace numbers under `DRIFTED` and `HELD GROUND` labels and nothing more.
+
+The player-side reveal still says "You Drifted" / "You Held Ground" — that's self-disclosure on a personal device, structurally different from public attribution. Drift-arrays (`drifters`, `holders`) remain in the data layer for any future host-only diagnostic view that wants named detail behind a privacy toggle. Principle for any future per-player metric on the shared screen: aggregate by default; named attribution only behind explicit host opt-in.

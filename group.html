@@ -3045,7 +3045,6 @@ var handleAnalyze = function() {
 
   // ── REVEAL — historical outcome is the headline; drift count is a footer ──
   if (phase === 'reveal') {
-    var totalVoters = driftData ? (driftData.drifters.length + driftData.holders.length) : 0;
     return ce('div', { style: W },
       ce('div', { style: cd, className: 'fade-up' },
         ce('div', { style: { textAlign:'center', marginBottom:16 } },
@@ -3058,15 +3057,22 @@ var handleAnalyze = function() {
               ce('p', { style: { fontSize:15.5, lineHeight:1.9, color:C.cream+'DD', margin:0, fontFamily:"'Playfair Display',Georgia,serif" } }, s.teach)
             )
           : ce('p', { style: dm }, 'The group has made its decision.'),
-        driftData && ce('div', { style: { borderTop:'1px solid '+C.cream+'15', paddingTop:14, marginTop:8, display:'flex', justifyContent:'space-between', alignItems:'baseline', flexWrap:'wrap', gap:8 } },
-          ce('div', { style: { fontSize:12, color:C.cream+'77' } },
-            ce('span', { style: { color:driftData.total>0?C.rust:C.green, fontWeight:700, fontFamily:'monospace' } }, driftData.total + ' of ' + totalVoters),
-            driftData.total === 1 ? ' player' : ' players',
-            driftData.total === 0 ? ' matched the group in private.' : ' drifted in private.'
-          ),
-          driftData.total > 0 && ce('div', { style: { fontSize:11, color:C.cream+'55' } },
-            ce('span', { style: { color:C.rust } }, 'Drifted: '), driftData.drifters.join(', ')
-          )
+        // Aggregate drift counts — names removed per 2026-04-26 patch brief
+        // (privacy: aggregate ok, named attribution invasive). drifters/holders
+        // arrays still present in Firebase for future host-only diagnostic views.
+        driftData && (
+          driftData.total === 0
+            ? ce('p', { style: { textAlign:'center', fontSize:13, color:C.green, marginBottom:12, fontStyle:'italic' } }, 'Everyone matched the group in private.')
+            : ce('div', { style: { borderTop:'1px solid '+C.cream+'15', paddingTop:16, marginTop:8, display:'flex', gap:32, justifyContent:'center', textAlign:'center' } },
+                ce('div', null,
+                  ce('div', { style: { color:C.rust, fontWeight:700, fontSize:13, letterSpacing:1.5 } }, 'DRIFTED'),
+                  ce('div', { style: { color:C.cream, fontSize:24, fontWeight:300, fontFamily:'monospace' } }, driftData.drifters.length)
+                ),
+                ce('div', null,
+                  ce('div', { style: { color:C.green, fontWeight:700, fontSize:13, letterSpacing:1.5 } }, 'HELD GROUND'),
+                  ce('div', { style: { color:C.cream, fontSize:24, fontWeight:300, fontFamily:'monospace' } }, driftData.holders.length)
+                )
+              )
         ),
         ce('div', { style: { textAlign:'center', marginTop:18 } },
           ce('button', { style: bt, onClick: handleNextRound },
