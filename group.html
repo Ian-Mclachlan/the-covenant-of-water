@@ -704,7 +704,7 @@ VF:{title:"The Vulnerable Fortress",prose:"Strength and cracks in equal measure.
 // ── Narrative Trigger Libraries ──
 const NARRATIVE_TRIGGERS = [
   {id:"NT-001",conditions:[{m:"sdp",op:"<",v:20},{m:"latencyShift",op:">",v:1.3}],
-   narrative:"You held your ground on {sdp}% of high-stress decisions — and you weren\'t reflexive about it. Your crisis latency ratio was {latencyShift}×, suggesting each stand was deliberate, not stubborn. That is the Deliberator\'s gift: wise mind holding under fire."},
+   narrative:"You held your ground on {sdp}% of high-stress decisions — and you weren\'t reflexive about it. Your crisis latency ratio was {latencyShift}×, suggesting each stand was deliberate, not stubborn. That is the Deliberator\'s pattern — time to think, even under pressure."},
   {id:"NT-002",conditions:[{m:"biasRatio",op:">",v:0.75},{m:"dp",op:"<",v:30}],
    narrative:"You expected the group to abandon their convictions far more than they did — yet you yourself were among the most steadfast. Your cynicism about others didn\'t match your own loyalty. The question: is your distrust a perception or a projection?"},
   {id:"NT-003",conditions:[{m:"slope",op:">",v:0.10},{m:"baselineDriftPct",op:"<",v:20}],
@@ -712,11 +712,11 @@ const NARRATIVE_TRIGGERS = [
   {id:"NT-003b",conditions:[{m:"slope",op:"<",v:-0.10},{m:"baselineDriftPct",op:">",v:50}],
    narrative:"You began this game inside the group\'s current — conforming on {baselineDriftPct}% of early decisions. But something shifted. As the stakes rose, you found your voice. That trajectory — from compliance to conviction — is the rarest arc in the data."},
   {id:"NT-004",conditions:[{m:"shadowScore",op:">",v:0.80}],
-   narrative:"Across every scenario where {shadowFoundation} was available, you walked past it. This consistent avoidance of {shadowDesc} is your moral blind spot. Not wrong. But invisible to you. And what we cannot see in ourselves, we often cannot tolerate in others."},
+   narrative:"Across every scenario where {shadowFoundation} was available, you walked past it. This consistent avoidance of {shadowDesc} looks like a blind spot worth examining — not necessarily wrong, but worth noticing. What we cannot see in ourselves, we often cannot tolerate in others."},
   {id:"NT-005",conditions:[{m:"latencyShift",op:">",v:1.4},{m:"dp",op:"<",v:25}],
    narrative:"When the stakes rose, you slowed down — your decision latency increased by {latencyIncreasePct}% in crisis rounds. And that deliberation paid off: you were among the least susceptible to conformity pressure."},
   {id:"NT-006",conditions:[{m:"latencyShift",op:"<",v:0.6},{m:"sdp",op:">",v:50}],
-   narrative:"Under pressure, your decisions got faster and your convictions got weaker — a {latencyDecreasePct}% drop in deliberation time paired with a {sdp}% drift rate. The amygdala seized the wheel."},
+   narrative:"Under pressure, your decisions got faster and your convictions got weaker — a {latencyDecreasePct}% drop in deliberation time paired with a {sdp}% drift rate. A pattern worth noticing in yourself the next time stakes climb."},
   {id:"NT-007",conditions:[{m:"soloDissent",op:">=",v:2}],
    narrative:"You were the only person to dissent from the consensus on {soloDissent} occasions. Roosevelt called this the \'Arena\' — choosing to stand in the dust while the crowd watches. Whether the group needed your dissent or not, you were willing to bear the cost."},
   {id:"NT-009",conditions:[{m:"indivCMR",op:">",v:0.60},{m:"foundationVariety",op:">=",v:4}],
@@ -1628,9 +1628,9 @@ r.narratives.map((n,i)=>ce("p",{key:i,style:{fontSize:14,lineHeight:1.85,color:C
 
 ce("div",{style:sx},ce("div",{style:sxT(C.purity)},"THE MORAL SHADOW"),
 r.shadowFoundation&&r.shadowScore>0.3?ce("p",{style:{fontSize:14,lineHeight:1.8,color:C.cream+"88",margin:0}},
-"Across every scenario where ",ce("strong",{style:{color:FC[r.shadowFoundation]||C.cream}},r.shadowFoundation)," was available, you walked past it ",ce("strong",null,Math.round(r.shadowScore*100)+"%")," of the time. ",
-r.shadowScore>0.7?"This consistent avoidance is your moral blind spot — the language you cannot bring yourself to speak. Not wrong. But invisible to you.":
-"This pattern suggests a mild but measurable avoidance — worth noticing, not alarming."):
+"In the scenarios where ",ce("strong",{style:{color:FC[r.shadowFoundation]||C.cream}},r.shadowFoundation)," was on the table, you reached for something else most of the time. ",
+r.shadowScore>0.7?"A pattern worth noticing, not a verdict — the moral language you reach for least often, especially across just nine rounds.":
+"A mild pattern of avoidance, worth keeping an eye on rather than alarming."):
 ce("p",{style:{fontSize:14,lineHeight:1.8,color:C.cream+"55",margin:0}},"No strong shadow pattern detected — your choices drew broadly from the available foundations."),
 r.shadow&&ce("div",{style:{display:"flex",gap:4,flexWrap:"wrap",marginTop:12}},
 Object.entries(r.shadow).sort((a,b)=>b[1]-a[1]).map(([f,v])=>ce("span",{key:f,style:{fontSize:11,background:(v>0.6?C.rust:C.cream)+"12",color:(v>0.6?C.rust:C.cream)+"88",border:"1px solid "+(v>0.6?C.rust:C.cream)+"22",borderRadius:16,padding:"2px 10px"}},f+": "+Math.round(v*100)+"%")))),
@@ -1661,16 +1661,16 @@ ce("div",{style:{display:"flex",alignItems:"center",gap:12,marginBottom:8}},
 ce("div",{style:{fontSize:22,fontWeight:600,color:C.cream}},r.latencyType),
 ce("div",{style:{fontSize:12,color:C.cream+"55"}},"Shift ratio: "+r.latencyShift.toFixed(2)+"\u00d7")),
 ce("p",{style:{fontSize:14,lineHeight:1.8,color:C.cream+"88"}},
-r.latencyType==="Deliberator"?"When the stakes rose, you slowed down. Executive function engaged. Linehan would call this 'wise mind' — emotion and reason holding each other in balance.":
-r.latencyType==="Snap Reactor"?"Under pressure, your decisions accelerated. The amygdala seized the wheel — fight/flight overriding deliberation.":
-"Your decision speed is stress-invariant. Either deep equanimity or practiced detachment — only you know which.")),
+r.latencyType==="Deliberator"?"When stakes rose in this session, you took longer to choose. Whether that’s careful weighing or hesitation, you’ll know better than the data.":
+r.latencyType==="Snap Reactor"?"When stakes rose in this session, you chose faster. Whether that’s decisiveness or reactivity is yours to interpret.":
+"Your decision time held roughly constant across stress levels in this session. Equanimity, detachment, or a small sample — your call.")),
 
 ce("div",{style:{...sx,background:(r.rg>60?C.green:C.rust)+"08",border:`1px solid ${r.rg>60?C.green:C.rust}22`}},
-ce("div",{style:sxT(r.rg>60?C.green:C.rust)},"LINEHAN \u2014 EMOTIONAL REGULATION"),
+ce("div",{style:sxT(r.rg>60?C.green:C.rust)},"REGULATION ACROSS STRESS"),
 ce("p",{style:{fontSize:14,lineHeight:1.8,color:C.cream+"88",margin:0}},
-r.rg>70?"Your choices remained consistent regardless of stress. Like Linehan\u2019s dialectical balance, you held both your convictions and the group\u2019s needs without collapsing into stubbornness or compliance. This capacity to tolerate discomfort without reacting impulsively is the foundation of adaptive leadership.":
-r.rg>40?"Under escalating stress, your decision patterns shifted moderately. Awareness is power: now that you can see the stress-drift curve, you can learn to notice the moment your gut shifts from \u2018I believe this\u2019 to \u2018I just want this to be over.\u2019 That moment is where growth lives.":
-"High-stress scenarios significantly altered your decisions. Linehan would call this the \u2018emotion mind\u2019 overriding the \u2018wise mind.\u2019 This isn\u2019t weakness \u2014 it\u2019s data. The teams that grow fastest are those where individuals name the pressure before it decides for them."))
+r.rg>70?"Your choices held roughly consistent across the stress gradient in this session. The capacity to tolerate discomfort without reacting impulsively is one signature of adaptive behavior \u2014 not the only one, and not a verdict from nine rounds.":
+r.rg>40?"Under escalating stress, your decision patterns shifted moderately. The point of seeing the curve is to notice the moment your gut shifts from \u2018I believe this\u2019 to \u2018I just want this to be over\u2019 \u2014 that moment is where the work happens.":
+"High-stress scenarios shifted your decisions noticeably. This isn\u2019t weakness \u2014 it\u2019s data. Naming the pressure before it decides for you is the move worth practicing."))
 )})(),
 
 mt==="foot"&&mp<0&&ce("div",{style:{textAlign:"center",padding:"40px 0",color:C.cream+"55"}},ce("p",null,"\u2191 Select a player above to see their footprint")),
@@ -1687,7 +1687,7 @@ mt==="pride"&&ce("div",{className:"fade-up"},
 // ── RELATIONAL CALIBRATION — THE NORTH STAR ──
 ce("div",{style:{...sx,background:C.gold+"08",border:`1px solid ${C.gold}33`,textAlign:"center",padding:"28px 20px"}},
 ce("div",{style:{...sxT(C.gold),fontSize:13,letterSpacing:3}},"RELATIONAL CALIBRATION"),
-ce("div",{style:{fontSize:13,color:C.cream+"55",marginBottom:16,fontFamily:"'Playfair Display'",fontStyle:"italic"}},"The group\u2019s capacity to sustain the Productive Zone of Disequilibrium"),
+ce("div",{style:{fontSize:13,color:C.cream+"55",marginBottom:16,fontFamily:"'Playfair Display'",fontStyle:"italic",lineHeight:1.5,maxWidth:520,marginLeft:"auto",marginRight:"auto"}},"A composite lens on this group\u2019s capacity to hold disequilibrium \u2014 four measured signals, weighted equally. A frame, not a verdict."),
 ce("div",{style:{fontSize:56,fontWeight:300,color:data.grp.relationalCalibration>0.6?C.green:data.grp.relationalCalibration>0.35?C.gold:C.rust,fontFamily:"monospace",marginBottom:8}},Math.round(data.grp.relationalCalibration*100)+"%"),
 ce("div",{style:{display:"flex",justifyContent:"center",gap:12,flexWrap:"wrap",marginTop:12}},
 ce(RCGauge,{value:data.grp.moralElasticity,label:"Moral Elasticity",color:C.gold,size:72}),
@@ -1718,7 +1718,7 @@ ce("div",{style:{fontSize:11,color:C.cream+"44",fontWeight:700,marginBottom:4}},
 ce("div",{style:{fontSize:22,fontWeight:300,color:data.grp.cmr>0.5?C.green:data.grp.cmr>0.3?C.gold:C.rust}},Math.round(data.grp.cmr*100)+"%"),
 ce("div",{style:{fontSize:11,color:C.cream+"44"}},data.grp.contextMatches+" of "+data.grp.contextTotal+" matched"))),
 ce("p",{style:{fontSize:13,lineHeight:1.7,color:C.cream+"77",marginTop:8}},
-data.grp.moralElasticity>0.5?"This group shifted its moral lens across contexts \u2014 reading the terrain rather than defaulting to a single foundation. This is the foundation of adaptive decision-making.":
+data.grp.moralElasticity>0.5?"This group shifted its moral lens across contexts \u2014 reading the terrain rather than defaulting to a single foundation. This is one signature of adaptive groups \u2014 not the only one, and not a guarantee of one.":
 data.grp.moralElasticity>0.3?"Moderate moral flexibility. The group accessed multiple foundations but didn\u2019t consistently match the contextual demands of each scenario.":
 "Narrow moral palette. The group defaulted to the same foundation regardless of context \u2014 a hammer seeing every crisis as a nail.")),
 
@@ -1734,7 +1734,7 @@ ce("div",{style:{fontSize:11,color:C.cream+"44",fontWeight:700,marginBottom:4}},
 ce("div",{style:{fontSize:22,fontWeight:300,color:data.grp.capstoneSR>=0.8?C.green:C.rust}},Math.round(data.grp.capstoneSR*100)+"%"),
 ce("div",{style:{fontSize:11,color:C.cream+"44"}},"fragments surfaced"))),
 ce("p",{style:{fontSize:13,lineHeight:1.7,color:C.cream+"77",marginTop:8}},
-data.grp.adaptiveCalibration>0.5?"This group found the best signal, not just the loudest voice. Minority perspectives reached the final decision, and asymmetric information was synthesized under chaos.":
+data.grp.adaptiveCalibration>0.5?"On the rounds where minority views surfaced, the group\u2019s decisions tracked them more often than the majority pulse alone would predict. That\u2019s a marker of the dynamic Woolley\u2019s work describes \u2014 not a certification.":
 "The group\u2019s decisions tracked the majority pulse rather than integrating minority insight. Woolley\u2019s research is clear: groups that suppress quiet truths underperform those that amplify them.")),
 
 // ── HOLDING ENVIRONMENT ──
@@ -1775,7 +1775,7 @@ ce("p",{style:{fontSize:13,color:C.cream+"66",margin:0,lineHeight:1.6}},item.d))
 ce("div",{style:{...sx,background:(sr>=0.8?C.green:C.rust)+"08",border:`1px solid ${sr>=0.8?C.green:C.rust}22`}},
 ce("div",{style:sxT(sr>=0.8?C.green:C.rust)},"CYNEFIN \u2014 CHAOTIC SYNTHESIS"),
 ce("p",{style:{fontSize:14,lineHeight:1.8,color:C.cream+"88",margin:0}},
-sr>=0.8?"Your pride synthesized asymmetric information under chaos. Every fragment surfaced. This is the hallmark of an adaptive organism.":
+sr>=0.8?"Your pride synthesized asymmetric information under chaos. Every fragment surfaced. This is one of the cleanest signals in the engine \u2014 capstone fragment integration is among the few measures here we\u2019d defend without much hedging.":
 `Only ${Math.round(sr*100)}% of fragments were integrated. In the Chaotic domain, teams fail not from bad decisions, but from incomplete pictures.`)),
 
 // ── GROUP COMPUTED NARRATIVES ──
@@ -1791,14 +1791,14 @@ ce("p",{style:{fontSize:14,lineHeight:1.7,color:C.cream+"77",marginBottom:20}},"
 [["Social Drift","Delta between Private Pulse and group consensus. High drift = your conviction didn\u2019t survive social pressure."],
 ["Stress-Weighted Drift","High-stress scenario choices weighted heavier. Reveals who you become when pressure is real."],
 ["Social Awareness (c-factor)","Prediction accuracy \u2014 how well you estimated who shifted. Based on Woolley\u2019s collective intelligence research."],
-["Regulation Score","From Linehan\u2019s DBT. Measures decision consistency under stress. High = your \u2018wise mind\u2019 holds."],
+["Regulation Score","From Linehan\u2019s DBT framework. A behavioral proxy for decision consistency under stress \u2014 not the validated DERS instrument."],
 ["Haidt Moral Foundations","Every choice tagged to one of six foundations (Care, Equality, Proportionality, Loyalty, Authority, Purity)."],
 ["Belbin Team Role","Inferred from your dominant moral foundation pattern. Maps to Belbin\u2019s nine team roles."],
 ["Edmondson Safety","Measured via aggregate Social Drift. Low drift = safety to hold ground. High drift = conformity pressure."],
 ["Lencioni Trust","Mapped to observed behaviors: vulnerability, productive conflict, and commitment (capstone synthesis)."],
 ["Cynefin Capstone","Information Asymmetry: each player holds a secret fragment. Tests adaptive leadership in Chaos."],
 ["Four Archetypes","Euclidean distance from archetype centroids. Produces a blend percentage (e.g. 52% Vanguard, 28% Anchor) instead of a bucket."],
-["Moral Shadow","Tracks which foundations you consistently avoided when available. High rejection rate = your moral blind spot."],
+["Moral Shadow","Tracks which foundations you consistently passed over when they were available. High rejection rate suggests a pattern worth examining \u2014 not a verdict."],
 ["Social Perception","Prediction accuracy + directional bias. Cynic (expects betrayal), Idealist (expects cohesion), Reader (accurate), Guesser (no model)."],
 ["Drift Arc","Linear regression of conformity over rounds. Eroded Anchor (independence fades), Late Bloomer (finds voice), Steady State."],
 ["Decision Latency","Ratio of crisis-round to baseline-round response times. Deliberator (slows down), Snap Reactor (speeds up), Steady Hand."]

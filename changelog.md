@@ -2,6 +2,14 @@
 
 What has actually shipped, date-stamped. Newest first. Keep entries to 1–3 lines.
 
+## 2026-04-26 (later) — Mirror epistemic edits: classic + trigger templates
+
+Commit 2 of 2 from the Mirror voice brief. Applies the same Part 1 principles and Part 2 vocabulary across the codebase so the multiplayer Mirror's new voice doesn't drift back into the classic mode or the trigger templates.
+
+- **Trigger templates (`NARRATIVE_TRIGGERS`)** — `NT-001` drops "wise mind holding under fire" → "the Deliberator's pattern: time to think, even under pressure." `NT-004` softens "is your moral blind spot" → "looks like a blind spot worth examining." `NT-006` strips "the amygdala seized the wheel" → "a pattern worth noticing in yourself." All `{variable}` tokens preserved.
+- **Classic-mode Mirror (lines ~1631–1801)** — shadow line drops percentage and reframes as "pattern worth noticing"; latency block strips "wise mind"/"amygdala seized the wheel" and anchors to "in this session"; regulation prose drops Linehan diagnostic frame; "LINEHAN — EMOTIONAL REGULATION" header → "REGULATION ACROSS STRESS"; classic RC subtitle reframed as a lens (matching multiplayer 3a); Moral Elasticity / Adaptive Calibration / Capstone Synthesis copy softened with same vocabulary as multiplayer; Regulation Score glossary entry now reads "A behavioral proxy for decision consistency under stress — not the validated DERS instrument"; Moral Shadow glossary entry softened from "= your moral blind spot" to "suggests a pattern worth examining — not a verdict."
+- **decisions.md** new entry "The Mirror's epistemic register" naming the five rules as project house style for any future Mirror copy (Solo when its rewrite happens, included).
+
 ## 2026-04-26 — Glass card → frame; drift reveal counts only
 
 Two patches from the 2026-04-26 playtest brief, separate commits.
