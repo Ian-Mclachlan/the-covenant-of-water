@@ -2052,7 +2052,7 @@ function MirrorPlayerCard(props) {
       })(),
       ce('div', { style: { overflow:'hidden' } },
         ce('div', { style: Object.assign({}, ts, { fontSize:13, fontWeight:700, color:C.cream, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }) }, p.name || 'Player'),
-        ce('div', { style: { fontSize:10, color:C.cream+'66', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' } }, archName + (topPct!=null ? ' \u00b7 ' + topPct + '%' : ''))
+        ce('div', { style: { fontSize:10, color:C.cream+'66', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' } }, archName)
       )
     ),
     ce('div', { style: { display:'flex', gap:4, flexWrap:'wrap', marginTop:6 } },
@@ -2070,6 +2070,7 @@ function ArchetypeBlendBars(props) {
   var blend = props.blend || [];
   var archMap = { Chameleon: C.equality, LoneBull: C.rust, Vanguard: C.gold, Anchor: C.green };
   return ce('div', { style: { marginTop: 10 } },
+    ce('p', { style: { fontSize:11, color:C.cream+'66', margin:'0 0 8px', fontStyle:'italic', lineHeight:1.5 } }, 'Proximity to four animal centroids in 6-foundation space. Read the order, not the points.'),
     blend.map(function(ab, i) {
       var col = archMap[ab.name] || C.gold;
       return ce('div', { key: i, style: { marginBottom: 8 } },
@@ -2166,7 +2167,7 @@ function WhatIfSliders(props) {
     }),
     Row({
       label: 'Context Match Rate (CMR)', col: C.gold,
-      sublabel: 'right tool for the moment',
+      sublabel: 'matches to designer-tagged best-fit option',
       value: cmr, onChange: setCmr,
       displayValue: pct(cmr) + '%'
     }),
@@ -2254,11 +2255,12 @@ function DeepDiveBreakdown(props) {
       rightSub: (g.contextMatches || 0) + ' of ' + (g.contextTotal || 0) + ' matched',
       rightCol: (g.cmr||0) > 0.5 ? C.green : (g.cmr||0) > 0.3 ? C.gold : C.rust,
       copy: (g.moralElasticity || 0) > 0.5
-        ? 'This group shifted its moral lens across contexts \u2014 reading the terrain rather than defaulting to a single foundation. This is the foundation of adaptive decision-making.'
+        ? 'This group shifted its moral lens across contexts \u2014 reading the terrain rather than defaulting to a single foundation. This is one signature of adaptive groups \u2014 not the only one, and not a guarantee of one.'
         : (g.moralElasticity || 0) > 0.3
         ? 'Moderate moral flexibility. The group accessed multiple foundations but didn\u2019t consistently match the contextual demands of each scenario.'
         : 'Narrow moral palette. The group defaulted to the same foundation regardless of context \u2014 a hammer seeing every crisis as a nail.'
     }),
+    ce('p', { style: { fontSize:11, color:C.cream+'55', margin:'-4px 0 14px', fontStyle:'italic', lineHeight:1.5, paddingLeft:14 } }, 'CMR uses designer-authored \u201cbest fit\u201d tags. Treat as a relative score across sessions, not as an objective correctness rate.'),
  
     // Adaptive Calibration
     Block({
@@ -2273,7 +2275,7 @@ function DeepDiveBreakdown(props) {
       rightSub: 'fragments surfaced',
       rightCol: (g.capstoneSR||0) >= 0.8 ? C.green : C.rust,
       copy: (g.adaptiveCalibration || 0) > 0.5
-        ? 'This group found the best signal, not just the loudest voice. Minority perspectives reached the final decision, and asymmetric information was synthesized under chaos.'
+        ? 'On the rounds where minority views surfaced, the group\u2019s decisions tracked them more often than the majority pulse alone would predict. That\u2019s a marker of the dynamic Woolley\u2019s work describes \u2014 not a certification.'
         : 'The group\u2019s decisions tracked the majority pulse rather than integrating minority insight. Woolley\u2019s research is clear: groups that suppress quiet truths underperform those that amplify them.'
     }),
  
@@ -2290,7 +2292,7 @@ function DeepDiveBreakdown(props) {
       rightValue: pct(g.cpi || 0) + '%',
       rightSub: (g.cpi||0) < 0.35 ? 'low conformity pressure' : 'high conformity pressure',
       rightCol: (g.cpi||0) < 0.35 ? C.green : C.rust,
-      copy: g.saf ? g.saf.de : 'The Holding Environment is where a group either contains its disequilibrium productively or collapses back into false consensus.'
+      copy: g.saf ? g.saf.de : 'The Holding Environment is where a group\u2019s capacity to hold disagreement productively gets tested \u2014 sometimes containing it, sometimes collapsing back into agreement that wasn\u2019t earned.'
     }),
  
     // Capstone Synthesis (compact — one stat + narrative)
@@ -2302,7 +2304,7 @@ function DeepDiveBreakdown(props) {
         ),
         ce('p', { style: { fontSize:13, lineHeight:1.7, color:C.cream+'99', margin:0, flex:1 } },
           (g.capstoneSynthesis || 0) >= 0.8
-            ? 'Every fragment surfaced. Asymmetric information was integrated under chaos. This is the hallmark of an adaptive organism.'
+            ? 'Every fragment surfaced. Asymmetric information was integrated under chaos. This is one of the cleanest signals in the engine \u2014 capstone fragment integration is among the few measures here we\u2019d defend without much hedging.'
             : 'Only ' + pct(g.capstoneSR || 0) + '% of fragments were surfaced. In the Chaotic domain, teams fail not from bad decisions, but from incomplete pictures.'
         )
       )
@@ -2315,7 +2317,7 @@ function DeepDiveBreakdown(props) {
     playerList.length > 0 && ce('div', { style: gp },
       ce('div', { style: sxT2(C.rust) }, 'Breaking Points \u2014 Where Convictions Bend'),
       ce('p', { style: { fontSize:12, color:C.cream+'66', marginTop:-4, marginBottom:14, fontStyle:'italic' } },
-        'Piecewise regression on each player\u2019s stress-response curve. The dashed line marks the exact stress level at which the baseline strategy collapsed.'
+        'A piecewise fit to each player\u2019s drift-by-stress curve. The dashed line marks the apparent inflection \u2014 a tendency from 9 rounds, not a clinically validated threshold.'
       ),
       ce('div', { style: { display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(280px, 1fr))', gap:16 } },
         playerList.map(function(entry, idx) {
@@ -2340,6 +2342,30 @@ function DeepDiveBreakdown(props) {
 // GroupMirrorHost — the Campfire view, with Deep Dive toggle
 // This is what renders on the shared screen during the mirror phase.
 // ────────────────────────────────────────────────────────────────────────────
+// ═══ What this is and isn\u2019t — epistemic disclosure (2026-04-26 brief Part 4) ═══
+function WhatThisIsAndIsnt() {
+  var pStyle = { fontSize:13, lineHeight:1.75, color:C.cream+'CC', margin:'0 0 12px', fontFamily:"'Source Sans 3',system-ui,sans-serif" };
+  var hStyle = { fontSize:11, letterSpacing:1.5, color:C.gold, fontWeight:700, marginBottom:6, textTransform:'uppercase' };
+  return ce('div', { style: Object.assign({}, gp, { background:'rgba(10,20,10,0.55)', border:'1px solid '+C.cream+'18', marginTop:18 }) },
+    ce('details', { style: { width:'100%' } },
+      ce('summary', { style: { cursor:'pointer', listStyle:'none', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'4px 0', fontSize:13, letterSpacing:1.5, color:C.gold, fontWeight:700, textTransform:'uppercase' } },
+        ce('span', null, 'What this is and isn\u2019t'),
+        ce('span', { style: { fontSize:11, color:C.cream+'66', fontWeight:400, letterSpacing:0 } }, 'Tap to expand')
+      ),
+      ce('div', { style: { marginTop:14 } },
+        ce('div', { style: hStyle }, 'What this is'),
+        ce('p', { style: pStyle }, 'A behavioral elicitation. You made nine forced-choice decisions under varying stress, with timing and conformity measured along the way. The profile you see is built from those signals.'),
+        ce('div', { style: hStyle }, 'What it isn\u2019t'),
+        ce('p', { style: pStyle }, 'A clinical instrument. The composite scores (Relational Calibration, Moral Elasticity, Adaptive Calibration, Holding Environment) are useful frames, not validated scales. Archetype percentages and breakpoint stress levels are estimates from a small sample \u2014 read the rank-ordering, not the decimals. Context Match Rate uses designer-authored \u201cbest fit\u201d tags that haven\u2019t been independently rated.'),
+        ce('div', { style: hStyle }, 'What\u2019s strongest in here'),
+        ce('p', { style: pStyle }, 'The rank-ordering of your moral foundations. Your group\u2019s capstone fragment integration. Whether the group\u2019s decisions tracked minority insight on the rounds where it surfaced. These are the parts we\u2019d defend with the least hedging.'),
+        ce('div', { style: hStyle }, 'What we\u2019re working toward'),
+        ce('p', { style: Object.assign({}, pStyle, { marginBottom:0 }) }, 'Convergent validation against the Moral Foundations Questionnaire, test-retest reliability, and inter-rater agreement on the scenario tags. Until that work is done, treat this as a structured mirror for reflection \u2014 not a measurement.')
+      )
+    )
+  );
+}
+
 function GroupMirrorHost(props) {
   var results = props.results || {};
   var scenariosCount = props.scenariosCount || 0;
@@ -2434,6 +2460,7 @@ function GroupMirrorHost(props) {
           pct(RC) + '%'
         ),
         ce('div', { style: { fontSize:11, letterSpacing:2, color:C.cream+'77', marginTop:6, fontWeight:600 } }, 'RELATIONAL CALIBRATION'),
+        ce('p', { style: { fontSize:12.5, lineHeight:1.55, color:C.cream+'88', margin:'10px auto 0', maxWidth:520, fontStyle:'italic' } }, 'A composite lens on this group\u2019s capacity to hold disequilibrium \u2014 four measured signals, weighted equally. A frame, not a verdict.'),
         ce('p', { style: { fontSize:14.5, lineHeight:1.8, color:C.cream+'BB', margin:'18px auto 0', maxWidth:560 } }, g.ga.prose)
       ),
 
@@ -2469,7 +2496,7 @@ function GroupMirrorHost(props) {
           'This game operationalizes five bodies of research. In your case, three are most directly relevant to what the data shows:'
         ),
         ce('p', { style: synthParaStyle },
-          '• Ronald Heifetz\'s adaptive leadership framework: you held the Productive Zone of Disequilibrium ', rcDesc, '.'
+          '• Through Ronald Heifetz\'s adaptive-leadership lens: this group\'s RC reads as ', rcDesc, ' \u2014 a frame for the conversation, not a verdict.'
         ),
         ce('p', { style: synthParaStyle },
           '• Amy Edmondson\'s psychological safety: your Holding Environment score of ', pct(HE), ' suggests ', edmondsonInterp, '.'
@@ -2545,7 +2572,10 @@ function GroupMirrorHost(props) {
           playerList: playerList,
           scenariosCount: scenariosCount
         })
-      )
+      ),
+
+      // Epistemic disclosure (collapsed by default).
+      ce(WhatThisIsAndIsnt)
     )
   );
 }
@@ -2645,7 +2675,7 @@ function PlayerMirrorPhone(props) {
           ce('strong', { style: { color: FC[myP.sf] || C.cream } }, myP.sf || '\u2014'),
           '. Together they form your moral voice.',
           myP.shadowFoundation && myP.shadowScore > 0.5
-            ? [' And consistently, across every scenario where ', ce('strong', { key:'sf', style: { color: FC[myP.shadowFoundation] || C.rust } }, myP.shadowFoundation), ' was available, you walked past it ', ce('strong', { key:'ss', style: { color:C.rust } }, Math.round((myP.shadowScore||0)*100) + '%'), ' of the time \u2014 a measurable moral shadow.']
+            ? [' In the scenarios where ', ce('strong', { key:'sf', style: { color: FC[myP.shadowFoundation] || C.rust } }, myP.shadowFoundation), ' was on the table, you reached for something else most of the time \u2014 a pattern worth noticing, not a verdict.']
             : ''
         )
       ),
@@ -2656,9 +2686,9 @@ function PlayerMirrorPhone(props) {
         ce(BreakpointCurve, { dbs: myP.dbs, bp: myP.breakpoint }),
         myP.breakpoint && myP.breakpoint.detected
           ? ce('p', { style: { fontSize:13.5, lineHeight:1.75, color:C.cream+'99', marginTop:10, marginBottom:0 } },
-              (myName ? myName + ', under stress level ' : 'Under stress level '),
+              (myName ? myName + ', around stress level ' : 'Around stress level '),
               ce('strong', { style: { color:C.rust } }, myP.breakpoint.breakpoint),
-              ', your decision pattern shifted. Below that threshold your baseline held; above it, a different strategy took over. Knowing where the line is means you can name it before it decides for you.')
+              ', the curve of your decisions appears to bend. With only 9 rounds, treat this as a tendency to watch for, not a fixed threshold. The point of seeing it here is to recognize it sooner the next time stakes climb.')
           : ce('p', { style: { fontSize:13.5, lineHeight:1.75, color:C.cream+'88', marginTop:10, marginBottom:0, fontStyle:'italic' } },
               'No clear breakpoint detected \u2014 your response pattern was smooth across the stress gradient.')
       ),
@@ -2678,18 +2708,18 @@ function PlayerMirrorPhone(props) {
           ce('div', { style: sxT2(myP.latencyType === 'Deliberator' ? C.green : myP.latencyType === 'Snap Reactor' ? C.rust : C.gold) }, 'Decision Latency'),
           ce('div', { style: { fontSize:17, fontWeight:700, color:C.cream, marginBottom:4 } }, myP.latencyType || 'Steady Hand'),
           ce('p', { style: { fontSize:12.5, lineHeight:1.65, color:C.cream+'88', margin:0 } },
-            myP.latencyType === 'Deliberator'  ? 'When stakes rose, you slowed down. Wise mind engaged.' :
-            myP.latencyType === 'Snap Reactor' ? 'Under pressure, your decisions accelerated. The amygdala took the wheel.' :
-                                                 'Your decision speed was stress-invariant. Equanimity or detachment \u2014 only you know which.'
+            myP.latencyType === 'Deliberator'  ? 'When stakes rose in this session, you took longer to choose. Whether that\u2019s careful weighing or hesitation, you\u2019ll know better than the data.' :
+            myP.latencyType === 'Snap Reactor' ? 'When stakes rose in this session, you chose faster. Whether that\u2019s decisiveness or reactivity is yours to interpret.' :
+                                                 'Your decision time held roughly constant across stress levels in this session. Equanimity, detachment, or a small sample \u2014 your call.'
           )
         )
       ),
  
       // ── COMPUTED NARRATIVES — the things impossible to know about yourself
       myP.narratives && myP.narratives.length > 0 && ce('div', { style: Object.assign({}, gp, { background:'rgba(212,168,68,0.08)', border:'1px solid '+C.gold+'33', marginTop: 16 }) },
-        ce('div', { style: sxT2(C.gold) }, 'The Mirror \u2014 Computed Insights'),
-        ce('p', { style: { fontSize:11.5, color:C.cream+'55', marginTop:-4, marginBottom:14 } },
-          myName ? (myName + ', these were generated from your specific data patterns. No two players receive the same set.') : 'Generated from your specific data patterns. No two players receive the same set.'
+        ce('div', { style: sxT2(C.gold) }, 'The Mirror \u2014 Patterns Worth Noticing'),
+        ce('p', { style: { fontSize:11.5, color:C.cream+'55', marginTop:-4, marginBottom:14, lineHeight:1.55, fontStyle:'italic' } },
+          (myName ? myName + ', generated' : 'Generated') + ' from this session\u2019s behavioral patterns. Your set differs from your teammates\u2019 because your decisions did. Read them as starting points for reflection, not as conclusions.'
         ),
         myP.narratives.slice(0, 4).map(function(n, i){
           return ce('p', { key: n.id || i, style: { fontSize:14, lineHeight:1.9, color:C.cream+'CC', marginTop: i===0 ? 0 : 14, marginBottom:0, fontFamily:"'Playfair Display',Georgia,serif", fontStyle:'italic', paddingLeft:14, borderLeft:'2px solid '+C.gold+'44' } }, n.text);
@@ -2699,7 +2729,10 @@ function PlayerMirrorPhone(props) {
       // ── FOOTER — invitation to the shared screen ───────────────────────
       ce('div', { style: { textAlign:'center', marginTop:24, padding:'16px 0 8px', color:C.cream+'55', fontSize:12 } },
         'The full group Mirror \u2014 radar, breaking points, what-if simulation \u2014 is on the shared Campfire screen.'
-      )
+      ),
+
+      // Epistemic disclosure (collapsed by default).
+      ce(WhatThisIsAndIsnt)
     )
   );
 }
