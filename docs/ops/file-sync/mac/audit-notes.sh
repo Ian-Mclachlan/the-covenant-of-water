@@ -96,12 +96,12 @@ fi
 echo ""
 echo "Largest 20 duplicate groups:"
 cut -f1 "$TMP_HASHES" | sort | uniq -d | while read -r h; do
-    sz=$(grep "^$h	" "$TMP_HASHES" | head -1 | cut -f2)
-    n=$(grep -c "^$h	" "$TMP_HASHES")
+    sz=$(grep "^$h"$'\t' "$TMP_HASHES" | head -1 | cut -f2)
+    n=$(grep -c "^$h"$'\t' "$TMP_HASHES")
     printf '%s\t%s\t%s\n' "$((sz * (n - 1)))" "$n" "$h"
 done | sort -rn | head -20 | while IFS=$'\t' read -r waste n h; do
     echo "  ${n}x  $(echo "$waste" | awk '{printf "%7.1f MB wasted", $1/1048576}')"
-    grep "^$h	" "$TMP_HASHES" | cut -f3 | sed 's|^|      |'
+    grep "^$h"$'\t' "$TMP_HASHES" | cut -f3 | sed 's|^|      |'
 done
 echo ""
 
