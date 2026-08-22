@@ -1,0 +1,36 @@
+# notes-sync.conf — copy to notes-sync.conf and edit. NOT committed to git.
+#
+# This file names real folders on your machines, so it stays local. The repo
+# this lives in is PUBLIC — do not put employer names, project names, or
+# internal folder structures into any file you commit.
+
+# ---------------------------------------------------------------- source ---
+# The notes root inside the WORK tenant's OneDrive folder on this Mac.
+# Find the exact path with:   ls ~/Library/CloudStorage/
+# It will look like:          ~/Library/CloudStorage/OneDrive-<Tenant>/<Notes root>
+NOTES_SOURCE="$HOME/Library/CloudStorage/OneDrive-CHANGEME/CHANGEME"
+
+# ----------------------------------------------------------- destination ---
+# Where the durable personal copy lives. This is the copy that survives the
+# work account being deprovisioned, so it must NOT be inside any work-tenant
+# folder. Two sensible choices:
+#
+#   Google Drive (syncs to your phone, so receipts are readable there):
+#     "$HOME/Library/CloudStorage/GoogleDrive-you@gmail.com/My Drive/Notes"
+#   Purely local (nothing leaves the Mac):
+#     "$HOME/Notes"
+NOTES_DEST="$HOME/Library/CloudStorage/GoogleDrive-CHANGEME/My Drive/Notes"
+
+# ------------------------------------------------------------- behaviour ---
+# Hours before a scheduled --if-due run is considered overdue.
+MAX_AGE_HOURS=20
+
+# Skip files larger than this (MB). 0 disables the limit.
+MAX_FILE_MB=500
+
+# Extra rsync excludes, one per line inside the parentheses.
+EXTRA_EXCLUDES=(
+  "*.tmp"
+  "~$*"
+  ".DS_Store"
+)

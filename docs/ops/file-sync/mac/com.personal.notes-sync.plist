@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  One agent handles both the schedule and the phone trigger. It wakes every
+  15 minutes and runs sync-notes.sh in "if due" mode, which exits immediately
+  unless the last run is overdue (MAX_AGE_HOURS) or a trigger file is waiting
+  in _status/inbox. That keeps the common case cheap while making a
+  phone-initiated run land within 15 minutes.
+
+  Install:
+    mkdir -p ~/bin ~/Library/Logs/NotesSync ~/Library/LaunchAgents
+    cp sync-notes.sh audit-notes.sh notes-sync.conf ~/bin/
+    chmod +x ~/bin/sync-notes.sh ~/bin/audit-notes.sh
+    sed "s|__HOME__|$HOME|g" com.personal.notes-sync.plist \
+      > ~/Library/LaunchAgents/com.personal.notes-sync.plist
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.personal.notes-sync.plist
+
+  Run now:   launchctl kickstart -k gui/$(id -u)/com.personal.notes-sync
+  Inspect:   launchctl print gui/$(id -u)/com.personal.notes-sync
+  Remove:    launchctl bootout gui/$(id -u)/com.personal.notes-sync
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.personal.notes-sync</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>__HOME__/bin/sync-notes.sh</string>
+        <string>--if-due</string>
+    </array>
+
+    <key>StartInterval</key>
+    <integer>900</integer>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>__HOME__/Library/Logs/NotesSync/launchd.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>__HOME__/Library/Logs/NotesSync/launchd.err.log</string>
+
+    <key>ProcessType</key>
+    <string>Background</string>
+
+    <key>LowPriorityIO</key>
+    <true/>
+</dict>
+</plist>

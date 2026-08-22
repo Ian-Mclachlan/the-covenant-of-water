@@ -1,427 +1,365 @@
-# Handoff: Nightly personal-file sync — HP work laptop → OneDrive → MacBook Air
+# Handoff: durable personal copy of work-laptop notes
 
-**Status:** ready to install · **Owner:** dm2116@gmail.com · **Last updated:** 2026-08-22
+**Status:** revised — v1 was built on a topology that doesn't exist
+**Owner:** dm2116@gmail.com · **Last updated:** 2026-08-22
 **Location:** `docs/ops/file-sync/` in `the-covenant-of-water`
 
----
-
-## 0. Read this first (60 seconds)
-
-**The problem.** Personal files created on the HP work laptop are supposed to reach the
-personal MacBook Air via OneDrive. It worked when done by hand. It is not happening every
-night, and — more importantly — *there is currently no way to tell whether it happened*.
-"I don't think it's happening" is the real bug. A sync you cannot verify is a sync you do
-not have.
-
-**The fix, in three parts:**
-
-1. **A scheduled job on the HP laptop** copies personal folders into the personal OneDrive
-   every night at 23:00, and *catches up automatically* if the laptop was off.
-2. **Every run writes a receipt** — a plain text file that syncs to OneDrive like any other
-   file. Open it on your phone and it tells you, in English, when the sync last ran, whether
-   it worked, and how many files moved.
-3. **A trigger inbox** lets the phone start a run on demand. Drop any file into a OneDrive
-   folder; the laptop notices within 15 minutes and runs.
-
-**Why a "trigger inbox" instead of your phone talking to the laptop directly.** It can't.
-A Claude session on your phone runs in the cloud; the HP laptop sits behind the work
-network with nothing listening for inbound connections, and a work laptop is the last
-machine that should have a remote-control port open. OneDrive is the one channel that
-already crosses that boundary in both directions and is already trusted by IT. So we use it
-as a mailbox: the phone drops a note in, the laptop checks the mailbox on a timer. This is
-slower than a direct command (up to 15 minutes) and completely robust.
-
-**Time to install:** ~25 minutes on the HP laptop, ~10 minutes on the MacBook.
+> ⚠️ **This repository is PUBLIC.** Nothing in this folder names an employer,
+> a project, a team, or an internal folder structure, and it must stay that
+> way. All of that lives in `notes-sync.conf`, which is local and never
+> committed. Do not paste real paths, folder names, or file listings into any
+> file here, into a commit message, or into a PR description.
 
 ---
 
-## 1. Architecture
+## 0. What changed, and why
 
-```
-┌────────────────────────────┐
-│  HP LAPTOP (Windows, work) │
-│                            │
-│  C:\Users\<you>\Documents\Personal   ─┐
-│  C:\Users\<you>\Desktop\Personal     ─┤  robocopy, additive only
-│  C:\Users\<you>\Pictures\Personal    ─┘  (never deletes)
-│              │                              │
-│              ▼                              │
-│  %OneDriveConsumer%\PersonalSync\      ◄────┘   ← PERSONAL OneDrive, not work
-│      Documents\  Desktop\  Pictures\
-│      _status\
-│          LAST-RUN.txt      ← receipt you read on your phone
-│          last-run.json     ← receipt Claude/Zapier reads
-│          mac-last-pull.json← written BY the MacBook, read here
-│          inbox\            ← drop any file here to force a run
-│                            │
-│  Task Scheduler:           │
-│    PersonalSync-Nightly  23:00 daily, catches up if missed
-│    PersonalSync-Watcher  every 15 min, checks inbox\
-└────────────┬───────────────┘
-             │  Microsoft OneDrive (personal account)
-             ▼
-┌────────────────────────────┐            ┌──────────────────┐
-│  MACBOOK AIR (personal)    │            │  PHONE           │
-│                            │            │                  │
-│  ~/Library/CloudStorage/   │            │  OneDrive app:   │
-│    OneDrive-Personal/      │            │   read LAST-RUN  │
-│      PersonalSync/         │            │   upload file to │
-│         │                  │            │   inbox\ to      │
-│         │ optional rsync   │            │   force a run    │
-│         ▼                  │            │                  │
-│  ~/PersonalFromWork/       │            │  Claude dispatch:│
-│                            │            │   same, via      │
-│  launchd: 07:30 and 18:30  │            │   prompts in §9  │
-└────────────────────────────┘            └──────────────────┘
-```
+The first version of this runbook assumed a **personal Microsoft OneDrive**
+account as the transport: work laptop → personal OneDrive → MacBook. A survey
+of the actual MacBook found that account doesn't exist. What's actually there:
 
-**Direction of travel is one-way: laptop → Mac.** Files you create on the MacBook do not
-travel back to the HP laptop. That is deliberate (see §8).
+- The only OneDrive on the Mac belongs to the **work tenant**.
+- Personal cloud storage on the Mac is **Google Drive**, under the gmail account.
+- ~18 GB of the corpus is already on the Mac in **two separate copies** outside
+  OneDrive, and **~43% of the OneDrive content is duplicated against itself**.
 
----
+Installed as written, v1 would have failed outright or silently resolved to the
+work tenant — automating the exact problem it was meant to solve. So the design
+changed in three ways.
 
-## 2. Design decisions, and why
+### The problem was misdiagnosed
 
-| Decision | Why |
-|---|---|
-| **Additive copy, never a mirror** | `robocopy /E /XO` with no `/MIR` and no `/PURGE`. Deleting a file on the work laptop must never delete your only copy on the Mac. The cost: renaming a file on the laptop produces *two* copies on the Mac. That trade is correct — a stray duplicate is an annoyance, a deleted original is a disaster. |
-| **Personal OneDrive only, never the work tenant** | The scripts read `HKCU\Software\Microsoft\OneDrive\Accounts\Personal` to find the folder. A work account lives under `Business1`/`Business2` and is structurally excluded. Staging into the work tenant would put personal files under company retention/eDiscovery and could vanish on the day you leave. |
-| **Receipts, not faith** | Every run writes `_status\LAST-RUN.txt`. This is the single feature that fixes the actual complaint. If the file is stale, the sync is broken, and you know within seconds from your phone. |
-| **Task runs as *you*, interactively — not as SYSTEM** | The OneDrive client only runs inside your logged-on session. A task running as SYSTEM would copy files into a folder that never uploads — a silent failure that looks like success. This also means **no admin rights are needed**, which matters on a managed work laptop. |
-| **`-StartWhenAvailable` on the nightly task** | This is the direct fix for "it didn't run last night." If the laptop was shut, in a bag, or on a plane at 23:00, the run fires as soon as the machine is back — instead of being skipped until tomorrow. |
-| **Trigger *inbox folder*, not a specific filename** | Any file dropped in works — a photo, a note, a screenshot. The OneDrive mobile app can upload a file in three taps; it cannot easily create a file with an exact name. This makes phone-initiated runs actually usable. |
-| **Mac writes a receipt back** | `mac-last-pull.json` closes the loop. Without it you know the files *left* the laptop but not that they *arrived*. |
-| **15-minute polling, not a push** | See §0. Push would require an inbound listener on a work machine. Not worth it. |
+v1 said the bug was "it doesn't run nightly and you can't verify it." That was
+your report, and verification is still worth having. But it isn't the thing that
+will actually cost you.
+
+**The real exposure: the work tenant's OneDrive folder is not storage you
+control.** When the work account is deprovisioned, the sync client removes the
+local copy from every machine signed into it — including the MacBook. Notes that
+exist only there go with it, on someone else's schedule, without warning.
+
+That reframes the goal. This is not a sync project. It is **getting a durable
+personal copy of your own notes onto storage that survives the work account**,
+and then keeping it current.
+
+### The second problem: the corpus is a mess
+
+18 GB in two copies, 43% internally duplicated. Making that copy reliable and
+well-monitored produces a reliable, well-monitored duplicate of a mess. The
+audit step (§3) now comes *first* and is not optional.
+
+### Why it "worked fine a couple of days ago"
+
+Because both machines are signed into the same work tenant, so OneDrive was
+already carrying files between them. Nothing was ever built — you were using the
+work tenant as the transport, which works right up until it doesn't.
+
+**And the connector errors have the same root cause.** Pointing Claude at the
+work OneDrive requires OAuth consent that only a tenant administrator can grant.
+A healthcare organisation will not grant it to a third-party app. Those errors
+aren't a misconfiguration to debug — that path is closed. All automation here
+runs **locally on your own Mac** instead.
 
 ---
 
-## 3. Pre-flight — confirm these five things before installing
+## 1. Corrected architecture
 
-These are the assumptions this document is built on. Four are quick checks; #1 is the one
-that can stop the whole plan.
+```
+┌─────────────────────────────┐
+│  WORK LAPTOP (Windows)      │   Nothing is installed here.
+│                             │   No scripts, no scheduled tasks,
+│  Notes live inside the      │   no admin rights, nothing new for
+│  work tenant's OneDrive     │   anyone to notice.
+│  folder (already synced)    │
+└──────────────┬──────────────┘
+               │  work tenant OneDrive — already working
+               ▼
+┌─────────────────────────────┐
+│  MACBOOK AIR (personal)     │
+│                             │
+│  ~/Library/CloudStorage/    │  ← revocable. Wiped on deprovisioning.
+│    OneDrive-<work tenant>/  │
+│              │              │
+│              │  sync-notes.sh — additive, never deletes
+│              ▼              │
+│  Google Drive (personal)    │  ← DURABLE. Survives the work account.
+│    or a plain local folder  │
+│      _status/LAST-RUN.txt   │     receipt, readable on your phone
+│      _status/manifest.tsv   │     record of what existed
+│      _status/inbox/         │     drop a file here to force a run
+│                             │
+│  launchd: every 15 min      │
+└─────────────────────────────┘
+```
 
-1. **Personal OneDrive is allowed to run on the HP laptop.**
-   Open OneDrive settings → *Account*. You should see two accounts, or at minimum a
-   personal one. If the work tenant blocks consumer OneDrive (some MDM/DLP configurations
-   do), **stop here** — none of this will work, and see §8 for the alternatives. Also worth
-   a moment's thought: this moves *your own personal files* off a work machine, which is
-   ordinary and fine, but anything work-owned should not go through this pipeline.
+Two properties worth naming:
 
-2. **Which folders actually hold personal files?**
-   This document assumes `Documents\Personal`, `Desktop\Personal`, and `Pictures\Personal`.
-   **This is a guess and is almost certainly wrong in the details.** Correct it in
-   `sync-config.json` before the first run. Syncing all of `Documents` will drag in work
-   material — pick real, personal-only subfolders.
+**Everything runs on hardware you own.** The work laptop gets no scripts and no
+scheduled tasks. The Mac reads a folder it has already synced and writes to a
+folder it owns. No new channel is opened off the work machine.
 
-3. **Storage headroom.** Free personal OneDrive is 5 GB. Check the current size of your
-   chosen folders (right-click → Properties on Windows). If it exceeds the plan, either
-   trim the source list or upgrade before running.
-
-4. **The MacBook has the OneDrive app installed and signed in to the *same personal
-   account*.** Check `~/Library/CloudStorage/` — you want a folder called
-   `OneDrive-Personal`.
-
-5. **A run time that works.** 23:00 is the default. Pick a time the laptop is usually on
-   and awake but you are not using it. Avoid times when a VPN disconnect job or corporate
-   patch window runs.
+**The receipt moved to the personal side.** It lands in Google Drive, so it
+still reaches your phone — through a personal account rather than a work one.
 
 ---
 
-## 4. Part A — Install on the HP laptop (Windows)
+## 2. Before anything else: the scope question
 
-Everything is under `docs/ops/file-sync/windows/`. Copy that folder to somewhere stable on
-the laptop — `C:\Users\<you>\PersonalSync\` is a good choice. **Do not put the scripts
-inside the OneDrive folder they manage.**
+These are your notes — meeting notes, your own thinking, your action items. That
+is an ordinary thing to want a durable copy of, and most of the value is in the
+parts only you wrote.
 
-### A1. Configure
+Two things are worth being straight about, once:
 
-```powershell
-cd C:\Users\<you>\PersonalSync
-Copy-Item sync-config.example.json sync-config.json
-notepad sync-config.json
-```
+**PHI is not the only line.** You've scoped this as "not PHI/PII" and that's the
+right first filter, but work-tenant content is also employer-confidential by
+default — internal strategy, governance discussion, unpublished research
+direction. That's a separate category from patient data, and it doesn't become
+personal because you typed it. The distinction that actually holds up is
+**authorship**: notes you wrote are a much stronger claim than decks others
+shared, exports, or attachments you received.
 
-Edit the `sources` array so it lists your real personal folders. Each entry's `name`
-becomes the folder name on the Mac side, so keep names short and **never rename them later**
-(renaming creates a second copy of everything).
+**"No PHI" is hard to guarantee across 18 GB by assertion.** In a clinical AI
+context, identifiers turn up in places nobody intended — a case discussed in a
+governance meeting, an MRN in a pasted screenshot, a de-identification example
+that wasn't fully de-identified. §3 runs a mechanical screen for this. It's
+triage, not proof.
 
-### A2. Dry run — always do this first
+The person who can actually rule on whether this is permitted is your compliance
+team or your manager — not me, and not a runbook. If you've already had that
+conversation, this section is just a checklist. If you haven't, it's worth
+having before 18 GB moves, not after.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\Sync-PersonalFiles.ps1 -DryRun
-```
+**What this document does not do:** it doesn't bypass anything. It copies files
+your personal Mac has already synced, to another folder on that same Mac. If a
+DLP control would block that, it will still block it.
 
-This lists what *would* be copied and copies nothing. Read the output. If it names files
-you don't recognise or work material, fix `sync-config.json` and run it again. Do not skip
-this step — it is also the first time these scripts execute on a real Windows machine, so
-it is where a typo or a policy block will surface.
+### The narrower version, if you want it
 
-### A3. First real run
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\Sync-PersonalFiles.ps1 -Reason manual
-```
-
-Expect the first run to be slow (it copies everything) and later runs to take seconds.
-When it finishes, confirm the receipt exists:
-
-```powershell
-Get-Content "$env:OneDriveConsumer\PersonalSync\_status\LAST-RUN.txt"
-```
-
-### A4. Install the schedule
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\Install-SyncTasks.ps1 -At 23:00
-```
-
-No administrator rights required. It registers two tasks and prints their next run times.
-To change the time later, just run it again with a different `-At`. To remove everything:
-`.\Install-SyncTasks.ps1 -Uninstall` (this removes only the scheduled tasks — your files
-and OneDrive folder are untouched).
-
-### A5. Prove the schedule works
-
-```powershell
-Start-ScheduledTask -TaskName PersonalSync-Nightly
-Start-Sleep -Seconds 30
-Get-ScheduledTask -TaskName PersonalSync-Nightly, PersonalSync-Watcher |
-    Get-ScheduledTaskInfo |
-    Format-Table TaskName, LastRunTime, LastTaskResult, NextRunTime -AutoSize
-```
-
-`LastTaskResult` of `0` means success. Anything else, see §7.
-
-### A6. Prove the phone trigger works
-
-Create a file in the inbox from the laptop, and confirm the watcher picks it up:
-
-```powershell
-"test" | Set-Content "$env:OneDriveConsumer\PersonalSync\_status\inbox\test.txt"
-Start-ScheduledTask -TaskName PersonalSync-Watcher
-Start-Sleep -Seconds 20
-Get-Content "$env:OneDriveConsumer\PersonalSync\_status\LAST-RUN.txt" | Select-Object -First 6
-```
-
-The receipt's `TRIGGER` line should now read `on-demand`, and `test.txt` should have moved
-into `inbox\.claimed\`.
-
-**Logs live at** `%LOCALAPPDATA%\PersonalSync\logs\sync-YYYY-MM.log`.
+Sync **only files you authored**, and exclude received material entirely. Fewer
+files, a far stronger ownership claim, and it captures the thing you actually
+said you wanted — your notes, your thoughts, your next steps. §5 shows the
+config for this. It's the version I'd suggest starting with.
 
 ---
 
-## 5. Part B — Install on the MacBook Air
+## 3. Step one: audit. Do not skip this.
 
-Choose one option. **Option 1 is recommended** — it is fewer moving parts, and fewer moving
-parts is the entire point of this exercise.
-
-### Option 1 — Work directly in the OneDrive folder (recommended)
-
-1. Open Finder → `~/Library/CloudStorage/OneDrive-Personal/`
-2. Right-click the `PersonalSync` folder → **Always Keep on This Device**.
-3. Drag `PersonalSync` to the Finder sidebar for one-click access.
-
-That's it. Files arrive on their own. The "Always Keep on This Device" step matters: without
-it, OneDrive stores placeholders and the files are not really on the laptop — which is
-exactly what you *don't* want on a plane. Nothing else to install, nothing else to break.
-
-### Option 2 — Copy into a plain local folder
-
-Use this if you want the files somewhere outside OneDrive (e.g. so a Time Machine or Backblaze
-backup treats them as ordinary local files, or so deleting from OneDrive later doesn't touch
-them).
+`audit-notes.sh` changes nothing. It reads, counts, and reports.
 
 ```bash
-mkdir -p ~/bin ~/Library/LaunchAgents ~/Library/Logs/PersonalSync
-cp docs/ops/file-sync/mac/pull-from-onedrive.sh ~/bin/
-chmod +x ~/bin/pull-from-onedrive.sh
-
-# Run once by hand first and read the output
-~/bin/pull-from-onedrive.sh
-
-# Then schedule it: 07:30, 18:30, and at every login
-sed "s|__HOME__|$HOME|g" docs/ops/file-sync/mac/com.personal.onedrive-pull.plist \
-  > ~/Library/LaunchAgents/com.personal.onedrive-pull.plist
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.personal.onedrive-pull.plist
+cd ~/bin
+./audit-notes.sh "/path/to/work/OneDrive/notes-root" "/path/to/personal/dest"
 ```
 
-Verify and control it:
+It answers three questions:
 
-```bash
-launchctl print gui/$(id -u)/com.personal.onedrive-pull   # is it loaded?
-launchctl kickstart -k gui/$(id -u)/com.personal.onedrive-pull   # run it right now
-tail -n 40 ~/Library/Logs/PersonalSync/pull.log
-launchctl bootout gui/$(id -u)/com.personal.onedrive-pull  # remove
-```
+| Section | Question | Why it matters |
+|---|---|---|
+| 1. Size and shape | How big, how many files, by folder and by type | Tells you whether this fits in Google Drive and what you're actually dealing with |
+| 2. Duplicates | What's byte-identical, within the source and against the destination | The 43% figure. Reclaimable space, and how much of the 18 GB is genuinely new |
+| 3. Identifier screen | Which files contain SSN-shaped, MRN-shaped, DOB-adjacent or phone-shaped strings | Triage for §2 |
 
-> **macOS gotcha — grant Full Disk Access.** A launchd agent reading
-> `~/Library/CloudStorage` or writing to `~/Documents` can be silently blocked by macOS
-> privacy protection. The symptom is `Operation not permitted` in `pull.log` while the same
-> command works fine when you run it in Terminal. Fix: **System Settings → Privacy &
-> Security → Full Disk Access → +** and add `/bin/bash`. Press ⌘⇧G in the file picker to
-> type the path. Then `launchctl kickstart -k …` to retry.
+**On the identifier screen.** It reports **file paths and match counts only —
+never the matched value.** Writing an identifier into a log would create exactly
+the exposure the screen exists to find. A hit is not proof of anything: long
+digit runs appear in dates, version numbers, and ticket IDs. A clean result is
+not proof of absence either — it can't read inside Word, Excel, PowerPoint, or
+PDF, so those are listed separately as needing manual review.
+
+Read the report before configuring anything. It will change what you sync.
 
 ---
 
-## 6. Part C — Using it from your phone
+## 4. Step two: pick the destination
 
-### "Did it run last night?"
+The destination must be somewhere the work account cannot revoke. `sync-notes.sh`
+refuses to write anywhere with `OneDrive-` or `SharePoint` in the path.
 
-Open the **OneDrive app** → `PersonalSync` → `_status` → **`LAST-RUN.txt`**. You get:
+| Option | Good for | Trade-off |
+|---|---|---|
+| **Google Drive (personal)** | Receipts reach your phone; off-machine backup | 18 GB against your Drive quota; content leaves the Mac |
+| **Plain local folder** (`~/Notes`) | Nothing leaves the machine; simplest | No phone visibility; needs Time Machine or similar behind it |
+| **Local + Drive for receipts only** | Corpus stays local, status is still visible on the phone | Slightly more setup |
+
+If the audit shows the corpus is mostly duplicates, dedup first — you may find
+the real figure is well under 18 GB.
+
+---
+
+## 5. Step three: install (MacBook only)
+
+```bash
+mkdir -p ~/bin ~/Library/Logs/NotesSync ~/Library/LaunchAgents
+cp docs/ops/file-sync/mac/{sync-notes.sh,audit-notes.sh} ~/bin/
+cp docs/ops/file-sync/mac/notes-sync.conf.example ~/bin/notes-sync.conf
+chmod +x ~/bin/sync-notes.sh ~/bin/audit-notes.sh
+
+ls ~/Library/CloudStorage/          # find the exact work tenant folder name
+nano ~/bin/notes-sync.conf          # set NOTES_SOURCE and NOTES_DEST
+```
+
+`notes-sync.conf` holds the real paths and is **never committed**.
+
+### The authored-only variant
+
+To sync only what you wrote, add received-material folders to `EXTRA_EXCLUDES`
+in the config — shared decks, downloads, attachments, exports — and point
+`NOTES_SOURCE` at your notes root rather than the whole tenant folder.
+
+### Dry run, then real run
+
+```bash
+~/bin/sync-notes.sh --dry-run    # lists what would copy, copies nothing
+~/bin/sync-notes.sh --now
+cat "$(grep '^NOTES_DEST' ~/bin/notes-sync.conf | cut -d'"' -f2)/_status/LAST-RUN.txt"
+```
+
+### Schedule it
+
+```bash
+sed "s|__HOME__|$HOME|g" docs/ops/file-sync/mac/com.personal.notes-sync.plist \
+  > ~/Library/LaunchAgents/com.personal.notes-sync.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.personal.notes-sync.plist
+launchctl kickstart -k gui/$(id -u)/com.personal.notes-sync    # run now
+launchctl print gui/$(id -u)/com.personal.notes-sync           # verify
+```
+
+One agent covers both jobs: it wakes every 15 minutes and exits immediately
+unless the last run is overdue or a trigger file is waiting.
+
+> **macOS gotcha — Full Disk Access.** A launchd agent reading
+> `~/Library/CloudStorage` can be silently blocked by macOS privacy protection.
+> Symptom: `Operation not permitted` in `~/Library/Logs/NotesSync/sync.log`
+> while the same command works in Terminal. Fix: **System Settings → Privacy &
+> Security → Full Disk Access → +**, add `/bin/bash` (⌘⇧G to type the path),
+> then `launchctl kickstart -k …`.
+
+---
+
+## 6. Nothing to install on the work laptop
+
+This is deliberate, and it's a change from v1.
+
+If your notes already live inside the work tenant's OneDrive folder — which they
+do, since the Mac is receiving them — then leg one is already running. OneDrive
+does it. There is nothing to schedule and nothing to add.
+
+If some folder on the laptop sits *outside* OneDrive, **move it in once, by
+hand.** That's a drag-and-drop, not a script. It needs no admin rights, no
+scheduled task, and adds nothing to a managed machine.
+
+This also sidesteps the connector problem entirely: no tenant consent is needed
+because nothing touches the tenant's API.
+
+---
+
+## 7. Checking it from your phone
+
+Google Drive app → your notes folder → `_status` → **`LAST-RUN.txt`**:
 
 ```
-PERSONAL FILE SYNC - LAST RUN RECEIPT
-=====================================
+NOTES SYNC — LAST RUN RECEIPT
+=============================
 
 RESULT      : OK
-FINISHED    : 2026-08-21 23:00:11 (Pacific Standard Time)
+FINISHED    : 2026-08-22 07:30:14 PDT
 TRIGGER     : scheduled
-COPIED      : 14 new/updated file(s), 122.4 MB
-DURATION    : 38 second(s)
-LAPTOP      : HP-LAPTOP-01
-NEXT RUN    : 2026-08-22 23:00
-...
+NEW FILES   : 6 copied this run
+CORPUS      : 4,182 file(s), 11G held in the durable copy
+DURATION    : 52s
+MAC         : MacBook Air
+WORK SOURCE : yes
 ```
 
-**The 26-hour rule:** if `FINISHED` is more than about 26 hours old, or `RESULT` is not
-`OK`, something is wrong. Everything else is noise.
+**Two lines matter.** `RESULT` should be `OK` and `FINISHED` should be under ~26
+hours old. `WORK SOURCE` is the deprovisioning canary: if it reports the folder
+is gone, the durable copy is now the only copy — which is the outcome this whole
+exercise exists to produce.
 
-### "Run it now"
+**To force a run:** Google Drive app → `_status` → `inbox` → upload any file. A
+screenshot works. It runs within 15 minutes if the Mac is awake.
 
-Open the **OneDrive app** → `PersonalSync` → `_status` → `inbox` → **+ / Upload** → pick any
-file at all (a screenshot is easiest). Within 15 minutes — assuming the laptop is on, awake,
-and logged in — the sync runs and `LAST-RUN.txt` updates with `TRIGGER : on-demand`.
-
-If the laptop is asleep or off, the trigger simply waits in the inbox and fires when it
-wakes. Nothing is lost.
+`_status/manifest-YYYY-MM.tsv` lists every file held, with size and date — a
+record of what existed even if the source disappears.
 
 ---
 
-## 7. Troubleshooting
+## 8. Troubleshooting
 
-| Symptom | Most likely cause | Fix |
+| Symptom | Cause | Fix |
 |---|---|---|
-| `LAST-RUN.txt` is days old | Laptop was off/asleep at 23:00 and hasn't been back since | It will catch up on next login. If it doesn't, check `Get-ScheduledTaskInfo` — the task may be disabled. |
-| `LAST-RUN.txt` never appeared at all | Nightly task never ran, or the staging folder isn't in the *personal* OneDrive | Run `Sync-PersonalFiles.ps1 -Reason manual` by hand and read the error. |
-| Receipt says OK but files aren't on the Mac | Files copied into the folder but OneDrive hasn't uploaded them | Check the OneDrive tray icon on the laptop. Paused? Signed out? "Processing changes" forever? Quit and reopen OneDrive. |
-| `LastTaskResult` is `0x41303` | Task has never run yet | Not an error. Wait for the schedule or `Start-ScheduledTask`. |
-| `LastTaskResult` is `0x1` | Script exited with a failure | Read `%LOCALAPPDATA%\PersonalSync\logs\sync-YYYY-MM.log`. |
-| Script: "Could not locate the PERSONAL OneDrive folder" | Personal account not signed in, or only the work tenant is present | Sign in to personal OneDrive. If IT blocks it, see §8. |
-| Robocopy reports failures on a few files | Files were open (Word/Excel lock files) or path too long | Usually self-healing — next run picks them up. Persistent failures: add the pattern to `excludeFiles`. |
-| Nightly task never fires while the lid is shut | Wake timers disabled by corporate power policy | `-WakeToRun` is set but can be overridden by policy. Fall back to relying on `-StartWhenAvailable` catch-up at next login — set the time to something like 12:30 when the laptop is likely open. |
-| Mac: `Operation not permitted` in `pull.log` | macOS Full Disk Access | See the gotcha box in §5. |
-| Mac: rsync exit 23 or 24 | Files On-Demand placeholders vanished mid-copy | Benign. Marking the folder "Always Keep on This Device" removes it. |
-| Duplicate files on the Mac with slightly different names | A file was renamed on the laptop; additive copy keeps both | Expected behaviour (§2). Delete the stale one on the Mac; it will not come back unless it changes on the laptop. |
-| OneDrive says "storage full" | 5 GB free tier | Trim `sources`, raise `maxFileMB` down, or upgrade the plan. |
+| `ERROR: source not found` | Work tenant folder renamed, signed out, or deprovisioned | `ls ~/Library/CloudStorage/` and update `NOTES_SOURCE`. If it's gone entirely, the durable copy is now the only copy. |
+| `ERROR: NOTES_DEST points inside a work-tenant folder` | Destination is inside OneDrive/SharePoint | Working as intended. Pick a personal destination. |
+| Receipt over 26 hours old | Mac asleep, or agent not loaded | `launchctl print gui/$(id -u)/com.personal.notes-sync` |
+| `Operation not permitted` in the log | macOS Full Disk Access | See the gotcha in §5 |
+| rsync exit 23 / 24 | Cloud placeholders vanished mid-copy | Benign; next run picks them up. Mark the source "Always Keep on This Device". |
+| Sync is very slow the first time | Files On-Demand hydrating placeholders | Expected once. Later runs are incremental. |
+| Google Drive quota full | 18 GB against a 15 GB free tier | Run the audit and dedup first, or go local-only |
+| Claude can't reach the work OneDrive | Tenant admin consent — not grantable | Not fixable. Automation runs locally instead (§0). |
 
 ---
 
-## 8. Limitations — what this deliberately does not do
+## 9. Limitations
 
-- **It is one-way.** Laptop → Mac. Files created on the MacBook stay on the MacBook. Making
-  it two-way means real conflict resolution and a much bigger failure surface; if you want
-  that, say so and we'll design it separately.
-- **It never deletes anything on the receiving side.** Cleanup is a manual, occasional job.
-- **It cannot run while the laptop is off.** No software fixes this. The catch-up behaviour
-  is the mitigation.
-- **The phone trigger is not instant.** Up to 15 minutes, plus OneDrive propagation.
-- **It does not encrypt anything beyond what OneDrive already does.** If some of these files
-  are genuinely sensitive, that's a separate conversation.
-- **If IT blocks personal OneDrive on the work laptop, this plan is dead** and the realistic
-  alternatives are: a personal USB drive on a schedule, a personal cloud client that *is*
-  permitted, or simply not creating personal files on the work machine. Confirm §3.1 early.
-- **The PowerShell has not been executed on a Windows machine yet.** It was written and
-  syntax-reviewed but authored in a Linux container. The `-DryRun` step in §A2 exists
-  precisely to catch anything that surfaces only at runtime — do not skip it.
+- **One-way.** Work tenant → personal copy. Edits on the personal side don't go back.
+- **Never deletes.** Cleanup is manual and occasional.
+- **The identifier screen is triage, not a compliance control.** It cannot read
+  Office or PDF binaries, and pattern matching both over- and under-reports.
+- **Nothing here is a legal or policy opinion.** Whether this is permitted is a
+  question for your compliance team.
+- **If the work account is deprovisioned before this runs, the window is closed.**
+  That is the argument for doing the audit this week rather than next month.
+- **Untested against your real corpus.** These scripts were written in a Linux
+  container. Bash and plist syntax are verified; behaviour against 18 GB of real
+  files is not. The audit is report-only and the sync has a dry-run mode —
+  use both first.
 
 ---
 
-## 9. Prompts to hand to Claude
+## 10. Prompts
 
-Copy these verbatim. Each is self-contained.
+> Keep real folder names out of anything you paste into a public repo, a commit
+> message, or a PR description. In the prompts below, describe paths rather than
+> quoting them where you can.
 
-### 9.1 — For Claude Code running **on the HP laptop** (install)
+**On the MacBook — audit first**
 
-> I need you to install a nightly personal-file sync on this Windows laptop. The scripts and
-> the full handoff document are in the repo `the-covenant-of-water` under
-> `docs/ops/file-sync/` on branch `claude/file-sync-hp-macbook-onedrive-w2370g`. Read
-> `HANDOFF.md` first, then follow section 4 exactly: copy the `windows/` folder to
-> `C:\Users\<me>\PersonalSync`, help me fill in `sync-config.json` with my real personal
-> folders (ask me — don't guess), run the dry run and show me the output before copying
-> anything, then do the first real run and install the scheduled tasks. Finish by showing me
-> the contents of `_status\LAST-RUN.txt` and the output of `Get-ScheduledTaskInfo` for both
-> tasks. Do not use `/MIR` or anything that can delete files.
+> Read `docs/ops/file-sync/HANDOFF.md` in `the-covenant-of-water`, branch
+> `claude/file-sync-hp-macbook-onedrive-w2370g`. Install `audit-notes.sh` to
+> `~/bin` and run it against my work OneDrive notes root and my intended
+> personal destination — ask me for both paths, don't guess. Then walk me
+> through the report: how much is duplicated, how much is genuinely new, and
+> which files the identifier screen flagged. Don't install the sync or change
+> anything yet. Don't paste real folder paths into any file that gets committed
+> — the repo is public.
 
-### 9.2 — For Claude Code running **on the MacBook Air** (install)
+**On the MacBook — install the sync**
 
-> Set up the receiving end of my OneDrive file sync on this Mac. Read
-> `docs/ops/file-sync/HANDOFF.md` in `the-covenant-of-water` (branch
-> `claude/file-sync-hp-macbook-onedrive-w2370g`), section 5. Confirm the OneDrive personal
-> account is signed in and `~/Library/CloudStorage/OneDrive-Personal/PersonalSync` exists.
-> Then set that folder to "Always Keep on This Device" and tell me if it worked. If I say I
-> want the files outside OneDrive, do Option 2 instead: install
-> `mac/pull-from-onedrive.sh` to `~/bin`, load the launchd agent, run it once, and show me
-> the log.
+> Following section 5 of `docs/ops/file-sync/HANDOFF.md`, install
+> `sync-notes.sh` and the launchd agent on this Mac. Help me fill in
+> `notes-sync.conf` — ask me for the paths. Run the dry run and show me the
+> output before anything is copied. Then do the first real run and show me
+> `_status/LAST-RUN.txt`. The destination must not be inside any work tenant
+> folder.
 
-### 9.3 — Daily check-in (phone, no connectors needed)
+**Daily check (no connector needed — that path is closed)**
 
-> Remind me to check my file sync. Tell me to open the OneDrive app →
-> `PersonalSync/_status/LAST-RUN.txt` and read me back what to look for: `RESULT` should be
-> `OK` and `FINISHED` should be less than 26 hours old. If I paste you the contents, tell me
-> whether the sync is healthy and what to do if not.
-
-### 9.4 — Daily check-in (automated, if a OneDrive connector is configured)
-
-> Read `PersonalSync/_status/last-run.json` from my personal OneDrive. Tell me in one line
-> whether the sync is healthy: `result` must be `OK` and `finishedAt` must be within the last
-> 26 hours. If it's stale or failed, say so plainly, tell me the likely cause using the
-> troubleshooting table in `docs/ops/file-sync/HANDOFF.md`, and offer to force a run.
-
-### 9.5 — Force a run from the phone (automated)
-
-> My file sync looks stale. Force a run: upload any small file into
-> `PersonalSync/_status/inbox/` in my personal OneDrive — the filename doesn't matter. Then
-> tell me the laptop will pick it up within 15 minutes if it's awake, and offer to re-check
-> `_status/last-run.json` in 20 minutes.
-
-### 9.6 — Set up a recurring reminder
-
-> Create a Routine that fires every weekday at 08:00 my time and runs prompt 9.4 from
-> `docs/ops/file-sync/HANDOFF.md`. If the sync is healthy, say nothing. If it's stale or
-> failed, notify me.
-
-> **On connectors:** 9.4 and 9.5 need Claude to have access to your personal OneDrive — via
-> a OneDrive connector or a Zapier "Microsoft OneDrive" action (`Upload File`, `Find File`).
-> Without one, use 9.3 and 9.5-by-hand, which need nothing but the OneDrive mobile app and
-> work perfectly well. Ask me to wire up the connector if you want the automated version.
+> Remind me to check my notes sync: Google Drive app → my notes folder →
+> `_status/LAST-RUN.txt`. `RESULT` should be `OK`, `FINISHED` under 26 hours
+> old, and `WORK SOURCE` should say yes. If I paste it to you, tell me whether
+> it's healthy.
 
 ---
 
-## 10. File inventory
+## 11. Open questions
 
-| File | Runs on | Purpose |
-|---|---|---|
-| `HANDOFF.md` | — | This document |
-| `windows/Sync-PersonalFiles.ps1` | HP laptop | The copy itself + writes receipts |
-| `windows/Watch-RunNow.ps1` | HP laptop | Polls the OneDrive inbox for phone triggers |
-| `windows/Install-SyncTasks.ps1` | HP laptop | Registers/removes the two scheduled tasks |
-| `windows/sync-config.example.json` | HP laptop | Template — copy to `sync-config.json` and edit |
-| `mac/pull-from-onedrive.sh` | MacBook | Option 2 only: copies out of OneDrive, writes a receipt back |
-| `mac/com.personal.onedrive-pull.plist` | MacBook | Option 2 only: launchd schedule |
-
-`sync-config.json` (the real one, with your folder paths) is intentionally **not** in the
-repo — it is machine-specific and may name private directories.
-
----
-
-## 11. Open questions for you
-
-Answer these and the config can be finalised; until then §3.2's guessed folder list stands
-as the working assumption.
-
-1. Which exact folders on the HP laptop hold personal files?
-2. Roughly how much data is that, and what's your OneDrive plan?
-3. Does IT permit personal OneDrive on the work laptop?
-4. Preferred nightly run time, and is the laptop usually awake then?
-5. MacBook: Option 1 (work inside OneDrive) or Option 2 (copy to `~/PersonalFromWork`)?
-6. Do you want the automated phone check (9.4/9.5), which needs a OneDrive connector wired up?
+1. **Has anyone at work signed off on this?** Changes how much to sync, and
+   whether the authored-only variant is the right starting point.
+2. **Is the work account at any near-term risk** — role change, offboarding,
+   reorg? Changes the urgency of the audit.
+3. **Google Drive or local-only** for the durable copy? Depends on the audit's
+   real size figure and your Drive quota.
+4. **Everything, or authored-only?** My suggestion is authored-only to start.
+5. **What are the two existing 18 GB copies on the Mac,** and can they be folded
+   into one destination? Right now they're a third and fourth copy of the mess.
