@@ -1,0 +1,34 @@
+{
+  "_comment": "Copy this file to sync-config.json and edit. Paths may use %USERPROFILE% and other environment variables. 'name' becomes the folder name inside OneDrive, so keep it short and stable - renaming it later creates a duplicate folder on the MacBook.",
+
+  "stageFolderName": "PersonalSync",
+
+  "sources": [
+    { "name": "Documents", "path": "%USERPROFILE%\\Documents\\Personal" },
+    { "name": "Desktop",   "path": "%USERPROFILE%\\Desktop\\Personal" },
+    { "name": "Pictures",  "path": "%USERPROFILE%\\Pictures\\Personal" }
+  ],
+
+  "excludeDirs": [
+    "node_modules",
+    ".git",
+    "AppData",
+    "$RECYCLE.BIN",
+    "System Volume Information",
+    "Zoom",
+    "OneDriveTemp"
+  ],
+
+  "excludeFiles": [
+    "~$*",
+    "*.tmp",
+    "*.crdownload",
+    "*.partial",
+    "*.lock",
+    "Thumbs.db",
+    "desktop.ini",
+    ".DS_Store"
+  ],
+
+  "maxFileMB": 2048
+}
